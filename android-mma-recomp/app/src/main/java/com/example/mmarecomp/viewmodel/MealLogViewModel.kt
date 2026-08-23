@@ -33,6 +33,8 @@ class MealLogViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var isRepeatingYesterday by mutableStateOf(false)
+        private set
 
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
     val totalProteines: Double get() = mealsForDay.sumOf { it.proteinesG }
@@ -110,6 +112,46 @@ class MealLogViewModel(
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible d'enregistrer ce repas.")
                 onResult(false)
+            }
+        }
+    }
+
+    /** Recopie les repas d'hier qui n'ont pas déjà un équivalent aujourd'hui
+     *  (créneau par créneau) — pour les journées où le rythme ne change pas.
+     *  `onResult` reçoit le nombre de repas recopiés (0 si rien à faire ou
+     *  en cas d'erreur). N'écrase jamais un repas déjà loggué aujourd'hui. */
+    fun repeatYesterday(onResult: (Int) -> Unit) {
+        isRepeatingYesterday = true
+        viewModelScope.launch {
+            try {
+                val yesterday = DateUtils.string(date.minusDays(1))
+                val yesterdayMeals = mealRepository.fetch(forDate = yesterday)
+                val alreadyLoggedSlots = mealsForDay.map { it.repas }.toSet()
+                val toRepeat = yesterdayMeals.filter { it.repas !in alreadyLoggedSlots }
+
+                var repeated = mealsForDay
+                var count = 0
+                for (meal in toRepeat) {
+                    val newMeal = NewMeal(
+                        date = DateUtils.string(date),
+                        repas = meal.repas,
+                        calories = meal.calories,
+                        proteinesG = meal.proteinesG,
+                        glucidesG = meal.glucidesG,
+                        lipidesG = meal.lipidesG,
+                        description = meal.description,
+                    )
+                    val saved = mealRepository.log(newMeal)
+                    repeated = (repeated.filterNot { it.repas == saved.repas } + saved).sortedBy { it.repas }
+                    count++
+                }
+                mealsForDay = repeated
+                onResult(count)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de répéter les repas d'hier.")
+                onResult(0)
+            } finally {
+                isRepeatingYesterday = false
             }
         }
     }

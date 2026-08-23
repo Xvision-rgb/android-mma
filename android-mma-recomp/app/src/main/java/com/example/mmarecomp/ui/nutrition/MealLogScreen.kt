@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import com.example.mmarecomp.viewmodel.MealLogViewModel
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
 
+    var repeatConfirmation by remember { mutableStateOf<String?>(null) }
     var selectedSlot by remember { mutableStateOf(RepasSlot.Matin) }
     var calories by remember { mutableStateOf("") }
     var proteines by remember { mutableStateOf("") }
@@ -80,7 +82,25 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         item { HorizontalDivider() }
-        item { Text("Repas déjà loggés", style = MaterialTheme.typography.titleMedium) }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Repas déjà loggés", style = MaterialTheme.typography.titleMedium)
+                TextButton(
+                    onClick = {
+                        viewModel.repeatYesterday { count ->
+                            repeatConfirmation = if (count > 0) {
+                                if (count == 1) "1 repas recopié depuis hier" else "$count repas recopiés depuis hier"
+                            } else {
+                                "Rien à recopier depuis hier"
+                            }
+                        }
+                    },
+                ) { Text("Répéter hier") }
+            }
+        }
+        repeatConfirmation?.let { message ->
+            item { Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
 
         if (viewModel.mealsForDay.isEmpty()) {
             item { Text("Aucun repas pour l'instant.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
