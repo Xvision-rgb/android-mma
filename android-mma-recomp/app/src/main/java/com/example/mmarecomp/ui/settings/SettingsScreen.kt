@@ -15,6 +15,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,7 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.data.ThemeMode
+import com.example.mmarecomp.data.ThemePreferenceStore
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.toFriendlyMessage
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -123,6 +129,28 @@ fun SettingsScreen(
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Enregistrer") }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Apparence", style = MaterialTheme.typography.titleMedium) }
+        item {
+            val themeOptions = listOf(
+                ThemeMode.SYSTEM to "Système",
+                ThemeMode.LIGHT to "Clair",
+                ThemeMode.DARK to "Sombre",
+            )
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                themeOptions.forEachIndexed { index, (mode, label) ->
+                    SegmentedButton(
+                        selected = AppThemeState.mode.value == mode,
+                        onClick = {
+                            AppThemeState.mode.value = mode
+                            ThemePreferenceStore(context).save(mode)
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = themeOptions.size),
+                    ) { Text(label) }
+                }
+            }
         }
 
         item { HorizontalDivider() }

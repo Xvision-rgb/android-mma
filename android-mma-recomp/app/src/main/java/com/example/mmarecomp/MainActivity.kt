@@ -6,15 +6,21 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.example.mmarecomp.data.ThemePreferenceStore
 import com.example.mmarecomp.ui.RootScreen
+import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.ui.theme.MMARecompTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppThemeState.mode.value = ThemePreferenceStore(this).load()
+
         setContent {
-            MMARecompTheme {
+            val themeMode by AppThemeState.mode
+            MMARecompTheme(themeMode = themeMode) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     RootScreen()
                 }
