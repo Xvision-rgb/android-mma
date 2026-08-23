@@ -103,6 +103,15 @@ fun SettingsScreen(
                 }
             }
         }
+        item {
+            OutlinedTextField(
+                value = viewModel.coachNotes,
+                onValueChange = { viewModel.coachNotes = it },
+                label = { Text("Notes du coach (libre)") },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         viewModel.errorMessage?.let { error ->
             item { Text(error, color = MaterialTheme.colorScheme.error) }

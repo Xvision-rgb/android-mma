@@ -16,6 +16,9 @@ create table public.profiles (
   -- "phase" permet d'étendre le suivi (métriques MMA spécifiques) sans
   -- refondre le schéma une fois le curriculum MMA lancé.
   phase text not null default 'ete' check (phase in ('ete', 'curriculum_mma')),
+  -- Notes libres (consignes du coach, rappels persos) — jamais affichées
+  -- ailleurs que dans Réglages, ne fait pas partie du suivi quotidien.
+  coach_notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -29,6 +29,7 @@ class ProfileViewModel(
     var poidsObjectifKg by mutableStateOf("")
     var bfObjectifPct by mutableStateOf("")
     var phase by mutableStateOf(Phase.Ete)
+    var coachNotes by mutableStateOf("")
     var isSaving by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -44,6 +45,7 @@ class ProfileViewModel(
                 poidsObjectifKg = fetched.poidsObjectifKg.toString()
                 bfObjectifPct = fetched.bfObjectifPct.toString()
                 phase = fetched.phase
+                coachNotes = fetched.coachNotes.orEmpty()
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le profil.")
             }
@@ -65,7 +67,12 @@ class ProfileViewModel(
         errorMessage = null
         isSaving = true
         viewModelScope.launch {
-            val patch = ProfileUpdate(poidsObjectifKg = poids, bfObjectifPct = bf, phase = phase)
+            val patch = ProfileUpdate(
+                poidsObjectifKg = poids,
+                bfObjectifPct = bf,
+                phase = phase,
+                coachNotes = coachNotes.ifBlank { null },
+            )
             try {
                 repository.update(userId, patch)
                 onSaved(phase)
