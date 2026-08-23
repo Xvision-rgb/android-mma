@@ -91,10 +91,13 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
                     label = { Text("Nom du modèle (ex: WOD standard)") },
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = {
-                    viewModel.saveCurrentAsTemplate(newTemplateName, context)
-                    newTemplateName = ""
-                }) { Text("Sauver") }
+                TextButton(
+                    onClick = {
+                        viewModel.saveCurrentAsTemplate(newTemplateName, context)
+                        newTemplateName = ""
+                    },
+                    enabled = newTemplateName.isNotBlank() && viewModel.wodContent.isNotBlank(),
+                ) { Text("Sauver") }
             }
         }
 
