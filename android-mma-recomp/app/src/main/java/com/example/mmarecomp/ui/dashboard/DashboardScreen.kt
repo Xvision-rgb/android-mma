@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
@@ -32,6 +33,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (!viewModel.isLoading && !viewModel.hasAnyData) {
+            item {
+                EmptyState(
+                    title = "Bienvenue 👋",
+                    message = "Log ta première séance, ton premier repas ou ta pesée du matin pour voir ton tableau de bord prendre vie.",
+                )
+            }
+        }
         item {
             DashCard {
                 Text("Séances", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

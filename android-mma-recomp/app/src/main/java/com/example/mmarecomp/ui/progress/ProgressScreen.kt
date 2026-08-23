@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
@@ -31,6 +32,15 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
+
+        if (!viewModel.isLoading && viewModel.weightTrend.isEmpty() && viewModel.chargeProgressionByExercise.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "Pas encore de quoi comparer",
+                    message = "Reviens ici dans quelques séances et pesées — ta progression sur 4 à 8 semaines s'affichera automatiquement.",
+                )
+            }
+        }
 
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {

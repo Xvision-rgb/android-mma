@@ -53,6 +53,11 @@ class DashboardViewModel(
     var consistencyStreak by mutableStateOf(0)
         private set
 
+    /** Vrai tant qu'aucune séance, repas ou pesée n'a jamais été loggué —
+     *  sert à afficher un message d'accueil plutôt que des cartes à "0". */
+    val hasAnyData: Boolean
+        get() = workoutsThisWeek.isNotEmpty() || mealsLast7Days.isNotEmpty() || morningWeighIns.isNotEmpty()
+
     val avgCaloriesLast7Days: Int
         get() {
             if (mealsLast7Days.isEmpty()) return 0

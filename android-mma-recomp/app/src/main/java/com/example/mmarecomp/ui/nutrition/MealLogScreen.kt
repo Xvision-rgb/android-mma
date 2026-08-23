@@ -103,7 +103,13 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         if (viewModel.mealsForDay.isEmpty()) {
-            item { Text("Aucun repas pour l'instant.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item {
+                Text(
+                    "Aucun repas loggué pour l'instant — ajoute ton premier repas ci-dessous, ou récupère ceux d'hier avec le bouton au-dessus.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         items(viewModel.mealsForDay) { meal ->
             meal.repasSlot?.let { slot ->
