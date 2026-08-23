@@ -21,6 +21,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.StreakCalculator
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
 import kotlinx.coroutines.launch
@@ -45,6 +46,11 @@ class DashboardViewModel(
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    /** Série de constance positive : jours consécutifs avec au moins une
+     *  séance ou un repas loggué. Jamais basée sur le poids. */
+    var consistencyStreak by mutableStateOf(0)
         private set
 
     val avgCaloriesLast7Days: Int
@@ -90,6 +96,13 @@ class DashboardViewModel(
                 mealsLast7Days = mealRepository.fetch(sevenDaysAgo)
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
+
+                val thirtyDaysAgo = DateUtils.daysAgo(30)
+                val recentWorkouts = workoutRepository.fetchWeek(thirtyDaysAgo)
+                val recentMeals = mealRepository.fetch(thirtyDaysAgo)
+                val activeDates = (recentWorkouts.mapNotNull { DateUtils.date(it.date) } +
+                    recentMeals.mapNotNull { DateUtils.date(it.date) }).toSet()
+                consistencyStreak = StreakCalculator.currentStreak(activeDates)
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le dashboard pour le moment.")
             } finally {

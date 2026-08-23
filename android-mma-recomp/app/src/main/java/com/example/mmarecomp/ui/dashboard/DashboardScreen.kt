@@ -41,6 +41,20 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                 )
             }
         }
+        if (viewModel.consistencyStreak >= 1) {
+            item {
+                DashCard {
+                    Text("Constance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val jours = if (viewModel.consistencyStreak == 1) "jour" else "jours"
+                    Text("${viewModel.consistencyStreak} $jours de suite 🔥", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Au moins une séance ou un repas loggué chaque jour — jamais basé sur le poids.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
         item {
             DashCard {
                 Text(
