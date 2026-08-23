@@ -6,6 +6,7 @@ final class ProfileViewModel: ObservableObject {
     @Published var poidsObjectifKg: String = ""
     @Published var bfObjectifPct: String = ""
     @Published var phase: Phase = .ete
+    @Published var coachNotes: String = ""
     @Published var isSaving = false
     @Published var errorMessage: String?
 
@@ -23,6 +24,7 @@ final class ProfileViewModel: ObservableObject {
             poidsObjectifKg = String(fetched.poidsObjectifKg)
             bfObjectifPct = String(fetched.bfObjectifPct)
             phase = fetched.phase
+            coachNotes = fetched.coachNotes ?? ""
         } catch {
             errorMessage = "Impossible de charger le profil."
         }
@@ -34,7 +36,8 @@ final class ProfileViewModel: ObservableObject {
         let patch = ProfileUpdate(
             poidsObjectifKg: Double(poidsObjectifKg.replacingOccurrences(of: ",", with: ".")),
             bfObjectifPct: Double(bfObjectifPct.replacingOccurrences(of: ",", with: ".")),
-            phase: phase
+            phase: phase,
+            coachNotes: coachNotes.isEmpty ? nil : coachNotes
         )
         do {
             try await service.update(userId: userId, patch: patch)

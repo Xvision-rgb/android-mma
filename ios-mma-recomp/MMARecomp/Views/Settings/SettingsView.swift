@@ -18,6 +18,11 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Notes du coach") {
+                    TextField("Notes libres…", text: $viewModel.coachNotes, axis: .vertical)
+                        .lineLimit(3...8)
+                }
+
                 if let error = viewModel.errorMessage {
                     Text(error).foregroundStyle(.red)
                 }
