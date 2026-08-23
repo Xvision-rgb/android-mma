@@ -26,6 +26,13 @@ class WorkoutRepository {
             }
             .decodeList()
 
+    /** Tout l'historique, sans filtre de date — sert aux records personnels
+     *  qui doivent rester valables même hors de la fenêtre de progression. */
+    suspend fun fetchAll(): List<Workout> =
+        client.postgrest.from("workouts")
+            .select { order("date", Order.ASCENDING) }
+            .decodeList()
+
     suspend fun log(workout: NewWorkout): Workout =
         client.postgrest.from("workouts")
             .insert(workout) { select() }

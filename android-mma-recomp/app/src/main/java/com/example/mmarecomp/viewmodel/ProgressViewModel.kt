@@ -12,6 +12,7 @@ import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
+import com.example.mmarecomp.util.PersonalRecordDetector
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
@@ -28,6 +29,8 @@ class ProgressViewModel(
     var weighIns by mutableStateOf<List<WeighIn>>(emptyList())
         private set
     var workouts by mutableStateOf<List<Workout>>(emptyList())
+        private set
+    var allTimeWorkouts by mutableStateOf<List<Workout>>(emptyList())
         private set
     var isLoading by mutableStateOf(false)
         private set
@@ -76,6 +79,23 @@ class ProgressViewModel(
             first != null && last != null && last > first
         }
 
+    /** Meilleure charge jamais loggée par exercice, sur tout l'historique
+     *  (pas seulement la fenêtre 4/8 semaines) — toujours une célébration,
+     *  jamais affiché comme "manquant" pour un exercice jamais fait. */
+    val personalBests: List<Pair<String, Double>>
+        get() {
+            val displayNameByKey = LinkedHashMap<String, String>()
+            for (workout in allTimeWorkouts) {
+                for (exercice in workout.exercices) {
+                    val key = exercice.nom.trim().lowercase()
+                    displayNameByKey.putIfAbsent(key, exercice.nom.trim())
+                }
+            }
+            return displayNameByKey.values
+                .mapNotNull { name -> PersonalRecordDetector.bestKnownLoad(name, allTimeWorkouts)?.let { name to it } }
+                .sortedBy { it.first }
+        }
+
     fun load() {
         isLoading = true
         errorMessage = null
@@ -85,8 +105,10 @@ class ProgressViewModel(
                 coroutineScope {
                     val weighInsDeferred = async { weighInRepository.fetch(since) }
                     val workoutsDeferred = async { workoutRepository.fetchWeek(since) }
+                    val allTimeDeferred = async { workoutRepository.fetchAll() }
                     weighIns = weighInsDeferred.await()
                     workouts = workoutsDeferred.await()
+                    allTimeWorkouts = allTimeDeferred.await()
                 }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger la progression.")

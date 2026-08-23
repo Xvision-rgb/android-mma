@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,6 +101,29 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         lineColor = MaterialTheme.colorScheme.tertiary,
                     )
+                }
+            }
+        }
+
+        if (viewModel.personalBests.isNotEmpty()) {
+            item { HorizontalDivider() }
+            item { Text("Records personnels", style = MaterialTheme.typography.titleMedium) }
+            items(viewModel.personalBests, key = { it.first }) { (name, best) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            Icons.Filled.EmojiEvents,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.height(18.dp),
+                        )
+                        Text("%.1f kg".format(best), style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }

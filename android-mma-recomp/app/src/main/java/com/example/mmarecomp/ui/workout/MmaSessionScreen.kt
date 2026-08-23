@@ -20,6 +20,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,7 +62,9 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
                                 Icon(
                                     Icons.Filled.Close,
                                     contentDescription = "Supprimer le modèle ${template.name}",
-                                    modifier = Modifier.clickable { viewModel.deleteTemplate(template, context) },
+                                    modifier = Modifier
+                                        .minimumInteractiveComponentSize()
+                                        .clickable { viewModel.deleteTemplate(template, context) },
                                 )
                             },
                         )
