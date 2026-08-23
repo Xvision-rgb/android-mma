@@ -72,7 +72,10 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
+                        // contentDescription = null : le label texte est toujours affiché
+                        // à côté (alwaysShowLabel par défaut), l'icône est donc décorative —
+                        // sinon TalkBack annoncerait le libellé deux fois de suite.
+                        icon = { Icon(tab.icon, contentDescription = null) },
                         label = { Text(tab.label) },
                     )
                 }

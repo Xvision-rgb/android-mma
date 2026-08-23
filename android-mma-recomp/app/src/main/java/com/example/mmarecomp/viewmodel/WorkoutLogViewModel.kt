@@ -56,6 +56,12 @@ class WorkoutLogViewModel(
         exercices = exercices.filterIndexed { i, _ -> i != index }
     }
 
+    /** Réinsère un exercice à l'index donné — utilisé par le snackbar "Annuler"
+     *  après une suppression accidentelle. */
+    fun insertExercise(index: Int, exercise: LoggedExercise) {
+        exercices = exercices.toMutableList().apply { add(index.coerceIn(0, size), exercise) }
+    }
+
     fun updateExercise(index: Int, updated: LoggedExercise) {
         exercices = exercices.toMutableList().also { it[index] = updated }
     }

@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NorthEast
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.components.ToggleRow
 
 @Composable
 fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
@@ -68,13 +67,11 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text("Toutes les reps faites proprement", style = MaterialTheme.typography.bodySmall)
-            Switch(checked = exercice.propre, onCheckedChange = { onChange(exercice.copy(propre = it)) })
-        }
+        ToggleRow(
+            label = "Toutes les reps faites proprement",
+            checked = exercice.propre,
+            onCheckedChange = { onChange(exercice.copy(propre = it)) },
+        )
 
         exercice.suggestionProgression?.let { suggestion ->
             SoftAlertBanner(

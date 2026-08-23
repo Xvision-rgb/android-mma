@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,15 +42,19 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaSheet: () -> Unit) {
     var showSavedMessage by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
 
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(scaffoldPadding),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -95,7 +105,18 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             Column {
                 ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.removeExercise(index) }) {
+                    IconButton(onClick = {
+                        viewModel.removeExercise(index)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Exercice retiré",
+                                actionLabel = "Annuler",
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.insertExercise(index, exercice)
+                            }
+                        }
+                    }) {
                         Icon(Icons.Filled.Delete, contentDescription = "Retirer cet exercice")
                     }
                     Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
@@ -138,5 +159,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         if (showSavedMessage) {
             item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
         }
+    }
     }
 }
