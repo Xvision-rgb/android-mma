@@ -29,6 +29,7 @@ import com.example.mmarecomp.ui.dashboard.DashboardScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
 import com.example.mmarecomp.ui.settings.SettingsScreen
+import com.example.mmarecomp.ui.trainingplan.TrainingPlanScreen
 import com.example.mmarecomp.ui.weighin.WeighInScreen
 import com.example.mmarecomp.ui.workout.MmaSessionScreen
 import com.example.mmarecomp.ui.workout.WorkoutLogScreen
@@ -37,6 +38,7 @@ import com.example.mmarecomp.viewmodel.MealLogViewModel
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 import com.example.mmarecomp.viewmodel.ProgressViewModel
+import com.example.mmarecomp.viewmodel.TrainingPlanViewModel
 import com.example.mmarecomp.viewmodel.WeighInViewModel
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
@@ -120,7 +122,12 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
                     vm,
                     onPhaseSaved = onPhaseChange,
                     onSignOut = { scope.launch { authRepository.signOut() } },
+                    onOpenTrainingPlan = { navController.navigate("training-plan") },
                 )
+            }
+            composable("training-plan") {
+                val vm = remember { TrainingPlanViewModel() }
+                TrainingPlanScreen(vm, currentPhase)
             }
         }
     }

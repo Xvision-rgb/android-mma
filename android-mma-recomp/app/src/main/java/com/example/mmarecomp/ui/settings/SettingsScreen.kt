@@ -27,7 +27,12 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 
 @Composable
-fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, onSignOut: () -> Unit) {
+fun SettingsScreen(
+    viewModel: ProfileViewModel,
+    onPhaseSaved: (Phase) -> Unit,
+    onSignOut: () -> Unit,
+    onOpenTrainingPlan: () -> Unit,
+) {
     LaunchedEffect(Unit) { viewModel.load() }
 
     LazyColumn(
@@ -85,6 +90,14 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Enregistrer") }
+        }
+
+        item { HorizontalDivider() }
+
+        item {
+            OutlinedButton(onClick = onOpenTrainingPlan, modifier = Modifier.fillMaxWidth()) {
+                Text("Modifier le split hebdomadaire")
+            }
         }
 
         item { HorizontalDivider() }
