@@ -89,4 +89,21 @@ class ProgressViewModel(
             }
         }
     }
+
+    /** Séances les plus récentes en premier — pour l'historique avec suppression. */
+    val recentWorkoutsDescending: List<Workout>
+        get() = workouts.sortedByDescending { it.date }
+
+    fun deleteWorkout(workout: Workout, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                workoutRepository.delete(workout.id)
+                workouts = workouts.filterNot { it.id == workout.id }
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de supprimer cette séance.")
+                onResult(false)
+            }
+        }
+    }
 }
