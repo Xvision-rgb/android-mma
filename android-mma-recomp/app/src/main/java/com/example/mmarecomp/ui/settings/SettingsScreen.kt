@@ -1,5 +1,7 @@
 package com.example.mmarecomp.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,12 +21,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.toFriendlyMessage
 import com.example.mmarecomp.viewmodel.ProfileViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
@@ -34,6 +41,23 @@ fun SettingsScreen(
     onOpenTrainingPlan: () -> Unit,
 ) {
     LaunchedEffect(Unit) { viewModel.load() }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                val csv = viewModel.buildExportCsv()
+                context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
+                exportMessage = "Export enregistré."
+            } catch (e: Exception) {
+                exportMessage = e.toFriendlyMessage("Échec de l'export.")
+            }
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -98,6 +122,21 @@ fun SettingsScreen(
             OutlinedButton(onClick = onOpenTrainingPlan, modifier = Modifier.fillMaxWidth()) {
                 Text("Modifier le split hebdomadaire")
             }
+        }
+
+        item { HorizontalDivider() }
+
+        item {
+            OutlinedButton(
+                onClick = { exportLauncher.launch("recomp-mma-export-${DateUtils.today()}.csv") },
+                enabled = !viewModel.isExporting,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (viewModel.isExporting) "Export en cours…" else "Exporter mes données (CSV)")
+            }
+        }
+        exportMessage?.let { message ->
+            item { Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
 
         item { HorizontalDivider() }
