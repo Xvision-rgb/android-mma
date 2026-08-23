@@ -116,6 +116,19 @@ class MealLogViewModel(
         }
     }
 
+    fun deleteMeal(meal: Meal, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                mealRepository.delete(meal.id)
+                mealsForDay = mealsForDay.filterNot { it.id == meal.id }
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de supprimer ce repas.")
+                onResult(false)
+            }
+        }
+    }
+
     /** Recopie les repas d'hier qui n'ont pas déjà un équivalent aujourd'hui
      *  (créneau par créneau) — pour les journées où le rythme ne change pas.
      *  `onResult` reçoit le nombre de repas recopiés (0 si rien à faire ou
