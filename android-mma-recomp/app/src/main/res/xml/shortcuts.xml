@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- targetPackage doit rester en phase avec applicationId (app/build.gradle.kts) —
+     si tu changes l'un, change l'autre ici aussi. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_weighin"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_weighin"
+        android:shortcutShortLabel="@string/shortcut_weighin_short"
+        android:shortcutLongLabel="@string/shortcut_weighin_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.mmarecomp"
+            android:targetClass="com.example.mmarecomp.MainActivity">
+            <extra android:name="destination" android:value="weighin" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="quick_meal"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_meal"
+        android:shortcutShortLabel="@string/shortcut_meal_short"
+        android:shortcutLongLabel="@string/shortcut_meal_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.mmarecomp"
+            android:targetClass="com.example.mmarecomp.MainActivity">
+            <extra android:name="destination" android:value="meals" />
+        </intent>
+    </shortcut>
+</shortcuts>

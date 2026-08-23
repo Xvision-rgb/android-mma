@@ -1,5 +1,6 @@
 package com.example.mmarecomp
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,13 +11,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.mmarecomp.data.ThemePreferenceStore
 import com.example.mmarecomp.ui.RootScreen
+import com.example.mmarecomp.ui.nav.PendingShortcutDestination
 import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.ui.theme.MMARecompTheme
+
+private const val SHORTCUT_DESTINATION_EXTRA = "destination"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppThemeState.mode.value = ThemePreferenceStore(this).load()
+        PendingShortcutDestination.route.value = intent?.getStringExtra(SHORTCUT_DESTINATION_EXTRA)
 
         setContent {
             val themeMode by AppThemeState.mode
@@ -26,5 +31,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        PendingShortcutDestination.route.value = intent.getStringExtra(SHORTCUT_DESTINATION_EXTRA)
     }
 }

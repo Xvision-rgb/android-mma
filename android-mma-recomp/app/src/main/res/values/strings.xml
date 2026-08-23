@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Recomp &amp; MMA</string>
+    <string name="shortcut_weighin_short">Pesée</string>
+    <string name="shortcut_weighin_long">Logger une pesée</string>
+    <string name="shortcut_meal_short">Repas</string>
+    <string name="shortcut_meal_long">Logger un repas</string>
 </resources>

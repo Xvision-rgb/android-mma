@@ -14,6 +14,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -58,6 +59,17 @@ private val tabs = listOf(
 fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        PendingShortcutDestination.route.value?.let { destination ->
+            navController.navigate(destination) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+            PendingShortcutDestination.route.value = null
+        }
+    }
 
     Scaffold(
         bottomBar = {
