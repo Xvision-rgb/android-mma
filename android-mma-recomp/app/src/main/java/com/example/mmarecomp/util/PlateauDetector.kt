@@ -17,8 +17,9 @@ object PlateauDetector {
     fun detect(
         morningWeighIns: List<Pair<LocalDate, Double>>,
         performanceTrendUp: Boolean,
+        today: LocalDate = LocalDate.now(),
     ): PlateauStatus {
-        val cutoff = LocalDate.now().minusDays(14)
+        val cutoff = today.minusDays(14)
         val recent = morningWeighIns.filter { it.first >= cutoff }.sortedBy { it.first }
         if (recent.size < 2) return PlateauStatus.NONE
 
