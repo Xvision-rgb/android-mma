@@ -92,7 +92,7 @@ class ProfileViewModel(
         isExporting = true
         try {
             val since = DateUtils.daysAgo(3650) // ~10 ans : en pratique "tout l'historique"
-            val workouts = workoutRepository.fetchWeek(since)
+            val workouts = workoutRepository.fetchAll()
             val meals = mealRepository.fetch(since)
             val weighIns = weighInRepository.fetch(since)
             return buildString {
