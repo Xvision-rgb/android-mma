@@ -56,127 +56,127 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth().padding(scaffoldPadding),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item { Text("Log séance", style = MaterialTheme.typography.titleLarge) }
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().padding(scaffoldPadding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item { Text("Log séance", style = MaterialTheme.typography.titleLarge) }
 
-        item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
+            item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
-        item {
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-                OutlinedTextField(
-                    value = viewModel.type.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Type de séance") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    WorkoutType.entries.forEach { option ->
-                        DropdownMenuItem(text = { Text(option.label) }, onClick = {
-                            viewModel.type = option
-                            expanded = false
-                        })
-                    }
-                }
-            }
-        }
-
-        if (viewModel.type == WorkoutType.MmaWod) {
-            item { TextButton(onClick = onOpenMmaSheet) { Text("Ouvrir le log WOD MMA") } }
-        }
-
-        item {
-            OutlinedTextField(
-                value = viewModel.dureeMin,
-                onValueChange = { viewModel.dureeMin = it },
-                label = { Text("Durée (min)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        item { HorizontalDivider() }
-        item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
-
-        itemsIndexed(viewModel.exercices) { index, exercice ->
-            Column {
-                ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {
-                        viewModel.removeExercise(index)
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = "Exercice retiré",
-                                actionLabel = "Annuler",
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.insertExercise(index, exercice)
-                            }
+            item {
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                    OutlinedTextField(
+                        value = viewModel.type.label,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Type de séance") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    )
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        WorkoutType.entries.forEach { option ->
+                            DropdownMenuItem(text = { Text(option.label) }, onClick = {
+                                viewModel.type = option
+                                expanded = false
+                            })
                         }
-                    }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Retirer cet exercice")
                     }
-                    Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            if (viewModel.type == WorkoutType.MmaWod) {
+                item { TextButton(onClick = onOpenMmaSheet) { Text("Ouvrir le log WOD MMA") } }
+            }
+
+            item {
+                OutlinedTextField(
+                    value = viewModel.dureeMin,
+                    onValueChange = { viewModel.dureeMin = it },
+                    label = { Text("Durée (min)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            item { HorizontalDivider() }
+            item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
+
+            itemsIndexed(viewModel.exercices) { index, exercice ->
+                Column {
+                    ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            viewModel.removeExercise(index)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Exercice retiré",
+                                    actionLabel = "Annuler",
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.insertExercise(index, exercice)
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Retirer cet exercice")
+                        }
+                        Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+
+            item {
+                TextButton(onClick = { viewModel.addExercise() }) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text("Ajouter un exercice")
+                }
+            }
+
+            item { HorizontalDivider() }
+
+            item {
+                OutlinedTextField(
+                    value = viewModel.notes,
+                    onValueChange = { viewModel.notes = it },
+                    label = { Text("Notes, ressenti…") },
+                    trailingIcon = {
+                        VoiceInputButton { spoken ->
+                            viewModel.notes = if (viewModel.notes.isBlank()) spoken else "${viewModel.notes} $spoken"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            viewModel.errorMessage?.let { error ->
+                item { Text(error, color = MaterialTheme.colorScheme.error) }
+            }
+
+            item {
+                Button(
+                    onClick = { viewModel.save { showSavedMessage = it } },
+                    enabled = !viewModel.isSaving,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance")
+                }
+            }
+
+            if (showSavedMessage) {
+                item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
+                if (viewModel.newRecords.isNotEmpty()) {
+                    item {
+                        val label = if (viewModel.newRecords.size == 1) {
+                            "Nouveau record personnel sur ${viewModel.newRecords.first()} 🏆"
+                        } else {
+                            "Nouveaux records personnels : ${viewModel.newRecords.joinToString(", ")} 🏆"
+                        }
+                        SoftAlertBanner(message = label, icon = Icons.Filled.EmojiEvents)
+                    }
                 }
             }
         }
-
-        item {
-            TextButton(onClick = { viewModel.addExercise() }) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("Ajouter un exercice")
-            }
-        }
-
-        item { HorizontalDivider() }
-
-        item {
-            OutlinedTextField(
-                value = viewModel.notes,
-                onValueChange = { viewModel.notes = it },
-                label = { Text("Notes, ressenti…") },
-                trailingIcon = {
-                    VoiceInputButton { spoken ->
-                        viewModel.notes = if (viewModel.notes.isBlank()) spoken else "${viewModel.notes} $spoken"
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
-        }
-
-        item {
-            Button(
-                onClick = { viewModel.save { showSavedMessage = it } },
-                enabled = !viewModel.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance")
-            }
-        }
-
-        if (showSavedMessage) {
-            item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
-            if (viewModel.newRecords.isNotEmpty()) {
-                item {
-                    val label = if (viewModel.newRecords.size == 1) {
-                        "Nouveau record personnel sur ${viewModel.newRecords.first()} 🏆"
-                    } else {
-                        "Nouveaux records personnels : ${viewModel.newRecords.joinToString(", ")} 🏆"
-                    }
-                    SoftAlertBanner(message = label, icon = Icons.Filled.EmojiEvents)
-                }
-            }
-        }
-    }
     }
 }
