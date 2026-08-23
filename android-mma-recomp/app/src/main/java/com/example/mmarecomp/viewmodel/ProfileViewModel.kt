@@ -9,6 +9,7 @@ import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.Profile
 import com.example.mmarecomp.model.ProfileUpdate
+import com.example.mmarecomp.util.toFriendlyMessage
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
@@ -34,24 +35,32 @@ class ProfileViewModel(
                 bfObjectifPct = fetched.bfObjectifPct.toString()
                 phase = fetched.phase
             } catch (e: Exception) {
-                errorMessage = "Impossible de charger le profil."
+                errorMessage = e.toFriendlyMessage("Impossible de charger le profil.")
             }
         }
     }
 
     fun save(onSaved: (Phase) -> Unit) {
+        val poids = poidsObjectifKg.replace(",", ".").toDoubleOrNull()
+        val bf = bfObjectifPct.replace(",", ".").toDoubleOrNull()
+        if (poids == null || poids !in 30.0..300.0) {
+            errorMessage = "Le poids objectif doit être un nombre entre 30 et 300 kg."
+            return
+        }
+        if (bf == null || bf !in 3.0..60.0) {
+            errorMessage = "Le %BF objectif doit être un nombre entre 3 et 60."
+            return
+        }
+
+        errorMessage = null
         isSaving = true
         viewModelScope.launch {
-            val patch = ProfileUpdate(
-                poidsObjectifKg = poidsObjectifKg.replace(",", ".").toDoubleOrNull(),
-                bfObjectifPct = bfObjectifPct.replace(",", ".").toDoubleOrNull(),
-                phase = phase,
-            )
+            val patch = ProfileUpdate(poidsObjectifKg = poids, bfObjectifPct = bf, phase = phase)
             try {
                 repository.update(userId, patch)
                 onSaved(phase)
             } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer le profil."
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer le profil.")
             } finally {
                 isSaving = false
             }

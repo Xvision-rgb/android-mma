@@ -13,6 +13,7 @@ import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -82,7 +83,7 @@ class ProgressViewModel(
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
             } catch (e: Exception) {
-                errorMessage = "Impossible de charger la progression."
+                errorMessage = e.toFriendlyMessage("Impossible de charger la progression.")
             } finally {
                 isLoading = false
             }

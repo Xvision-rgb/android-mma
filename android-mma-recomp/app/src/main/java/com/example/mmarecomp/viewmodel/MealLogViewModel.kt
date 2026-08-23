@@ -16,6 +16,7 @@ import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
+import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -51,7 +52,7 @@ class MealLogViewModel(
                 mealsForDay = mealRepository.fetch(forDate = dateString)
                 target = targetRepository.fetch(forDate = dateString)
             } catch (e: Exception) {
-                errorMessage = "Impossible de charger les repas du jour."
+                errorMessage = e.toFriendlyMessage("Impossible de charger les repas du jour.")
             } finally {
                 isLoading = false
             }
@@ -81,6 +82,17 @@ class MealLogViewModel(
         description: String,
         onResult: (Boolean) -> Unit,
     ) {
+        if (calories !in 0..5000) {
+            errorMessage = "Les calories doivent être entre 0 et 5000."
+            onResult(false)
+            return
+        }
+        if (listOf(proteinesG, glucidesG, lipidesG).any { it < 0.0 || it > 500.0 }) {
+            errorMessage = "Une des valeurs (protéines/glucides/lipides) semble hors limites (0 à 500g)."
+            onResult(false)
+            return
+        }
+
         viewModelScope.launch {
             val newMeal = NewMeal(
                 date = DateUtils.string(date),
@@ -96,7 +108,7 @@ class MealLogViewModel(
                 mealsForDay = (mealsForDay.filterNot { it.repas == slot.value } + saved).sortedBy { it.repas }
                 onResult(true)
             } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer ce repas."
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer ce repas.")
                 onResult(false)
             }
         }

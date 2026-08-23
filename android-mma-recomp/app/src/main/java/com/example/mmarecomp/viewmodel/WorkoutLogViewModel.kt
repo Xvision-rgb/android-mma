@@ -15,6 +15,7 @@ import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -60,21 +61,30 @@ class WorkoutLogViewModel(
     }
 
     fun save(onResult: (Boolean) -> Unit) {
+        val duree = dureeMin.toIntOrNull()
+        if (dureeMin.isNotBlank() && (duree == null || duree !in 1..300)) {
+            errorMessage = "La durée doit être un nombre de minutes entre 1 et 300."
+            onResult(false)
+            return
+        }
+
         errorMessage = null
         isSaving = true
         viewModelScope.launch {
             val newWorkout = NewWorkout(
                 date = DateUtils.string(date),
                 type = type,
-                exercices = exercices,
-                dureeMin = dureeMin.toIntOrNull(),
+                // On ignore les lignes d'exercice laissées sans nom plutôt que
+                // d'envoyer des entrées vides en base.
+                exercices = exercices.filter { it.nom.isNotBlank() },
+                dureeMin = duree,
                 notes = notes.ifBlank { null },
             )
             try {
                 lastSaved = workoutRepository.log(newWorkout)
                 onResult(true)
             } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la séance."
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer la séance.")
                 onResult(false)
             } finally {
                 isSaving = false

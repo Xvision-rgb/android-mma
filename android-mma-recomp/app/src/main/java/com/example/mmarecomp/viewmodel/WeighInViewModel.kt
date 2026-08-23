@@ -15,6 +15,7 @@ import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -56,7 +57,7 @@ class WeighInViewModel(
             try {
                 history = repository.fetch(DateUtils.daysAgo(days))
             } catch (e: Exception) {
-                errorMessage = "Impossible de charger l'historique des pesées."
+                errorMessage = e.toFriendlyMessage("Impossible de charger l'historique des pesées.")
             }
         }
     }
@@ -68,6 +69,18 @@ class WeighInViewModel(
             onResult(false)
             return
         }
+        if (poids !in 30.0..300.0) {
+            errorMessage = "Ce poids semble hors limites (entre 30 et 300 kg)."
+            onResult(false)
+            return
+        }
+        val bf = bfPct.replace(",", ".").toDoubleOrNull()
+        if (bfPct.isNotBlank() && (bf == null || bf !in 3.0..60.0)) {
+            errorMessage = "Le % de masse grasse doit être entre 3 et 60."
+            onResult(false)
+            return
+        }
+
         errorMessage = null
         isSaving = true
         viewModelScope.launch {
@@ -76,7 +89,7 @@ class WeighInViewModel(
                 heure = heure.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
                 type = type,
                 poidsKg = poids,
-                bfPct = bfPct.replace(",", ".").toDoubleOrNull(),
+                bfPct = bf,
                 contexte = WeighInContext(
                     creatineRecente = creatineRecente,
                     alcoolRecent = alcoolRecent,
@@ -88,7 +101,7 @@ class WeighInViewModel(
                 history = history.filterNot { it.date == saved.date && it.type == saved.type } + saved
                 onResult(true)
             } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la pesée."
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer la pesée.")
                 onResult(false)
             } finally {
                 isSaving = false

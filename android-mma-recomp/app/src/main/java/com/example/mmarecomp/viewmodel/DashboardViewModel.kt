@@ -22,6 +22,7 @@ import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.util.toFriendlyMessage
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(
@@ -90,7 +91,7 @@ class DashboardViewModel(
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
             } catch (e: Exception) {
-                errorMessage = "Impossible de charger le dashboard pour le moment."
+                errorMessage = e.toFriendlyMessage("Impossible de charger le dashboard pour le moment.")
             } finally {
                 isLoading = false
             }

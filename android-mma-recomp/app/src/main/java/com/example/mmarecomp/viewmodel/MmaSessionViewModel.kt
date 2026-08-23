@@ -10,6 +10,7 @@ import com.example.mmarecomp.model.NewMmaSession
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.ParsedWodMovement
 import com.example.mmarecomp.util.WodParser
+import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -43,7 +44,7 @@ class MmaSessionViewModel(
                 repository.log(session)
                 onResult(true)
             } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la séance MMA."
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer la séance MMA.")
                 onResult(false)
             } finally {
                 isSaving = false
