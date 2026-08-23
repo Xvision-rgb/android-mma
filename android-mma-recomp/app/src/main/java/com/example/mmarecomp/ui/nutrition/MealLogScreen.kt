@@ -30,6 +30,7 @@ import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
+import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 
 @Composable
@@ -176,6 +177,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item {
             OutlinedTextField(
                 value = description, onValueChange = { description = it }, label = { Text("Description (optionnel)") },
+                trailingIcon = {
+                    VoiceInputButton { spoken ->
+                        description = if (description.isBlank()) spoken else "$description $spoken"
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }

@@ -43,6 +43,7 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
 
@@ -140,6 +141,11 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 value = viewModel.notes,
                 onValueChange = { viewModel.notes = it },
                 label = { Text("Notes, ressenti…") },
+                trailingIcon = {
+                    VoiceInputButton { spoken ->
+                        viewModel.notes = if (viewModel.notes.isBlank()) spoken else "${viewModel.notes} $spoken"
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }

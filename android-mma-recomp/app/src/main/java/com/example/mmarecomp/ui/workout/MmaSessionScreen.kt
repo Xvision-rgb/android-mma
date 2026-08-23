@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 
 @Composable
@@ -143,6 +144,15 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
                 value = viewModel.notesTechnique,
                 onValueChange = { viewModel.notesTechnique = it },
                 label = { Text("Notes technique") },
+                trailingIcon = {
+                    VoiceInputButton { spoken ->
+                        viewModel.notesTechnique = if (viewModel.notesTechnique.isBlank()) {
+                            spoken
+                        } else {
+                            "${viewModel.notesTechnique} $spoken"
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
