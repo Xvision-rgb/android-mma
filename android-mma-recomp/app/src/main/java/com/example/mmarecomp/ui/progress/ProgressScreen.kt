@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
@@ -35,6 +36,13 @@ import com.example.mmarecomp.viewmodel.ProgressViewModel
 fun ProgressScreen(viewModel: ProgressViewModel) {
     LaunchedEffect(viewModel.windowWeeks) { viewModel.load() }
 
+    PullToRefreshWrapper(isLoading = viewModel.isLoading, onRefresh = { viewModel.load() }) {
+        ProgressContent(viewModel)
+    }
+}
+
+@Composable
+private fun ProgressContent(viewModel: ProgressViewModel) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),

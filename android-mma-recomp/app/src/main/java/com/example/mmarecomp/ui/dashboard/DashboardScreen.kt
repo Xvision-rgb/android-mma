@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
@@ -28,6 +29,13 @@ import com.example.mmarecomp.viewmodel.DashboardViewModel
 fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
+    PullToRefreshWrapper(isLoading = viewModel.isLoading, onRefresh = { viewModel.load(phase) }) {
+        DashboardContent(viewModel)
+    }
+}
+
+@Composable
+private fun DashboardContent(viewModel: DashboardViewModel) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
