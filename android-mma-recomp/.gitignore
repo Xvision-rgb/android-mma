@@ -1,0 +1,14 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+app/release/
+app/debug/
+
+# Secrets — copie SupabaseConfig.kt.example en SupabaseConfig.kt en local/CI
+app/src/main/java/com/example/mmarecomp/SupabaseConfig.kt

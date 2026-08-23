@@ -1,0 +1,8 @@
+package com.example.mmarecomp
+
+// Copie ce fichier en "SupabaseConfig.kt" (gitignored) et renseigne tes propres
+// valeurs, disponibles dans Supabase > Project Settings > API.
+object SupabaseConfig {
+    const val URL = "https://YOUR-PROJECT.supabase.co"
+    const val ANON_KEY = "YOUR-SUPABASE-ANON-KEY"
+}
