@@ -18,6 +18,8 @@ import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
 import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MealLogViewModel(
@@ -51,8 +53,12 @@ class MealLogViewModel(
         viewModelScope.launch {
             val dateString = DateUtils.string(date)
             try {
-                mealsForDay = mealRepository.fetch(forDate = dateString)
-                target = targetRepository.fetch(forDate = dateString)
+                coroutineScope {
+                    val mealsDeferred = async { mealRepository.fetch(forDate = dateString) }
+                    val targetDeferred = async { targetRepository.fetch(forDate = dateString) }
+                    mealsForDay = mealsDeferred.await()
+                    target = targetDeferred.await()
+                }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger les repas du jour.")
             } finally {

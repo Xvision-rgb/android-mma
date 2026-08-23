@@ -24,6 +24,8 @@ import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakCalculator
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(
@@ -95,19 +97,32 @@ class DashboardViewModel(
                 val mondayOfWeek = DateUtils.startOfWeek()
                 val sevenDaysAgo = DateUtils.daysAgo(7)
                 val today = DateUtils.today()
-
-                planThisWeek = trainingPlanRepository.fetchWeek(phase)
-                workoutsThisWeek = workoutRepository.fetchWeek(mondayOfWeek)
-                mealsLast7Days = mealRepository.fetch(sevenDaysAgo)
-                morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
-                todayTarget = nutritionTargetRepository.fetch(today)
-
                 val thirtyDaysAgo = DateUtils.daysAgo(30)
-                val recentWorkouts = workoutRepository.fetchWeek(thirtyDaysAgo)
-                val recentMeals = mealRepository.fetch(thirtyDaysAgo)
-                val activeDates = (recentWorkouts.mapNotNull { DateUtils.date(it.date) } +
-                    recentMeals.mapNotNull { DateUtils.date(it.date) }).toSet()
-                consistencyStreak = StreakCalculator.currentStreak(activeDates)
+
+                // Sept requêtes indépendantes — lancées en parallèle plutôt
+                // qu'attendues une par une, pour un chargement nettement
+                // plus rapide sur une connexion mobile.
+                coroutineScope {
+                    val planDeferred = async { trainingPlanRepository.fetchWeek(phase) }
+                    val workoutsWeekDeferred = async { workoutRepository.fetchWeek(mondayOfWeek) }
+                    val mealsWeekDeferred = async { mealRepository.fetch(sevenDaysAgo) }
+                    val weighInsDeferred = async { weighInRepository.fetch(sevenDaysAgo) }
+                    val targetDeferred = async { nutritionTargetRepository.fetch(today) }
+                    val recentWorkoutsDeferred = async { workoutRepository.fetchWeek(thirtyDaysAgo) }
+                    val recentMealsDeferred = async { mealRepository.fetch(thirtyDaysAgo) }
+
+                    planThisWeek = planDeferred.await()
+                    workoutsThisWeek = workoutsWeekDeferred.await()
+                    mealsLast7Days = mealsWeekDeferred.await()
+                    morningWeighIns = weighInsDeferred.await().filter { it.type == WeighInType.MatinJeun }
+                    todayTarget = targetDeferred.await()
+
+                    val recentWorkouts = recentWorkoutsDeferred.await()
+                    val recentMeals = recentMealsDeferred.await()
+                    val activeDates = (recentWorkouts.mapNotNull { DateUtils.date(it.date) } +
+                        recentMeals.mapNotNull { DateUtils.date(it.date) }).toSet()
+                    consistencyStreak = StreakCalculator.currentStreak(activeDates)
+                }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le dashboard pour le moment.")
             } finally {

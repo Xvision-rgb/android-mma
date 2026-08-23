@@ -15,6 +15,8 @@ import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 data class ChargePoint(val date: LocalDate, val chargeKg: Double)
@@ -80,8 +82,12 @@ class ProgressViewModel(
         viewModelScope.launch {
             val since = DateUtils.daysAgo(windowWeeks * 7L)
             try {
-                weighIns = weighInRepository.fetch(since)
-                workouts = workoutRepository.fetchWeek(since)
+                coroutineScope {
+                    val weighInsDeferred = async { weighInRepository.fetch(since) }
+                    val workoutsDeferred = async { workoutRepository.fetchWeek(since) }
+                    weighIns = weighInsDeferred.await()
+                    workouts = workoutsDeferred.await()
+                }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger la progression.")
             } finally {
