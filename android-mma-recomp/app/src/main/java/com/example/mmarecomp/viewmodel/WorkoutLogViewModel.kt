@@ -15,6 +15,7 @@ import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.PersonalRecordDetector
 import com.example.mmarecomp.util.toFriendlyMessage
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -33,6 +34,11 @@ class WorkoutLogViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var lastSaved by mutableStateOf<Workout?>(null)
+        private set
+
+    /** Noms des exercices qui viennent de battre leur record personnel lors
+     *  du dernier enregistrement — jamais l'inverse (pas de "record manqué"). */
+    var newRecords by mutableStateOf<List<String>>(emptyList())
         private set
 
     /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
@@ -77,17 +83,32 @@ class WorkoutLogViewModel(
         errorMessage = null
         isSaving = true
         viewModelScope.launch {
+            val cleanedExercices = exercices.filter { it.nom.isNotBlank() }
+
+            // Best-effort : si l'historique ne charge pas, on enregistre quand
+            // même la séance, on rate juste la détection de record cette fois.
+            val history = runCatching { workoutRepository.fetchRecent(60) }.getOrDefault(emptyList())
+            val records = cleanedExercices.mapNotNull { exercice ->
+                val charge = exercice.chargeReelleKg
+                if (charge != null && PersonalRecordDetector.isNewRecord(exercice.nom, charge, history)) {
+                    exercice.nom
+                } else {
+                    null
+                }
+            }
+
             val newWorkout = NewWorkout(
                 date = DateUtils.string(date),
                 type = type,
                 // On ignore les lignes d'exercice laissées sans nom plutôt que
                 // d'envoyer des entrées vides en base.
-                exercices = exercices.filter { it.nom.isNotBlank() },
+                exercices = cleanedExercices,
                 dureeMin = duree,
                 notes = notes.ifBlank { null },
             )
             try {
                 lastSaved = workoutRepository.log(newWorkout)
+                newRecords = records
                 onResult(true)
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible d'enregistrer la séance.")

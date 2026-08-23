@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
 
@@ -158,6 +160,16 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         if (showSavedMessage) {
             item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
+            if (viewModel.newRecords.isNotEmpty()) {
+                item {
+                    val label = if (viewModel.newRecords.size == 1) {
+                        "Nouveau record personnel sur ${viewModel.newRecords.first()} 🏆"
+                    } else {
+                        "Nouveaux records personnels : ${viewModel.newRecords.joinToString(", ")} 🏆"
+                    }
+                    SoftAlertBanner(message = label, icon = Icons.Filled.EmojiEvents)
+                }
+            }
         }
     }
     }
