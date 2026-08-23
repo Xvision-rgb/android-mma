@@ -24,8 +24,14 @@ targets:
         CFBundleDisplayName: MMA Recomp
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.mmarecomp
+        # APP_IDENTIFIER doit être exporté avant `xcodegen generate` (en local
+        # ou en CI) — même variable que celle lue par fastlane/Appfile et
+        # fastlane/Matchfile, pour n'avoir qu'une seule source de vérité.
+        PRODUCT_BUNDLE_IDENTIFIER: "${APP_IDENTIFIER}"
         SWIFT_VERSION: "5.10"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        DEVELOPMENT_TEAM: "${TEAM_ID}"
+        CODE_SIGN_STYLE: Manual
