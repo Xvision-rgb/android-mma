@@ -18,12 +18,18 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,18 +37,28 @@ import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.viewmodel.ProgressViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProgressScreen(viewModel: ProgressViewModel) {
     LaunchedEffect(viewModel.windowWeeks) { viewModel.load() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    PullToRefreshWrapper(isLoading = viewModel.isLoading, onRefresh = { viewModel.load() }) {
-        ProgressContent(viewModel)
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
+        PullToRefreshWrapper(
+            isLoading = viewModel.isLoading,
+            onRefresh = { viewModel.load() },
+            modifier = Modifier.padding(scaffoldPadding),
+        ) {
+            ProgressContent(viewModel, snackbarHostState, scope)
+        }
     }
 }
 
 @Composable
-private fun ProgressContent(viewModel: ProgressViewModel) {
+private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: SnackbarHostState, scope: CoroutineScope) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -153,7 +169,20 @@ private fun ProgressContent(viewModel: ProgressViewModel) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    IconButton(onClick = { viewModel.deleteWorkout(workout) {} }) {
+                    IconButton(onClick = {
+                        viewModel.removeWorkoutLocally(workout)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Séance supprimée",
+                                actionLabel = "Annuler",
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.restoreWorkout(workout)
+                            } else {
+                                viewModel.commitDeleteWorkout(workout)
+                            }
+                        }
+                    }) {
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer la séance du ${workout.date}")
                     }
                 }

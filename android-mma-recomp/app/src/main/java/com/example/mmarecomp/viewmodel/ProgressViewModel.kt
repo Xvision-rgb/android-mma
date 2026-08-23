@@ -122,15 +122,24 @@ class ProgressViewModel(
     val recentWorkoutsDescending: List<Workout>
         get() = workouts.sortedByDescending { it.date }
 
-    fun deleteWorkout(workout: Workout, onResult: (Boolean) -> Unit) {
+    /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
+     *  avec un snackbar "Annuler" : [commitDeleteWorkout] si confirmé,
+     *  [restoreWorkout] sinon. */
+    fun removeWorkoutLocally(workout: Workout) {
+        workouts = workouts.filterNot { it.id == workout.id }
+    }
+
+    fun restoreWorkout(workout: Workout) {
+        workouts = (workouts.filterNot { it.id == workout.id } + workout).sortedBy { it.date }
+    }
+
+    fun commitDeleteWorkout(workout: Workout) {
         viewModelScope.launch {
             try {
                 workoutRepository.delete(workout.id)
-                workouts = workouts.filterNot { it.id == workout.id }
-                onResult(true)
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de supprimer cette séance.")
-                onResult(false)
+                restoreWorkout(workout)
             }
         }
     }

@@ -122,15 +122,24 @@ class MealLogViewModel(
         }
     }
 
-    fun deleteMeal(meal: Meal, onResult: (Boolean) -> Unit) {
+    /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
+     *  avec un snackbar "Annuler" : [commitDeleteMeal] si confirmé,
+     *  [restoreMeal] sinon. */
+    fun removeMealLocally(meal: Meal) {
+        mealsForDay = mealsForDay.filterNot { it.id == meal.id }
+    }
+
+    fun restoreMeal(meal: Meal) {
+        mealsForDay = (mealsForDay.filterNot { it.id == meal.id } + meal).sortedBy { it.repas }
+    }
+
+    fun commitDeleteMeal(meal: Meal) {
         viewModelScope.launch {
             try {
                 mealRepository.delete(meal.id)
-                mealsForDay = mealsForDay.filterNot { it.id == meal.id }
-                onResult(true)
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de supprimer ce repas.")
-                onResult(false)
+                restoreMeal(meal)
             }
         }
     }
