@@ -127,4 +127,5 @@ data class UserPreferences(
     val dailyReminderSilent: Boolean = false,
     val vibrateOnAnySave: Boolean = false,
     val nutritionTargetHistoryEnabled: Boolean = false,
+    val streakDisplayThreshold: Int = 1,
 )

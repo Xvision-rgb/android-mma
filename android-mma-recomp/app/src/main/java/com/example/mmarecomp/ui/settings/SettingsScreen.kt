@@ -316,6 +316,15 @@ fun SettingsScreen(
             }
         }
         item {
+            LabeledDropdown(
+                title = "Afficher la carte Constance à partir de",
+                options = listOf(1, 2, 3, 5, 7),
+                selected = prefs.streakDisplayThreshold,
+                labelFor = { if (it == 1) "1 jour" else "$it jours" },
+                onSelect = { days -> updatePrefs { it.copy(streakDisplayThreshold = days) } },
+            )
+        }
+        item {
             ToggleRow(
                 "Verrouiller l'app par biométrie/PIN",
                 prefs.appLockEnabled,

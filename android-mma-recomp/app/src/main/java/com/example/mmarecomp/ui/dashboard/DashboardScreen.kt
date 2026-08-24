@@ -87,7 +87,8 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
                 }
             }
         }
-        if (DashboardCard.CONSTANCE in visibleCards && viewModel.consistencyStreak >= 1) {
+        val streakThreshold = AppPreferencesState.preferences.value.streakDisplayThreshold
+        if (DashboardCard.CONSTANCE in visibleCards && viewModel.consistencyStreak >= streakThreshold) {
             item {
                 DashCard {
                     Text("Constance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
