@@ -28,12 +28,17 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
@@ -61,6 +66,9 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
 
 @Composable
 private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: SnackbarHostState, scope: CoroutineScope) {
+    val prefs by AppPreferencesState.preferences
+    var pendingDeleteWorkout by remember { mutableStateOf<Workout?>(null) }
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -173,16 +181,20 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                         )
                     }
                     IconButton(onClick = {
-                        viewModel.removeWorkoutLocally(workout)
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = "Séance supprimée",
-                                actionLabel = "Annuler",
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.restoreWorkout(workout)
-                            } else {
-                                viewModel.commitDeleteWorkout(workout)
+                        if (prefs.confirmBeforeDelete) {
+                            pendingDeleteWorkout = workout
+                        } else {
+                            viewModel.removeWorkoutLocally(workout)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Séance supprimée",
+                                    actionLabel = "Annuler",
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreWorkout(workout)
+                                } else {
+                                    viewModel.commitDeleteWorkout(workout)
+                                }
                             }
                         }
                     }) {
@@ -192,6 +204,17 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
             }
         }
     }
+
+    ConfirmDeleteDialog(
+        item = pendingDeleteWorkout,
+        title = "Supprimer la séance du ${pendingDeleteWorkout?.date} ?",
+        onConfirm = { workout ->
+            viewModel.removeWorkoutLocally(workout)
+            viewModel.commitDeleteWorkout(workout)
+            pendingDeleteWorkout = null
+        },
+        onDismiss = { pendingDeleteWorkout = null },
+    )
 }
 
 @Composable

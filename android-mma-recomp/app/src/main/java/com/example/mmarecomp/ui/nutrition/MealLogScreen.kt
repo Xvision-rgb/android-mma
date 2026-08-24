@@ -44,9 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
@@ -68,6 +70,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var manualCalories by remember { mutableStateOf("") }
     var manualProteines by remember { mutableStateOf("") }
     var newPresetName by remember { mutableStateOf("") }
+    var pendingDeleteMeal by remember { mutableStateOf<Meal?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val prefs by AppPreferencesState.preferences
@@ -200,16 +203,20 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.removeMealLocally(meal)
-                            scope.launch {
-                                val result = snackbarHostState.showSnackbar(
-                                    message = "Repas supprimé",
-                                    actionLabel = "Annuler",
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.restoreMeal(meal)
-                                } else {
-                                    viewModel.commitDeleteMeal(meal)
+                            if (prefs.confirmBeforeDelete) {
+                                pendingDeleteMeal = meal
+                            } else {
+                                viewModel.removeMealLocally(meal)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Repas supprimé",
+                                        actionLabel = "Annuler",
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restoreMeal(meal)
+                                    } else {
+                                        viewModel.commitDeleteMeal(meal)
+                                    }
                                 }
                             }
                         }) {
@@ -363,5 +370,16 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 ) { Text("Enregistrer ce repas") }
             }
         }
+
+        ConfirmDeleteDialog(
+            item = pendingDeleteMeal,
+            title = "Supprimer ce repas ?",
+            onConfirm = { meal ->
+                viewModel.removeMealLocally(meal)
+                viewModel.commitDeleteMeal(meal)
+                pendingDeleteMeal = null
+            },
+            onDismiss = { pendingDeleteMeal = null },
+        )
     }
 }
