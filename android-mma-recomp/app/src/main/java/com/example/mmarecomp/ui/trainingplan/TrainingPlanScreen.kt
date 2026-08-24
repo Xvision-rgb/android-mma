@@ -39,6 +39,8 @@ import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.KeepScreenOn
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.TrainingPlanViewModel
 
@@ -71,8 +73,8 @@ fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase, onBack: (
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+        verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

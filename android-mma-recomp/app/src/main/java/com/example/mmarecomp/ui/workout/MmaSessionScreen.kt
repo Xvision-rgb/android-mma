@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.KeepScreenOn
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 
@@ -73,8 +75,8 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+        verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
     ) {
         item { Text("Log MMA", style = MaterialTheme.typography.titleLarge) }
 
