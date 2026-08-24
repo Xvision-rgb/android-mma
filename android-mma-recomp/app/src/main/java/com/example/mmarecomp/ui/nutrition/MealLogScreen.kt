@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.nutrition
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.RepasSlot
@@ -52,6 +57,7 @@ import kotlinx.coroutines.launch
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
 
+    val context = LocalContext.current
     var repeatConfirmation by remember { mutableStateOf<String?>(null) }
     var selectedSlot by remember { mutableStateOf(RepasSlot.Matin) }
     var calories by remember { mutableStateOf("") }
@@ -61,9 +67,12 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var description by remember { mutableStateOf("") }
     var manualCalories by remember { mutableStateOf("") }
     var manualProteines by remember { mutableStateOf("") }
+    var newPresetName by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val prefs by AppPreferencesState.preferences
+
+    LaunchedEffect(Unit) { viewModel.loadPresets(context) }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         LazyColumn(
@@ -213,6 +222,38 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             item { HorizontalDivider() }
             item { Text("Ajouter / modifier un repas", style = MaterialTheme.typography.titleMedium) }
 
+            if (viewModel.presets.isNotEmpty()) {
+                item {
+                    Text("Favoris", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        viewModel.presets.forEach { preset ->
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    calories = preset.calories.toString()
+                                    proteines = preset.proteinesG.toString()
+                                    glucides = preset.glucidesG.toString()
+                                    lipides = preset.lipidesG.toString()
+                                    description = preset.description.orEmpty()
+                                },
+                                label = { Text(preset.name) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "Supprimer le favori ${preset.name}",
+                                        modifier = Modifier
+                                            .minimumInteractiveComponentSize()
+                                            .clickable { viewModel.deletePreset(preset, context) },
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
             item {
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
@@ -270,6 +311,32 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newPresetName,
+                        onValueChange = { newPresetName = it },
+                        label = { Text("Nom du favori (ex: Shake post-training)") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = {
+                            viewModel.saveCurrentAsPreset(
+                                name = newPresetName,
+                                calories = calories.toIntOrNull() ?: 0,
+                                proteinesG = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                                glucidesG = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                                lipidesG = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                                description = description,
+                                context = context,
+                            )
+                            newPresetName = ""
+                        },
+                        enabled = newPresetName.isNotBlank() && calories.isNotBlank(),
+                    ) { Text("Sauver") }
+                }
             }
 
             viewModel.errorMessage?.let { error ->

@@ -1,10 +1,13 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.MealPreset
+import com.example.mmarecomp.data.MealPresetStore
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.model.Meal
@@ -36,6 +39,10 @@ class MealLogViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var isRepeatingYesterday by mutableStateOf(false)
+        private set
+
+    /** Repas favoris réutilisables (stockage local, voir MealPresetStore). */
+    var presets by mutableStateOf<List<MealPreset>>(emptyList())
         private set
 
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
@@ -214,5 +221,38 @@ class MealLogViewModel(
         val lastThree = recentDailyTotals.takeLast(3)
         if (lastThree.size != 3) return false
         return lastThree.all { (_, calories, cible) -> calories < (cible * 0.85).toInt() }
+    }
+
+    fun loadPresets(context: Context) {
+        presets = MealPresetStore(context).load()
+    }
+
+    fun saveCurrentAsPreset(
+        name: String,
+        calories: Int,
+        proteinesG: Double,
+        glucidesG: Double,
+        lipidesG: Double,
+        description: String,
+        context: Context,
+    ) {
+        if (name.isBlank()) return
+        val updated = presets.filterNot { it.name == name } +
+            MealPreset(
+                name = name,
+                calories = calories,
+                proteinesG = proteinesG,
+                glucidesG = glucidesG,
+                lipidesG = lipidesG,
+                description = description.ifBlank { null },
+            )
+        MealPresetStore(context).save(updated)
+        presets = updated
+    }
+
+    fun deletePreset(preset: MealPreset, context: Context) {
+        val updated = presets.filterNot { it.name == preset.name }
+        MealPresetStore(context).save(updated)
+        presets = updated
     }
 }
