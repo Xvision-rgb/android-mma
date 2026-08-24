@@ -16,7 +16,7 @@ class ErrorMessagesTest {
     fun `duplicate key errors get an explanatory message instead of raw SQL`() {
         val result = Exception("duplicate key value violates unique constraint \"weigh_ins_user_id_date_type_key\"")
             .toFriendlyMessage("fallback")
-        assertEquals("Une entrée existait déjà pour cette date, elle vient d'être remplacée.", result)
+        assertEquals("Une entrée existe déjà pour cette date — vérifie qu'elle n'a pas déjà été enregistrée.", result)
     }
 
     @Test

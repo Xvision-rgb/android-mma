@@ -10,8 +10,12 @@ import java.io.IOException
  */
 fun Throwable.toFriendlyMessage(fallback: String): String = when {
     this is IOException -> "Pas de connexion internet — réessaie dans un instant."
+    // "Remplacée" serait faux ici : seule la pesée upserte réellement sur
+    // conflit (donc ne lève jamais cette erreur en pratique). Séance et
+    // séance MMA font un simple insert — un conflit de clé signifie que
+    // rien n'a été enregistré, pas qu'une entrée a été remplacée.
     message?.contains("duplicate key", ignoreCase = true) == true ->
-        "Une entrée existait déjà pour cette date, elle vient d'être remplacée."
+        "Une entrée existe déjà pour cette date — vérifie qu'elle n'a pas déjà été enregistrée."
     message?.contains("violates check constraint", ignoreCase = true) == true ||
         message?.contains("violates foreign key", ignoreCase = true) == true ->
         "Une des valeurs saisies est invalide."
