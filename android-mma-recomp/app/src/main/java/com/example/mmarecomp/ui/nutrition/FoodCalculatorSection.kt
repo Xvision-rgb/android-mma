@@ -30,6 +30,14 @@ import kotlin.math.roundToInt
 
 private data class SelectedFood(val food: FoodItem, val grams: Int)
 
+/** Repères de portion pour qui n'a pas de balance de cuisine — approximatifs
+ *  par nature, un point de départ à ajuster, pas une valeur exacte. */
+private val PORTION_PRESETS = listOf(
+    "Petite portion" to 80,
+    "Portion moyenne" to 150,
+    "Grosse portion" to 250,
+)
+
 /**
  * Aide au calcul quand on ne connaît pas les valeurs d'un repas : on
  * cherche un ou plusieurs aliments dans la base intégrée + les aliments
@@ -143,20 +151,32 @@ fun FoodCalculatorSection(
             ) { Text("Enregistrer cet aliment") }
         }
         selected.forEachIndexed { index, item ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(item.food.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                OutlinedTextField(
-                    value = item.grams.toString(),
-                    onValueChange = { value ->
-                        val grams = value.toIntOrNull() ?: item.grams
-                        selected = selected.toMutableList().also { it[index] = item.copy(grams = grams) }
-                    },
-                    label = { Text("g") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(90.dp),
-                )
-                IconButton(onClick = { selected = selected.filterIndexed { i, _ -> i != index } }) {
-                    Icon(Icons.Filled.Close, contentDescription = "Retirer ${item.food.name} du calcul")
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(item.food.name, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = item.grams.toString(),
+                        onValueChange = { value ->
+                            val grams = value.toIntOrNull() ?: item.grams
+                            selected = selected.toMutableList().also { it[index] = item.copy(grams = grams) }
+                        },
+                        label = { Text("g") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(90.dp),
+                    )
+                    IconButton(onClick = { selected = selected.filterIndexed { i, _ -> i != index } }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer ${item.food.name} du calcul")
+                    }
+                }
+                // Pas de balance en cuisine ? Des repères de portion approximatifs
+                // plutôt que d'obliger à peser précisément.
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PORTION_PRESETS.forEach { (label, grams) ->
+                        AssistChip(
+                            onClick = { selected = selected.toMutableList().also { it[index] = item.copy(grams = grams) } },
+                            label = { Text(label) },
+                        )
+                    }
                 }
             }
         }
