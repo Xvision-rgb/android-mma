@@ -10,6 +10,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.mmarecomp.data.ThemePreferenceStore
+import com.example.mmarecomp.data.UserPreferencesStore
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.RootScreen
 import com.example.mmarecomp.ui.nav.PendingShortcutDestination
 import com.example.mmarecomp.ui.theme.AppThemeState
@@ -21,6 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppThemeState.mode.value = ThemePreferenceStore(this).load()
+        AppPreferencesState.preferences.value = UserPreferencesStore(this).load()
         PendingShortcutDestination.route.value = intent?.getStringExtra(SHORTCUT_DESTINATION_EXTRA)
 
         setContent {

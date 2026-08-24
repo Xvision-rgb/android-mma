@@ -30,9 +30,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.data.AccentPreset
+import com.example.mmarecomp.data.DefaultTab
+import com.example.mmarecomp.data.MovingAverageWindow
 import com.example.mmarecomp.data.ThemeMode
 import com.example.mmarecomp.data.ThemePreferenceStore
+import com.example.mmarecomp.data.TextScale
+import com.example.mmarecomp.data.UserPreferences
+import com.example.mmarecomp.data.UserPreferencesStore
+import com.example.mmarecomp.data.WeekStart
+import com.example.mmarecomp.data.WeightUnit
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.LabeledDropdown
+import com.example.mmarecomp.ui.components.LabeledSegmentedChoice
+import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.toFriendlyMessage
@@ -51,6 +64,12 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var exportMessage by remember { mutableStateOf<String?>(null) }
+    val prefs by AppPreferencesState.preferences
+    fun updatePrefs(transform: (UserPreferences) -> UserPreferences) {
+        val updated = transform(prefs)
+        AppPreferencesState.preferences.value = updated
+        UserPreferencesStore(context).save(updated)
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -151,6 +170,104 @@ fun SettingsScreen(
                     ) { Text(label) }
                 }
             }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Préférences", style = MaterialTheme.typography.titleMedium) }
+
+        item {
+            LabeledSegmentedChoice(
+                title = "Unités de poids",
+                options = WeightUnit.entries,
+                selected = prefs.weightUnit,
+                labelFor = { it.label },
+                onSelect = { unit -> updatePrefs { it.copy(weightUnit = unit) } },
+            )
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Moyenne mobile (tendance poids)",
+                options = MovingAverageWindow.entries,
+                selected = prefs.movingAverageWindow,
+                labelFor = { it.label },
+                onSelect = { window -> updatePrefs { it.copy(movingAverageWindow = window) } },
+            )
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Premier jour de la semaine",
+                options = WeekStart.entries,
+                selected = prefs.weekStart,
+                labelFor = { it.label },
+                onSelect = { start -> updatePrefs { it.copy(weekStart = start) } },
+            )
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Taille du texte",
+                options = TextScale.entries,
+                selected = prefs.textScale,
+                labelFor = { it.label },
+                onSelect = { scale -> updatePrefs { it.copy(textScale = scale) } },
+            )
+        }
+        item {
+            LabeledDropdown(
+                title = "Couleur d'accent",
+                options = AccentPreset.entries,
+                selected = prefs.accent,
+                labelFor = { it.label },
+                onSelect = { accent -> updatePrefs { it.copy(accent = accent) } },
+            )
+        }
+        item {
+            LabeledDropdown(
+                title = "Onglet par défaut à l'ouverture",
+                options = DefaultTab.entries,
+                selected = prefs.defaultTab,
+                labelFor = { it.label },
+                onSelect = { tab -> updatePrefs { it.copy(defaultTab = tab) } },
+            )
+        }
+        item {
+            val defaultWorkoutTypeOptions: List<WorkoutType?> = listOf(null) + WorkoutType.entries
+            LabeledDropdown(
+                title = "Type de séance par défaut",
+                options = defaultWorkoutTypeOptions,
+                selected = WorkoutType.entries.find { it.name == prefs.defaultWorkoutType },
+                labelFor = { it?.label ?: "Premier de la liste" },
+                onSelect = { type -> updatePrefs { it.copy(defaultWorkoutType = type?.name) } },
+            )
+        }
+        item {
+            ToggleRow(
+                "Suivre le % de masse grasse",
+                prefs.showBodyFat,
+            ) { checked -> updatePrefs { it.copy(showBodyFat = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Cibles nutrition calculées automatiquement",
+                prefs.autoNutritionTargets,
+            ) { checked -> updatePrefs { it.copy(autoNutritionTargets = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Afficher la dictée vocale",
+                prefs.showVoiceInput,
+            ) { checked -> updatePrefs { it.copy(showVoiceInput = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Vibrer sur un nouveau record personnel",
+                prefs.celebratePrWithVibration,
+            ) { checked -> updatePrefs { it.copy(celebratePrWithVibration = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Confirmer avant suppression (au lieu du \"Annuler\")",
+                prefs.confirmBeforeDelete,
+            ) { checked -> updatePrefs { it.copy(confirmBeforeDelete = checked) } }
         }
 
         item { HorizontalDivider() }
