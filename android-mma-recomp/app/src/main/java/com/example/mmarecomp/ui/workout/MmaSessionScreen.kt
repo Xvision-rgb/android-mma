@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.workout
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 
@@ -37,8 +40,33 @@ import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
     val context = LocalContext.current
     var newTemplateName by remember { mutableStateOf("") }
+    var showDiscardConfirm by remember { mutableStateOf(false) }
+    val prefs by AppPreferencesState.preferences
+
+    val hasUnsavedChanges = viewModel.wodContent.isNotBlank() ||
+        viewModel.roundsSets.isNotBlank() ||
+        viewModel.notesTechnique.isNotBlank() ||
+        viewModel.ressenti != 3
 
     LaunchedEffect(Unit) { viewModel.loadTemplates(context) }
+
+    BackHandler(enabled = prefs.confirmDiscardUnsavedChanges && hasUnsavedChanges) {
+        showDiscardConfirm = true
+    }
+
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("Quitter sans enregistrer ?") },
+            text = { Text("Ta séance MMA en cours de saisie n'a pas été enregistrée.") },
+            confirmButton = {
+                TextButton(onClick = { showDiscardConfirm = false; onSaved() }) { Text("Quitter") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) { Text("Continuer la saisie") }
+            },
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
