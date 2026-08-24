@@ -45,6 +45,12 @@ class WorkoutLogViewModel(
     var newRecords by mutableStateOf<List<String>>(emptyList())
         private set
 
+    /** Historique récent — sert uniquement à afficher la meilleure charge
+     *  connue par exercice (préférence "Historique rapide") ; ne bloque
+     *  jamais la saisie si le chargement échoue. */
+    var recentHistory by mutableStateOf<List<Workout>>(emptyList())
+        private set
+
     /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
     fun loadPlan(phase: Phase) {
         viewModelScope.launch {
@@ -58,8 +64,47 @@ class WorkoutLogViewModel(
         }
     }
 
+    fun loadHistoryIfNeeded() {
+        if (!AppPreferencesState.preferences.value.showExerciseHistory || recentHistory.isNotEmpty()) return
+        viewModelScope.launch {
+            recentHistory = runCatching { workoutRepository.fetchRecent(60) }.getOrDefault(emptyList())
+        }
+    }
+
     fun addExercise() {
-        exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10)
+        val defaults = AppPreferencesState.preferences.value.defaultSeriesRepsByType[type.name]
+        exercices = exercices + LoggedExercise(nom = "", series = defaults?.series ?: 3, reps = defaults?.reps ?: 10)
+    }
+
+    /** Pré-remplit la durée avec celle de la dernière séance du même type —
+     *  préférence "Auto-remplissage de la durée", ne fait rien si un champ a
+     *  déjà été saisi. */
+    fun autoFillLastDurationIfNeeded() {
+        if (!AppPreferencesState.preferences.value.autoFillLastDuration || dureeMin.isNotBlank()) return
+        viewModelScope.launch {
+            val lastOfType = runCatching { workoutRepository.fetchRecent(30) }
+                .getOrDefault(emptyList())
+                .firstOrNull { it.type == type }
+            lastOfType?.dureeMin?.let { dureeMin = it.toString() }
+        }
+    }
+
+    /** Recopie les exercices de la dernière séance du même type dans la
+     *  séance en cours — un point de départ à ajuster, pas un renvoi
+     *  automatique. */
+    fun duplicateLastWorkout(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val lastOfType = runCatching { workoutRepository.fetchRecent(30) }
+                .getOrDefault(emptyList())
+                .firstOrNull { it.type == type }
+            if (lastOfType == null) {
+                onResult(false)
+                return@launch
+            }
+            exercices = lastOfType.exercices
+            lastOfType.dureeMin?.let { dureeMin = it.toString() }
+            onResult(true)
+        }
     }
 
     fun removeExercise(index: Int) {

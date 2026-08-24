@@ -59,6 +59,8 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     val prefs by AppPreferencesState.preferences
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
+    LaunchedEffect(viewModel.type) { viewModel.autoFillLastDurationIfNeeded() }
+    LaunchedEffect(Unit) { viewModel.loadHistoryIfNeeded() }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         LazyColumn(
@@ -107,11 +109,28 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
 
             item { HorizontalDivider() }
-            item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Exercices", style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = {
+                        viewModel.duplicateLastWorkout { duplicated ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (duplicated) "Dernière séance ${viewModel.type.label} recopiée" else "Pas de séance précédente de ce type",
+                                )
+                            }
+                        }
+                    }) { Text("Dupliquer la dernière") }
+                }
+            }
 
             itemsIndexed(viewModel.exercices) { index, exercice ->
                 Column {
-                    ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
+                    ExerciseRow(
+                        exercice = exercice,
+                        onChange = { viewModel.updateExercise(index, it) },
+                        history = viewModel.recentHistory,
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = {
                             viewModel.removeExercise(index)

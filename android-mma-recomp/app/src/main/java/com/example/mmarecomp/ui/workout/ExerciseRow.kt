@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,11 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
+import com.example.mmarecomp.model.Workout
+import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.RestTimerButton
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.ToggleRow
+import com.example.mmarecomp.util.PersonalRecordDetector
+import com.example.mmarecomp.util.formatWeight
 
 @Composable
-fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
+fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, history: List<Workout> = emptyList()) {
+    val prefs = AppPreferencesState.preferences.value
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -67,11 +74,26 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
             )
         }
 
+        if (prefs.showExerciseHistory && exercice.nom.isNotBlank()) {
+            val bestKnown = PersonalRecordDetector.bestKnownLoad(exercice.nom, history)
+            if (bestKnown != null) {
+                Text(
+                    "Meilleure charge connue : ${formatWeight(bestKnown, prefs.weightUnit)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         ToggleRow(
             label = "Toutes les reps faites proprement",
             checked = exercice.propre,
             onCheckedChange = { onChange(exercice.copy(propre = it)) },
         )
+
+        if (prefs.restTimerEnabled) {
+            RestTimerButton(seconds = prefs.restTimerSeconds)
+        }
 
         exercice.suggestionProgression?.let { suggestion ->
             SoftAlertBanner(

@@ -38,6 +38,7 @@ import com.example.mmarecomp.data.AccentPreset
 import com.example.mmarecomp.data.DashboardCard
 import com.example.mmarecomp.data.DefaultTab
 import com.example.mmarecomp.data.MovingAverageWindow
+import com.example.mmarecomp.data.SeriesReps
 import com.example.mmarecomp.data.ThemeMode
 import com.example.mmarecomp.data.ThemePreferenceStore
 import com.example.mmarecomp.data.TextScale
@@ -395,6 +396,76 @@ fun SettingsScreen(
                 "Confirmer avant suppression (au lieu du \"Annuler\")",
                 prefs.confirmBeforeDelete,
             ) { checked -> updatePrefs { it.copy(confirmBeforeDelete = checked) } }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Entraînement", style = MaterialTheme.typography.titleMedium) }
+        item {
+            ToggleRow(
+                "Minuteur de repos entre séries",
+                prefs.restTimerEnabled,
+            ) { checked -> updatePrefs { it.copy(restTimerEnabled = checked) } }
+        }
+        if (prefs.restTimerEnabled) {
+            item {
+                LabeledDropdown(
+                    title = "Durée du repos",
+                    options = listOf(30, 45, 60, 90, 120, 180),
+                    selected = prefs.restTimerSeconds,
+                    labelFor = { "${it}s" },
+                    onSelect = { seconds -> updatePrefs { it.copy(restTimerSeconds = seconds) } },
+                )
+            }
+        }
+        item {
+            ToggleRow(
+                "Auto-remplissage de la durée (dernière séance du même type)",
+                prefs.autoFillLastDuration,
+            ) { checked -> updatePrefs { it.copy(autoFillLastDuration = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Historique rapide (meilleure charge connue par exercice)",
+                prefs.showExerciseHistory,
+            ) { checked -> updatePrefs { it.copy(showExerciseHistory = checked) } }
+        }
+        item { Text("Séries/reps par défaut par type de séance", style = MaterialTheme.typography.bodyMedium) }
+        WorkoutType.entries.forEach { type ->
+            item {
+                val defaults = prefs.defaultSeriesRepsByType[type.name]
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = defaults?.series?.toString() ?: "",
+                        onValueChange = { text ->
+                            text.toIntOrNull()?.let { series ->
+                                updatePrefs {
+                                    val updated = it.defaultSeriesRepsByType +
+                                        (type.name to SeriesReps(series, defaults?.reps ?: 10))
+                                    it.copy(defaultSeriesRepsByType = updated)
+                                }
+                            }
+                        },
+                        label = { Text("${type.label} · séries") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = defaults?.reps?.toString() ?: "",
+                        onValueChange = { text ->
+                            text.toIntOrNull()?.let { reps ->
+                                updatePrefs {
+                                    val updated = it.defaultSeriesRepsByType +
+                                        (type.name to SeriesReps(defaults?.series ?: 3, reps))
+                                    it.copy(defaultSeriesRepsByType = updated)
+                                }
+                            }
+                        },
+                        label = { Text("reps") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
 
         item { Text("Renommer les phases", style = MaterialTheme.typography.bodyMedium) }

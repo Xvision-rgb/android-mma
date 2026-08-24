@@ -48,6 +48,9 @@ enum class DashboardCard(val label: String) {
     NUTRITION("Nutrition"),
 }
 
+@Serializable
+data class SeriesReps(val series: Int, val reps: Int)
+
 /**
  * Préférences propres à cet appareil (pas des données de suivi à
  * synchroniser), stockées en local — voir [UserPreferencesStore]. Tous les
@@ -75,4 +78,9 @@ data class UserPreferences(
     val appLockEnabled: Boolean = false,
     val phaseLabelOverrides: Map<String, String> = emptyMap(),
     val mealSlotLabelOverrides: Map<String, String> = emptyMap(),
+    val restTimerEnabled: Boolean = false,
+    val restTimerSeconds: Int = 90,
+    val defaultSeriesRepsByType: Map<String, SeriesReps> = emptyMap(),
+    val autoFillLastDuration: Boolean = false,
+    val showExerciseHistory: Boolean = false,
 )
