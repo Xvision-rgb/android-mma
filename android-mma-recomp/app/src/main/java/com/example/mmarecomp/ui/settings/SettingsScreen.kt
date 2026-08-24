@@ -684,7 +684,15 @@ fun SettingsScreen(
                             checked = tab.route !in prefs.hiddenTabs,
                             onCheckedChange = { visible ->
                                 updatePrefs {
-                                    it.copy(hiddenTabs = if (visible) it.hiddenTabs - tab.route else it.hiddenTabs + tab.route)
+                                    val newHidden = if (visible) it.hiddenTabs - tab.route else it.hiddenTabs + tab.route
+                                    // Un onglet masqué ne peut pas rester l'onglet par défaut à
+                                    // l'ouverture — sinon il devient injoignable dès qu'on le quitte.
+                                    val newDefaultTab = if (!visible && it.defaultTab == tab) {
+                                        DefaultTab.entries.firstOrNull { candidate -> candidate.route !in newHidden } ?: it.defaultTab
+                                    } else {
+                                        it.defaultTab
+                                    }
+                                    it.copy(hiddenTabs = newHidden, defaultTab = newDefaultTab)
                                 }
                             },
                             modifier = Modifier.weight(1f),
