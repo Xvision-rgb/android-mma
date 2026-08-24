@@ -24,6 +24,7 @@ import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakCalculator
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
+import com.example.mmarecomp.ui.AppPreferencesState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -73,7 +74,7 @@ class DashboardViewModel(
             val points = morningWeighIns.mapNotNull { w ->
                 DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) }
             }
-            return MovingAverage.sevenDay(points)
+            return MovingAverage.windowed(points, AppPreferencesState.preferences.value.movingAverageWindow.days)
         }
 
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
@@ -94,7 +95,7 @@ class DashboardViewModel(
         errorMessage = null
         viewModelScope.launch {
             try {
-                val mondayOfWeek = DateUtils.startOfWeek()
+                val mondayOfWeek = DateUtils.startOfWeek(weekStart = AppPreferencesState.preferences.value.weekStart)
                 val sevenDaysAgo = DateUtils.daysAgo(7)
                 val today = DateUtils.today()
                 val thirtyDaysAgo = DateUtils.daysAgo(30)

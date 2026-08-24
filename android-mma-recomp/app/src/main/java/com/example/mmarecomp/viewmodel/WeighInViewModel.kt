@@ -16,6 +16,7 @@ import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
+import com.example.mmarecomp.ui.AppPreferencesState
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -47,7 +48,8 @@ class WeighInViewModel(
             val points = history
                 .filter { it.type == WeighInType.MatinJeun }
                 .mapNotNull { w -> DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) } }
-            return MovingAverage.sevenDay(points)
+            val windowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
+            return MovingAverage.windowed(points, windowDays)
         }
 
     val eveningWeighIns: List<WeighIn> get() = history.filter { it.type == WeighInType.Soir }

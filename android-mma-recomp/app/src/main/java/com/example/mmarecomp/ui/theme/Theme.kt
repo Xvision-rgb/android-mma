@@ -5,10 +5,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import com.example.mmarecomp.data.AccentPreset
 import com.example.mmarecomp.data.ThemeMode
 
-private val LightColors = lightColorScheme(
-    primary = Steel,
+private fun accentColors(accent: AccentPreset): Pair<Color, Color> = when (accent) {
+    AccentPreset.STEEL -> Steel to SteelDark
+    AccentPreset.CLAY -> Clay to ClayDark
+    AccentPreset.MOSS -> Moss to MossDark
+    AccentPreset.EMBER -> Ember to EmberDark
+    AccentPreset.OCEAN -> Ocean to OceanDark
+}
+
+private fun lightColors(accent: AccentPreset) = lightColorScheme(
+    primary = accentColors(accent).first,
     secondary = Clay,
     tertiary = Moss,
     background = PaperLight,
@@ -19,8 +29,8 @@ private val LightColors = lightColorScheme(
     onSurfaceVariant = TextSecondaryLight,
 )
 
-private val DarkColors = darkColorScheme(
-    primary = SteelDark,
+private fun darkColors(accent: AccentPreset) = darkColorScheme(
+    primary = accentColors(accent).second,
     secondary = ClayDark,
     tertiary = MossDark,
     background = PaperDark,
@@ -34,6 +44,8 @@ private val DarkColors = darkColorScheme(
 @Composable
 fun MMARecompTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
+    accent: AccentPreset = AccentPreset.STEEL,
+    textScale: Float = 1f,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = when (themeMode) {
@@ -42,8 +54,8 @@ fun MMARecompTheme(
         ThemeMode.DARK -> true
     }
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = MMATypography,
+        colorScheme = if (darkTheme) darkColors(accent) else lightColors(accent),
+        typography = mmaTypography(textScale),
         content = content,
     )
 }

@@ -1,5 +1,6 @@
 package com.example.mmarecomp.util
 
+import com.example.mmarecomp.data.WeekStart
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -15,10 +16,17 @@ object DateUtils {
 
     fun daysAgo(n: Long): String = string(LocalDate.now().minusDays(n))
 
-    /** 1 = lundi ... 7 = dimanche, pour matcher `training_plan.jour_semaine`. */
+    /** 1 = lundi ... 7 = dimanche, pour matcher `training_plan.jour_semaine` —
+     *  toujours ISO/lundi, indépendant de la préférence d'affichage
+     *  "premier jour de semaine" qui ne concerne que les calculs de fenêtre
+     *  d'affichage (dashboard), jamais ce mapping de schéma. */
     fun weekdayIso(dateString: String): Int =
         date(dateString)?.dayOfWeek?.value ?: DayOfWeek.MONDAY.value
 
-    fun startOfWeek(from: LocalDate = LocalDate.now()): String =
-        string(from.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
+    /** Début de la semaine "affichée" (fenêtre du dashboard) — lundi par
+     *  défaut, dimanche si l'utilisateur préfère cette convention. */
+    fun startOfWeek(from: LocalDate = LocalDate.now(), weekStart: WeekStart = WeekStart.MONDAY): String {
+        val firstDay = if (weekStart == WeekStart.SUNDAY) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
+        return string(from.with(java.time.temporal.TemporalAdjusters.previousOrSame(firstDay)))
+    }
 }

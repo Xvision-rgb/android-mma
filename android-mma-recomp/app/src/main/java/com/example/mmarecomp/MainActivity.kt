@@ -28,7 +28,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by AppThemeState.mode
-            MMARecompTheme(themeMode = themeMode) {
+            val preferences by AppPreferencesState.preferences
+            MMARecompTheme(
+                themeMode = themeMode,
+                accent = preferences.accent,
+                textScale = preferences.textScale.multiplier,
+            ) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     RootScreen()
                 }

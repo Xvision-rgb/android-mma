@@ -15,6 +15,7 @@ import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PersonalRecordDetector
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.toFriendlyMessage
+import com.example.mmarecomp.ui.AppPreferencesState
 import java.time.LocalDate
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -43,7 +44,7 @@ class ProgressViewModel(
             val points = weighIns
                 .filter { it.type == WeighInType.MatinJeun }
                 .mapNotNull { w -> DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) } }
-            return MovingAverage.sevenDay(points)
+            return MovingAverage.windowed(points, AppPreferencesState.preferences.value.movingAverageWindow.days)
         }
 
     val bfTrend: List<TrendPoint>
@@ -55,7 +56,7 @@ class ProgressViewModel(
                     val bf = w.bfPct
                     if (d != null && bf != null) TrendPoint(d, bf) else null
                 }
-            return MovingAverage.sevenDay(points)
+            return MovingAverage.windowed(points, AppPreferencesState.preferences.value.movingAverageWindow.days)
         }
 
     /** Progression de charge par exercice sur la fenêtre sélectionnée. */
