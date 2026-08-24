@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.data.FoodDatabase
 import com.example.mmarecomp.data.FoodItem
+import com.example.mmarecomp.util.matchesSearch
 import kotlin.math.roundToInt
 
 private data class SelectedFood(val food: FoodItem, val grams: Int)
@@ -62,7 +63,7 @@ fun FoodCalculatorSection(
 
     val allFoods = remember(customFoods) { FoodDatabase.items + customFoods }
     val matches = remember(query, allFoods) {
-        if (query.isBlank()) emptyList() else allFoods.filter { it.name.contains(query, ignoreCase = true) }.take(6)
+        if (query.isBlank()) emptyList() else allFoods.filter { matchesSearch(it.name, query) }.take(6)
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
