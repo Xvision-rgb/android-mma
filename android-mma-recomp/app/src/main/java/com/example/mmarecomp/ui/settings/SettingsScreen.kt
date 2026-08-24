@@ -387,6 +387,30 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Rappel après séance manquée sur le dashboard",
+                prefs.missedWorkoutReminderEnabled,
+            ) { checked -> updatePrefs { it.copy(missedWorkoutReminderEnabled = checked) } }
+        }
+        if (prefs.missedWorkoutReminderEnabled) {
+            item {
+                Text(
+                    "Un message neutre sur le dashboard, jamais une notification — juste un rappel doux.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                LabeledDropdown(
+                    title = "Après combien de jours",
+                    options = listOf(2, 3, 5, 7, 10, 14),
+                    selected = prefs.missedWorkoutReminderDays,
+                    labelFor = { "$it jours" },
+                    onSelect = { days -> updatePrefs { it.copy(missedWorkoutReminderDays = days) } },
+                )
+            }
+        }
+        item {
+            ToggleRow(
                 "Suivre le % de masse grasse",
                 prefs.showBodyFat,
             ) { checked -> updatePrefs { it.copy(showBodyFat = checked) } }

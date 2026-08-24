@@ -56,6 +56,11 @@ class DashboardViewModel(
     var consistencyStreak by mutableStateOf(0)
         private set
 
+    /** Jours écoulés depuis la dernière séance loggée, sur une fenêtre de 30
+     *  jours ; null si aucune séance récente n'a été trouvée dans cette fenêtre. */
+    var daysSinceLastWorkout by mutableStateOf<Int?>(null)
+        private set
+
     /** Vrai tant qu'aucune séance, repas ou pesée n'a jamais été loggué —
      *  sert à afficher un message d'accueil plutôt que des cartes à "0". */
     val hasAnyData: Boolean
@@ -127,6 +132,14 @@ class DashboardViewModel(
                     val activeDates = (recentWorkouts.mapNotNull { DateUtils.date(it.date) } +
                         recentMeals.mapNotNull { DateUtils.date(it.date) }).toSet()
                     consistencyStreak = StreakCalculator.currentStreak(activeDates)
+
+                    val todayDate = DateUtils.date(today)
+                    val lastWorkoutDate = recentWorkouts.mapNotNull { DateUtils.date(it.date) }.maxOrNull()
+                    daysSinceLastWorkout = if (lastWorkoutDate != null && todayDate != null) {
+                        java.time.temporal.ChronoUnit.DAYS.between(lastWorkoutDate, todayDate).toInt()
+                    } else {
+                        null
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le dashboard pour le moment.")

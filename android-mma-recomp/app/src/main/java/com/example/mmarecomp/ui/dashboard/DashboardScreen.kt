@@ -140,6 +140,17 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         if (AppPreferencesState.preferences.value.weeklySummaryCardEnabled) {
             item { WeeklySummaryCard(viewModel, weightUnit) }
         }
+        val missedDays = viewModel.daysSinceLastWorkout
+        if (AppPreferencesState.preferences.value.missedWorkoutReminderEnabled &&
+            missedDays != null &&
+            missedDays >= AppPreferencesState.preferences.value.missedWorkoutReminderDays
+        ) {
+            item {
+                SoftAlertBanner(
+                    "Ça fait $missedDays jours sans séance loggée — reprends quand tu veux, aucune pression.",
+                )
+            }
+        }
     }
 }
 
