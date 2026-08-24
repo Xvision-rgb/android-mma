@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -16,6 +19,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -580,6 +585,54 @@ fun SettingsScreen(
                 "Vibrer à chaque enregistrement réussi",
                 prefs.vibrateOnAnySave,
             ) { checked -> updatePrefs { it.copy(vibrateOnAnySave = checked) } }
+        }
+
+        item { Text("Onglets — ordre et visibilité", style = MaterialTheme.typography.bodyMedium) }
+        item {
+            val order = if (prefs.tabOrder.isEmpty()) DefaultTab.entries.map { it.route } else prefs.tabOrder
+            Column {
+                order.forEachIndexed { index, route ->
+                    val tab = DefaultTab.entries.find { it.route == route } ?: return@forEachIndexed
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row {
+                            IconButton(
+                                onClick = {
+                                    if (index > 0) {
+                                        val newOrder = order.toMutableList()
+                                        newOrder[index] = newOrder[index - 1].also { newOrder[index - 1] = newOrder[index] }
+                                        updatePrefs { it.copy(tabOrder = newOrder) }
+                                    }
+                                },
+                                enabled = index > 0,
+                            ) { Icon(Icons.Filled.ArrowUpward, contentDescription = "Monter ${tab.label}") }
+                            IconButton(
+                                onClick = {
+                                    if (index < order.size - 1) {
+                                        val newOrder = order.toMutableList()
+                                        newOrder[index] = newOrder[index + 1].also { newOrder[index + 1] = newOrder[index] }
+                                        updatePrefs { it.copy(tabOrder = newOrder) }
+                                    }
+                                },
+                                enabled = index < order.size - 1,
+                            ) { Icon(Icons.Filled.ArrowDownward, contentDescription = "Descendre ${tab.label}") }
+                            Text(tab.label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        ToggleRow(
+                            label = "",
+                            checked = tab.route !in prefs.hiddenTabs,
+                            onCheckedChange = { visible ->
+                                updatePrefs {
+                                    it.copy(hiddenTabs = if (visible) it.hiddenTabs - tab.route else it.hiddenTabs + tab.route)
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
         }
 
         item { HorizontalDivider() }

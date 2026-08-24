@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -60,6 +61,17 @@ private val tabs = listOf(
 fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
+    val prefs by AppPreferencesState.preferences
+
+    // "settings" reste toujours visible — le masquer priverait l'utilisateur
+    // du seul endroit pour annuler ce choix.
+    val visibleTabs = tabs.filter { it.route == "settings" || it.route !in prefs.hiddenTabs }
+    val effectiveTabs = if (prefs.tabOrder.isEmpty()) {
+        visibleTabs
+    } else {
+        val ordered = prefs.tabOrder.mapNotNull { route -> visibleTabs.find { it.route == route } }
+        ordered + visibleTabs.filterNot { it.route in prefs.tabOrder }
+    }
 
     LaunchedEffect(Unit) {
         PendingShortcutDestination.route.value?.let { destination ->
@@ -77,7 +89,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
             NavigationBar {
-                tabs.forEach { tab ->
+                effectiveTabs.forEach { tab ->
                     NavigationBarItem(
                         selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true,
                         onClick = {
