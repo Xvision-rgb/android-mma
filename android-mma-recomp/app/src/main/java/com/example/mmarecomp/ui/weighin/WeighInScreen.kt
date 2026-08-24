@@ -30,6 +30,7 @@ import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.formatWeight
 import com.example.mmarecomp.viewmodel.WeighInViewModel
 
 @Composable
@@ -55,6 +56,9 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
         item {
             WeightTrendChart(points = viewModel.trend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+        }
+        viewModel.trend7Day.lastOrNull()?.let { latest ->
+            item { Text(formatWeight(latest.value, prefs.weightUnit), style = MaterialTheme.typography.titleMedium) }
         }
         if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
             item { SoftAlertBanner("Poids stable mais tu progresses — recomposition en cours 💪") }

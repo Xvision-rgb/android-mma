@@ -25,6 +25,7 @@ import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.formatWeight
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 
 @Composable
@@ -40,6 +41,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
 private fun DashboardContent(viewModel: DashboardViewModel) {
     val visibleCards = AppPreferencesState.preferences.value.visibleDashboardCards
     val averageWindowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
+    val weightUnit = AppPreferencesState.preferences.value.weightUnit
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -88,6 +90,9 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+                    viewModel.weightTrend7Day.lastOrNull()?.let { latest ->
+                        Text(formatWeight(latest.value, weightUnit), style = MaterialTheme.typography.titleMedium)
+                    }
                     if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
                         SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
                     }

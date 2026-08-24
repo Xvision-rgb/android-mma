@@ -37,6 +37,7 @@ import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.util.formatWeight
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -148,7 +149,7 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.height(18.dp),
                         )
-                        Text("%.1f kg".format(best), style = MaterialTheme.typography.bodyMedium)
+                        Text(formatWeight(best, AppPreferencesState.preferences.value.weightUnit), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
