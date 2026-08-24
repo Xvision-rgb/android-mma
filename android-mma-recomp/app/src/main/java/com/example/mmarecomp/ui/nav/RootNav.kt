@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.dashboard.DashboardScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
@@ -98,7 +99,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = "dashboard",
+            startDestination = AppPreferencesState.preferences.value.defaultTab.route,
             modifier = Modifier.padding(padding),
         ) {
             composable("dashboard") {

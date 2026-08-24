@@ -81,6 +81,30 @@ class MealLogViewModel(
         }
     }
 
+    /** Cible saisie à la main plutôt que calculée — pour les utilisateurs qui
+     *  préfèrent piloter leurs macros eux-mêmes (préférence "Cibles nutrition
+     *  automatiques" coupée). Le type_jour est requis par le schéma mais n'a
+     *  plus de sens une fois la cible surchargée : Training est stocké sans
+     *  incidence sur l'affichage. */
+    fun setManualTarget(calories: Int, proteinesG: Double, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val dateString = DateUtils.string(date)
+            val newTarget = NewNutritionTarget(
+                date = dateString,
+                typeJour = TypeJour.Training,
+                caloriesCible = calories,
+                proteinesCibleG = proteinesG,
+            )
+            try {
+                target = targetRepository.set(newTarget)
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible d'enregistrer cette cible.")
+                onResult(false)
+            }
+        }
+    }
+
     fun logMeal(
         slot: RepasSlot,
         calories: Int,

@@ -37,13 +37,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
 
@@ -52,6 +55,8 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     var showSavedMessage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val prefs by AppPreferencesState.preferences
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
 
@@ -156,7 +161,14 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
             item {
                 Button(
-                    onClick = { viewModel.save { showSavedMessage = it } },
+                    onClick = {
+                        viewModel.save { saved ->
+                            showSavedMessage = saved
+                            if (saved && prefs.celebratePrWithVibration && viewModel.newRecords.isNotEmpty()) {
+                                celebrationVibration(context)
+                            }
+                        }
+                    },
                     enabled = !viewModel.isSaving,
                     modifier = Modifier.fillMaxWidth(),
                 ) {

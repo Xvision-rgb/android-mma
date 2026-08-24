@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
@@ -57,8 +59,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var glucides by remember { mutableStateOf("") }
     var lipides by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var manualCalories by remember { mutableStateOf("") }
+    var manualProteines by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val prefs by AppPreferencesState.preferences
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         LazyColumn(
@@ -88,13 +93,55 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         )
                     }
                 }
-            } else {
+            } else if (prefs.autoNutritionTargets) {
                 item {
                     Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training) }) { Text("Jour training") }
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos) }) { Text("Jour repos") }
                     }
+                }
+            } else {
+                item { Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+
+            if (!prefs.autoNutritionTargets) {
+                item {
+                    Text(
+                        "Cible manuelle",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = manualCalories,
+                            onValueChange = { manualCalories = it },
+                            label = { Text("Calories") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = manualProteines,
+                            onValueChange = { manualProteines = it },
+                            label = { Text("Protéines (g)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                item {
+                    OutlinedButton(
+                        onClick = {
+                            val calories = manualCalories.toIntOrNull()
+                            val proteines = manualProteines.replace(",", ".").toDoubleOrNull()
+                            if (calories != null && proteines != null) {
+                                viewModel.setManualTarget(calories, proteines)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Définir la cible") }
                 }
             }
 

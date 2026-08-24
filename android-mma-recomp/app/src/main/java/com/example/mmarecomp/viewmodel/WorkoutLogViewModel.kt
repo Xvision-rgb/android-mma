@@ -14,6 +14,7 @@ import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.PersonalRecordDetector
 import com.example.mmarecomp.util.toFriendlyMessage
@@ -25,7 +26,10 @@ class WorkoutLogViewModel(
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
-    var type by mutableStateOf(WorkoutType.JambesForce)
+    var type by mutableStateOf(
+        WorkoutType.entries.find { it.name == AppPreferencesState.preferences.value.defaultWorkoutType }
+            ?: WorkoutType.JambesForce,
+    )
     var exercices by mutableStateOf<List<LoggedExercise>>(emptyList())
     var dureeMin by mutableStateOf("")
     var notes by mutableStateOf("")
