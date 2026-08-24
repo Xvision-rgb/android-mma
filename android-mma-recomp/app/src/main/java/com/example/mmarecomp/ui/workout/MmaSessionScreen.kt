@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 
 @Composable
@@ -197,7 +198,14 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
 
         item {
             Button(
-                onClick = { viewModel.save { saved -> if (saved) onSaved() } },
+                onClick = {
+                    viewModel.save { saved ->
+                        if (saved) {
+                            if (prefs.vibrateOnAnySave) celebrationVibration(context)
+                            onSaved()
+                        }
+                    }
+                },
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) {

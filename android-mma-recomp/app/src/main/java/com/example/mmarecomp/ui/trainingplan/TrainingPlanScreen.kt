@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.PlanDayType
@@ -37,6 +38,7 @@ import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.TrainingPlanViewModel
 
 @Composable
@@ -44,6 +46,7 @@ fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase, onBack: (
     LaunchedEffect(phase) { viewModel.load(phase) }
 
     val prefs by AppPreferencesState.preferences
+    val context = LocalContext.current
     var showDiscardConfirm by remember { mutableStateOf(false) }
 
     BackHandler(enabled = prefs.confirmDiscardUnsavedChanges && viewModel.hasUnsavedChanges) {
@@ -89,7 +92,11 @@ fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase, onBack: (
                 day = day,
                 isSaving = viewModel.savingDay == day.jourSemaine,
                 onChange = { viewModel.updateDay(day.jourSemaine, it) },
-                onSave = { viewModel.saveDay(day) {} },
+                onSave = {
+                    viewModel.saveDay(day) { saved ->
+                        if (saved && prefs.vibrateOnAnySave) celebrationVibration(context)
+                    }
+                },
             )
         }
     }
