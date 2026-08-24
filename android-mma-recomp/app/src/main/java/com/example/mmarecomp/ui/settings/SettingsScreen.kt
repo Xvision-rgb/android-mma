@@ -54,7 +54,11 @@ import com.example.mmarecomp.ui.components.LabeledSegmentedChoice
 import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.cancelDailyReminder
 import com.example.mmarecomp.util.displayLabel
+import com.example.mmarecomp.util.hasNotificationPermission
+import com.example.mmarecomp.util.needsNotificationPermission
+import com.example.mmarecomp.util.scheduleDailyReminder
 import com.example.mmarecomp.util.toFriendlyMessage
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
@@ -77,6 +81,8 @@ fun SettingsScreen(
         AppPreferencesState.preferences.value = updated
         UserPreferencesStore(context).save(updated)
     }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -309,6 +315,56 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        item {
+            ToggleRow(
+                "Rappel quotidien",
+                prefs.dailyReminderEnabled,
+            ) { checked ->
+                updatePrefs { it.copy(dailyReminderEnabled = checked) }
+                if (checked) {
+                    if (needsNotificationPermission && !hasNotificationPermission(context)) {
+                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    scheduleDailyReminder(context, prefs.dailyReminderHour, prefs.dailyReminderMinute)
+                } else {
+                    cancelDailyReminder(context)
+                }
+            }
+        }
+        if (prefs.dailyReminderEnabled) {
+            item {
+                Text(
+                    "Un simple rappel générique pour logger ta journée — jamais lié à la pesée, jamais " +
+                        "culpabilisant.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LabeledDropdown(
+                        title = "Heure",
+                        options = (0..23).toList(),
+                        selected = prefs.dailyReminderHour,
+                        labelFor = { "%02dh".format(it) },
+                        onSelect = { hour ->
+                            updatePrefs { it.copy(dailyReminderHour = hour) }
+                            scheduleDailyReminder(context, hour, prefs.dailyReminderMinute)
+                        },
+                    )
+                    LabeledDropdown(
+                        title = "Minute",
+                        options = listOf(0, 15, 30, 45),
+                        selected = prefs.dailyReminderMinute,
+                        labelFor = { "%02d".format(it) },
+                        onSelect = { minute ->
+                            updatePrefs { it.copy(dailyReminderMinute = minute) }
+                            scheduleDailyReminder(context, prefs.dailyReminderHour, minute)
+                        },
+                    )
+                }
+            }
         }
         item {
             ToggleRow(
