@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +61,17 @@ fun AuthScreen(viewModel: AuthViewModel) {
 
         Spacer(Modifier.height(20.dp))
         Button(onClick = { viewModel.signIn() }, modifier = Modifier.fillMaxWidth(), enabled = !viewModel.isSubmitting) {
-            if (viewModel.isSubmitting) CircularProgressIndicator(modifier = Modifier.height(20.dp)) else Text("Se connecter")
+            if (viewModel.isSubmitting) {
+                // CircularProgressIndicator ne suit pas LocalContentColor comme
+                // Text/Icon — sans couleur explicite, il se fond dans le fond
+                // "primary" du bouton et devient quasi invisible.
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
+                Text("Se connecter")
+            }
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = { viewModel.signUp() }, modifier = Modifier.fillMaxWidth(), enabled = !viewModel.isSubmitting) {
