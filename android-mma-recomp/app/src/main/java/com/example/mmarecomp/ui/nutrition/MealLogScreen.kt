@@ -85,6 +85,7 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
     val prefs by AppPreferencesState.preferences
 
     LaunchedEffect(Unit) { viewModel.loadPresets(context) }
+    LaunchedEffect(Unit) { viewModel.loadTargetHistoryIfNeeded() }
     KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
@@ -153,6 +154,26 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                 }
             } else {
                 item { Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+
+            if (prefs.nutritionTargetHistoryEnabled && viewModel.targetHistory.isNotEmpty()) {
+                item {
+                    Text(
+                        "Historique des cibles (60 derniers jours)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                items(viewModel.targetHistory, key = { it.id }) { pastTarget ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(pastTarget.date, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "${pastTarget.caloriesCible} kcal · ${pastTarget.proteinesCibleG.toInt()}g prot",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             if (!prefs.autoNutritionTargets) {

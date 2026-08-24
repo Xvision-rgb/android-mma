@@ -47,6 +47,11 @@ class MealLogViewModel(
     var presets by mutableStateOf<List<MealPreset>>(emptyList())
         private set
 
+    /** Historique des cibles nutrition passées — chargé à la demande, voir
+     *  loadTargetHistoryIfNeeded(). */
+    var targetHistory by mutableStateOf<List<NutritionTarget>>(emptyList())
+        private set
+
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
     val totalProteines: Double get() = mealsForDay.sumOf { it.proteinesG }
 
@@ -73,6 +78,13 @@ class MealLogViewModel(
             } finally {
                 isLoading = false
             }
+        }
+    }
+
+    fun loadTargetHistoryIfNeeded() {
+        if (!AppPreferencesState.preferences.value.nutritionTargetHistoryEnabled || targetHistory.isNotEmpty()) return
+        viewModelScope.launch {
+            targetHistory = runCatching { targetRepository.fetchHistory(DateUtils.daysAgo(60)) }.getOrDefault(emptyList())
         }
     }
 

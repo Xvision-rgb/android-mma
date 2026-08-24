@@ -487,6 +487,12 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Historique des cibles nutrition (60 derniers jours)",
+                prefs.nutritionTargetHistoryEnabled,
+            ) { checked -> updatePrefs { it.copy(nutritionTargetHistoryEnabled = checked) } }
+        }
+        item {
+            ToggleRow(
                 "Estimation de date d'objectif de poids",
                 prefs.weightGoalEtaEnabled,
             ) { checked -> updatePrefs { it.copy(weightGoalEtaEnabled = checked) } }
