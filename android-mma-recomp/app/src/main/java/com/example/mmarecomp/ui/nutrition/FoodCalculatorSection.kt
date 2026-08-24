@@ -32,17 +32,29 @@ private data class SelectedFood(val food: FoodItem, val grams: Int)
 
 /**
  * Aide au calcul quand on ne connaît pas les valeurs d'un repas : on
- * cherche un ou plusieurs aliments dans une petite base locale, on ajuste
- * le poids, et on applique le total dans le formulaire — jamais de saisie
- * automatique, l'utilisateur valide toujours explicitement.
+ * cherche un ou plusieurs aliments dans la base intégrée + les aliments
+ * personnels ajoutés, on ajuste le poids, et on applique le total dans le
+ * formulaire — jamais de saisie automatique, l'utilisateur valide toujours
+ * explicitement. Si rien n'est trouvé, on peut créer l'aliment soi-même
+ * (nom + valeurs pour 100g), sauvegardé pour les prochaines recherches.
  */
 @Composable
-fun FoodCalculatorSection(onApply: (calories: Int, proteinesG: Double, glucidesG: Double, lipidesG: Double, description: String) -> Unit) {
+fun FoodCalculatorSection(
+    customFoods: List<FoodItem>,
+    onSaveCustomFood: (FoodItem) -> Unit,
+    onApply: (calories: Int, proteinesG: Double, glucidesG: Double, lipidesG: Double, description: String) -> Unit,
+) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<List<SelectedFood>>(emptyList()) }
+    var creatingCustomFood by remember { mutableStateOf(false) }
+    var newFoodCalories by remember { mutableStateOf("") }
+    var newFoodProteines by remember { mutableStateOf("") }
+    var newFoodGlucides by remember { mutableStateOf("") }
+    var newFoodLipides by remember { mutableStateOf("") }
 
-    val matches = remember(query) {
-        if (query.isBlank()) emptyList() else FoodDatabase.items.filter { it.name.contains(query, ignoreCase = true) }.take(6)
+    val allFoods = remember(customFoods) { FoodDatabase.items + customFoods }
+    val matches = remember(query, allFoods) {
+        if (query.isBlank()) emptyList() else allFoods.filter { it.name.contains(query, ignoreCase = true) }.take(6)
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -53,7 +65,7 @@ fun FoodCalculatorSection(onApply: (calories: Int, proteinesG: Double, glucidesG
         )
         OutlinedTextField(
             value = query,
-            onValueChange = { query = it },
+            onValueChange = { query = it; creatingCustomFood = false },
             label = { Text("Chercher un aliment (ex: riz, poulet, œuf)") },
             modifier = Modifier,
         )
@@ -69,6 +81,66 @@ fun FoodCalculatorSection(onApply: (calories: Int, proteinesG: Double, glucidesG
                     )
                 }
             }
+        } else if (query.isNotBlank() && !creatingCustomFood) {
+            TextButton(onClick = { creatingCustomFood = true }) {
+                Text("Aucun résultat — créer \"$query\" comme aliment personnalisé")
+            }
+        }
+        if (creatingCustomFood) {
+            Text(
+                "Valeurs pour 100g de \"$query\"",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = newFoodCalories,
+                    onValueChange = { newFoodCalories = it },
+                    label = { Text("Calories") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = newFoodProteines,
+                    onValueChange = { newFoodProteines = it },
+                    label = { Text("Prot. (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = newFoodGlucides,
+                    onValueChange = { newFoodGlucides = it },
+                    label = { Text("Gluc. (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = newFoodLipides,
+                    onValueChange = { newFoodLipides = it },
+                    label = { Text("Lip. (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            TextButton(
+                onClick = {
+                    val food = FoodItem(
+                        name = query,
+                        caloriesPer100g = newFoodCalories.toIntOrNull() ?: 0,
+                        proteinPer100gG = newFoodProteines.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                        carbsPer100gG = newFoodGlucides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                        fatPer100gG = newFoodLipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                    )
+                    onSaveCustomFood(food)
+                    selected = selected + SelectedFood(food, 100)
+                    query = ""
+                    newFoodCalories = ""; newFoodProteines = ""; newFoodGlucides = ""; newFoodLipides = ""
+                    creatingCustomFood = false
+                },
+                enabled = newFoodCalories.isNotBlank(),
+            ) { Text("Enregistrer cet aliment") }
         }
         selected.forEachIndexed { index, item ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

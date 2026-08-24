@@ -86,6 +86,7 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
 
     LaunchedEffect(Unit) { viewModel.loadPresets(context) }
     LaunchedEffect(Unit) { viewModel.loadTargetHistoryIfNeeded() }
+    LaunchedEffect(Unit) { viewModel.loadCustomFoods(context) }
     KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
@@ -345,17 +346,21 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
 
             if (prefs.foodCalculatorEnabled) {
                 item {
-                    FoodCalculatorSection { cal, prot, gluc, lip, desc ->
-                        val currentCalories = calories.toIntOrNull() ?: 0
-                        val currentProteines = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0
-                        val currentGlucides = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0
-                        val currentLipides = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0
-                        calories = (currentCalories + cal).toString()
-                        proteines = "%.1f".format(currentProteines + prot)
-                        glucides = "%.1f".format(currentGlucides + gluc)
-                        lipides = "%.1f".format(currentLipides + lip)
-                        description = if (description.isBlank()) desc else "$description + $desc"
-                    }
+                    FoodCalculatorSection(
+                        customFoods = viewModel.customFoods,
+                        onSaveCustomFood = { food -> viewModel.saveCustomFood(food, context) },
+                        onApply = { cal, prot, gluc, lip, desc ->
+                            val currentCalories = calories.toIntOrNull() ?: 0
+                            val currentProteines = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0
+                            val currentGlucides = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0
+                            val currentLipides = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0
+                            calories = (currentCalories + cal).toString()
+                            proteines = "%.1f".format(currentProteines + prot)
+                            glucides = "%.1f".format(currentGlucides + gluc)
+                            lipides = "%.1f".format(currentLipides + lip)
+                            description = if (description.isBlank()) desc else "$description + $desc"
+                        },
+                    )
                 }
             }
 

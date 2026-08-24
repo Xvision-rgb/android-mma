@@ -1,6 +1,9 @@
 package com.example.mmarecomp.data
 
+import kotlinx.serialization.Serializable
+
 /** Aliment courant avec ses valeurs approximatives pour 100g. */
+@Serializable
 data class FoodItem(
     val name: String,
     val caloriesPer100g: Int,

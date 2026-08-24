@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.CustomFoodStore
+import com.example.mmarecomp.data.FoodItem
 import com.example.mmarecomp.data.MealPreset
 import com.example.mmarecomp.data.MealPresetStore
 import com.example.mmarecomp.data.MealRepository
@@ -45,6 +47,11 @@ class MealLogViewModel(
 
     /** Repas favoris réutilisables (stockage local, voir MealPresetStore). */
     var presets by mutableStateOf<List<MealPreset>>(emptyList())
+        private set
+
+    /** Aliments personnels ajoutés dans l'aide au calcul (stockage local,
+     *  voir CustomFoodStore) — vient s'ajouter à FoodDatabase à la recherche. */
+    var customFoods by mutableStateOf<List<FoodItem>>(emptyList())
         private set
 
     /** Historique des cibles nutrition passées — chargé à la demande, voir
@@ -286,5 +293,22 @@ class MealLogViewModel(
         val updated = presets.filterNot { it.name == preset.name }
         MealPresetStore(context).save(updated)
         presets = updated
+    }
+
+    fun loadCustomFoods(context: Context) {
+        customFoods = CustomFoodStore(context).load()
+    }
+
+    fun saveCustomFood(food: FoodItem, context: Context) {
+        if (food.name.isBlank()) return
+        val updated = customFoods.filterNot { it.name.equals(food.name, ignoreCase = true) } + food
+        CustomFoodStore(context).save(updated)
+        customFoods = updated
+    }
+
+    fun deleteCustomFood(food: FoodItem, context: Context) {
+        val updated = customFoods.filterNot { it.name == food.name }
+        CustomFoodStore(context).save(updated)
+        customFoods = updated
     }
 }
