@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.KeepScreenOn
 import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
@@ -50,6 +51,7 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         viewModel.ressenti != 3
 
     LaunchedEffect(Unit) { viewModel.loadTemplates(context) }
+    KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     BackHandler(enabled = prefs.confirmDiscardUnsavedChanges && hasUnsavedChanges) {
         showDiscardConfirm = true

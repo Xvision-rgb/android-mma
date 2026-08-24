@@ -38,6 +38,7 @@ import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.AppPreferencesState
+import com.example.mmarecomp.ui.components.KeepScreenOn
 import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.TrainingPlanViewModel
 
@@ -48,6 +49,7 @@ fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase, onBack: (
     val prefs by AppPreferencesState.preferences
     val context = LocalContext.current
     var showDiscardConfirm by remember { mutableStateOf(false) }
+    KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     BackHandler(enabled = prefs.confirmDiscardUnsavedChanges && viewModel.hasUnsavedChanges) {
         showDiscardConfirm = true
