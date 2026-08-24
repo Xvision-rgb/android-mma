@@ -26,7 +26,10 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.KeepScreenOn
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
@@ -39,11 +42,12 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
 
     var showSaved by remember { mutableStateOf(false) }
     val prefs by AppPreferencesState.preferences
+    KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+        verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
     ) {
         item { Text("Log pesée", style = MaterialTheme.typography.titleLarge) }
 

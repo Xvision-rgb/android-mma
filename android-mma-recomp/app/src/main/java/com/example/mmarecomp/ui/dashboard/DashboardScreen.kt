@@ -35,6 +35,8 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.DateUtils
@@ -56,11 +58,12 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
     val visibleCards = AppPreferencesState.preferences.value.visibleDashboardCards
     val averageWindowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
     val weightUnit = AppPreferencesState.preferences.value.weightUnit
+    val density = AppPreferencesState.preferences.value.displayDensity
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(densitySpacing(density)),
+        verticalArrangement = Arrangement.spacedBy(densityItemGap(density)),
     ) {
         if (!viewModel.isLoading && !viewModel.hasAnyData) {
             item {

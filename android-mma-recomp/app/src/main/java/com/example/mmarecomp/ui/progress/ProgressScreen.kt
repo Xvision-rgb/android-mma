@@ -40,8 +40,12 @@ import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.ui.components.toSnackbarDuration
+import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.formatWeight
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -71,8 +75,8 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+        verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
     ) {
         item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
 
@@ -183,7 +187,7 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
-                        Text(workout.date, style = MaterialTheme.typography.bodyMedium)
+                        Text(DateUtils.forDisplay(workout.date, prefs.dateFormat), style = MaterialTheme.typography.bodyMedium)
                         Text(
                             "${workout.type.label} · ${workout.exercices.size} exercice(s)",
                             style = MaterialTheme.typography.bodySmall,
@@ -199,6 +203,7 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                                 val result = snackbarHostState.showSnackbar(
                                     message = "Séance supprimée",
                                     actionLabel = "Annuler",
+                                    duration = prefs.undoDuration.toSnackbarDuration(),
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
                                     viewModel.restoreWorkout(workout)

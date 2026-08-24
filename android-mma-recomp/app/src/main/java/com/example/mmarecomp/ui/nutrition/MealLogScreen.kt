@@ -51,6 +51,10 @@ import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
+import com.example.mmarecomp.ui.components.KeepScreenOn
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
+import com.example.mmarecomp.ui.components.toSnackbarDuration
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
@@ -80,12 +84,13 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
     val prefs by AppPreferencesState.preferences
 
     LaunchedEffect(Unit) { viewModel.loadPresets(context) }
+    KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxWidth().padding(scaffoldPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+            verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
         ) {
             item { Text("Log repas", style = MaterialTheme.typography.titleLarge) }
 
@@ -265,6 +270,7 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                                     val result = snackbarHostState.showSnackbar(
                                         message = "Repas supprimé",
                                         actionLabel = "Annuler",
+                                        duration = prefs.undoDuration.toSnackbarDuration(),
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
                                         viewModel.restoreMeal(meal)

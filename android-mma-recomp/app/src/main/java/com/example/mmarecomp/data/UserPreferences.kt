@@ -54,6 +54,19 @@ data class SeriesReps(val series: Int, val reps: Int)
 @Serializable
 data class QuickAddSnack(val name: String, val calories: Int, val proteinesG: Double)
 
+@Serializable
+enum class DateFormatStyle(val label: String) { ISO("AAAA-MM-JJ"), FR("JJ/MM/AAAA") }
+
+@Serializable
+enum class UndoDuration(val seconds: Int, val label: String) {
+    SHORT(2, "Courte (2s)"),
+    NORMAL(4, "Normale (4s)"),
+    LONG(8, "Longue (8s)"),
+}
+
+@Serializable
+enum class DisplayDensity(val label: String) { COMPACT("Compacte"), COMFORTABLE("Confortable") }
+
 /**
  * Préférences propres à cet appareil (pas des données de suivi à
  * synchroniser), stockées en local — voir [UserPreferencesStore]. Tous les
@@ -99,4 +112,18 @@ data class UserPreferences(
     val weightGoalEtaEnabled: Boolean = false,
     val plateauSensitivityDays: Int = 14,
     val showTargetsAsPercent: Boolean = false,
+    val weeklySummaryCardEnabled: Boolean = false,
+    val lastCsvExportEpochMillis: Long = 0L,
+    val dateFormat: DateFormatStyle = DateFormatStyle.ISO,
+    val undoDuration: UndoDuration = UndoDuration.NORMAL,
+    val highContrast: Boolean = false,
+    val displayDensity: DisplayDensity = DisplayDensity.COMFORTABLE,
+    val keepScreenOnWhileLogging: Boolean = false,
+    val tabOrder: List<String> = emptyList(),
+    val hiddenTabs: Set<String> = emptySet(),
+    val missedWorkoutReminderEnabled: Boolean = false,
+    val missedWorkoutReminderDays: Int = 3,
+    val confirmDiscardUnsavedChanges: Boolean = false,
+    val dailyReminderSilent: Boolean = false,
+    val vibrateOnAnySave: Boolean = false,
 )

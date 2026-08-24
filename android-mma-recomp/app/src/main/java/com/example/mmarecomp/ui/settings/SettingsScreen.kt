@@ -37,11 +37,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.data.AccentPreset
 import com.example.mmarecomp.data.DashboardCard
+import com.example.mmarecomp.data.DateFormatStyle
 import com.example.mmarecomp.data.DefaultTab
+import com.example.mmarecomp.data.DisplayDensity
 import com.example.mmarecomp.data.MovingAverageWindow
 import com.example.mmarecomp.data.QuickAddSnack
 import com.example.mmarecomp.data.SeriesReps
 import com.example.mmarecomp.data.ThemeMode
+import com.example.mmarecomp.data.UndoDuration
 import com.example.mmarecomp.data.ThemePreferenceStore
 import com.example.mmarecomp.data.TextScale
 import com.example.mmarecomp.data.UserPreferences
@@ -526,6 +529,57 @@ fun SettingsScreen(
                 "Confirmer avant suppression (au lieu du \"Annuler\")",
                 prefs.confirmBeforeDelete,
             ) { checked -> updatePrefs { it.copy(confirmBeforeDelete = checked) } }
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Durée du snackbar \"Annuler\"",
+                options = UndoDuration.entries,
+                selected = prefs.undoDuration,
+                labelFor = { it.label },
+                onSelect = { duration -> updatePrefs { it.copy(undoDuration = duration) } },
+            )
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Format de date",
+                options = DateFormatStyle.entries,
+                selected = prefs.dateFormat,
+                labelFor = { it.label },
+                onSelect = { format -> updatePrefs { it.copy(dateFormat = format) } },
+            )
+        }
+        item {
+            LabeledSegmentedChoice(
+                title = "Densité d'affichage",
+                options = DisplayDensity.entries,
+                selected = prefs.displayDensity,
+                labelFor = { it.label },
+                onSelect = { density -> updatePrefs { it.copy(displayDensity = density) } },
+            )
+        }
+        item {
+            ToggleRow(
+                "Mode contraste élevé",
+                prefs.highContrast,
+            ) { checked -> updatePrefs { it.copy(highContrast = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Garder l'écran allumé pendant la saisie",
+                prefs.keepScreenOnWhileLogging,
+            ) { checked -> updatePrefs { it.copy(keepScreenOnWhileLogging = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Confirmer avant de quitter un formulaire modifié",
+                prefs.confirmDiscardUnsavedChanges,
+            ) { checked -> updatePrefs { it.copy(confirmDiscardUnsavedChanges = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Vibrer à chaque enregistrement réussi",
+                prefs.vibrateOnAnySave,
+            ) { checked -> updatePrefs { it.copy(vibrateOnAnySave = checked) } }
         }
 
         item { HorizontalDivider() }

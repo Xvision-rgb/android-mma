@@ -17,28 +17,28 @@ private fun accentColors(accent: AccentPreset): Pair<Color, Color> = when (accen
     AccentPreset.OCEAN -> Ocean to OceanDark
 }
 
-private fun lightColors(accent: AccentPreset) = lightColorScheme(
+private fun lightColors(accent: AccentPreset, highContrast: Boolean) = lightColorScheme(
     primary = accentColors(accent).first,
     secondary = Clay,
     tertiary = Moss,
-    background = PaperLight,
-    surface = SurfaceLight,
-    onBackground = InkLight,
-    onSurface = InkLight,
+    background = if (highContrast) Color.White else PaperLight,
+    surface = if (highContrast) Color.White else SurfaceLight,
+    onBackground = if (highContrast) Color.Black else InkLight,
+    onSurface = if (highContrast) Color.Black else InkLight,
     surfaceVariant = TrackLight,
-    onSurfaceVariant = TextSecondaryLight,
+    onSurfaceVariant = if (highContrast) Color.Black else TextSecondaryLight,
 )
 
-private fun darkColors(accent: AccentPreset) = darkColorScheme(
+private fun darkColors(accent: AccentPreset, highContrast: Boolean) = darkColorScheme(
     primary = accentColors(accent).second,
     secondary = ClayDark,
     tertiary = MossDark,
-    background = PaperDark,
-    surface = SurfaceDark,
-    onBackground = InkDark,
-    onSurface = InkDark,
+    background = if (highContrast) Color.Black else PaperDark,
+    surface = if (highContrast) Color.Black else SurfaceDark,
+    onBackground = if (highContrast) Color.White else InkDark,
+    onSurface = if (highContrast) Color.White else InkDark,
     surfaceVariant = TrackDark,
-    onSurfaceVariant = TextSecondaryDark,
+    onSurfaceVariant = if (highContrast) Color.White else TextSecondaryDark,
 )
 
 @Composable
@@ -46,6 +46,7 @@ fun MMARecompTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     accent: AccentPreset = AccentPreset.STEEL,
     textScale: Float = 1f,
+    highContrast: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = when (themeMode) {
@@ -54,7 +55,7 @@ fun MMARecompTheme(
         ThemeMode.DARK -> true
     }
     MaterialTheme(
-        colorScheme = if (darkTheme) darkColors(accent) else lightColors(accent),
+        colorScheme = if (darkTheme) darkColors(accent, highContrast) else lightColors(accent, highContrast),
         typography = mmaTypography(textScale),
         content = content,
     )

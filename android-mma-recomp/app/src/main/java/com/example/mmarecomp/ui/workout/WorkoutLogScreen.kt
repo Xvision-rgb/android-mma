@@ -44,8 +44,12 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.KeepScreenOn
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.ui.components.densityItemGap
+import com.example.mmarecomp.ui.components.densitySpacing
+import com.example.mmarecomp.ui.components.toSnackbarDuration
 import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
@@ -61,12 +65,13 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
     LaunchedEffect(viewModel.type) { viewModel.autoFillLastDurationIfNeeded() }
     LaunchedEffect(Unit) { viewModel.loadHistoryIfNeeded() }
+    KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxWidth().padding(scaffoldPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(densitySpacing(prefs.displayDensity)),
+            verticalArrangement = Arrangement.spacedBy(densityItemGap(prefs.displayDensity)),
         ) {
             item { Text("Log séance", style = MaterialTheme.typography.titleLarge) }
 
@@ -138,6 +143,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                                 val result = snackbarHostState.showSnackbar(
                                     message = "Exercice retiré",
                                     actionLabel = "Annuler",
+                                    duration = prefs.undoDuration.toSnackbarDuration(),
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
                                     viewModel.insertExercise(index, exercice)

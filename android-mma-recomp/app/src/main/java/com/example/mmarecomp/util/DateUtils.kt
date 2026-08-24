@@ -1,5 +1,6 @@
 package com.example.mmarecomp.util
 
+import com.example.mmarecomp.data.DateFormatStyle
 import com.example.mmarecomp.data.WeekStart
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -7,6 +8,7 @@ import java.time.format.DateTimeFormatter
 
 object DateUtils {
     private val isoFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val frFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     fun string(date: LocalDate): String = date.format(isoFormatter)
 
@@ -15,6 +17,14 @@ object DateUtils {
     fun today(): String = string(LocalDate.now())
 
     fun daysAgo(n: Long): String = string(LocalDate.now().minusDays(n))
+
+    /** Formate une date ISO stockée pour l'affichage selon la préférence
+     *  "Format de date" — le stockage reste toujours ISO, seul le texte
+     *  montré à l'utilisateur change. */
+    fun forDisplay(isoDateString: String, format: DateFormatStyle): String {
+        val parsed = date(isoDateString) ?: return isoDateString
+        return if (format == DateFormatStyle.FR) parsed.format(frFormatter) else isoDateString
+    }
 
     /** 1 = lundi ... 7 = dimanche, pour matcher `training_plan.jour_semaine` —
      *  toujours ISO/lundi, indépendant de la préférence d'affichage

@@ -40,6 +40,7 @@ class MainActivity : FragmentActivity() {
                 themeMode = themeMode,
                 accent = preferences.accent,
                 textScale = preferences.textScale.multiplier,
+                highContrast = preferences.highContrast,
             ) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val lockRequired = preferences.appLockEnabled && canUseAppLock(this@MainActivity)
