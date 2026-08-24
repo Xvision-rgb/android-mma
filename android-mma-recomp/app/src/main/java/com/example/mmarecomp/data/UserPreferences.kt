@@ -128,4 +128,5 @@ data class UserPreferences(
     val vibrateOnAnySave: Boolean = false,
     val nutritionTargetHistoryEnabled: Boolean = false,
     val streakDisplayThreshold: Int = 1,
+    val accessibleFont: Boolean = false,
 )

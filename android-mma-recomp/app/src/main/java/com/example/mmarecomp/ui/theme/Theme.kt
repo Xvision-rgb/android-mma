@@ -47,6 +47,7 @@ fun MMARecompTheme(
     accent: AccentPreset = AccentPreset.STEEL,
     textScale: Float = 1f,
     highContrast: Boolean = false,
+    accessibleFont: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val darkTheme = when (themeMode) {
@@ -56,7 +57,7 @@ fun MMARecompTheme(
     }
     MaterialTheme(
         colorScheme = if (darkTheme) darkColors(accent, highContrast) else lightColors(accent, highContrast),
-        typography = mmaTypography(textScale),
+        typography = mmaTypography(textScale, accessibleFont),
         content = content,
     )
 }

@@ -623,6 +623,12 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Police accessible (chasse fixe, lettres espacées)",
+                prefs.accessibleFont,
+            ) { checked -> updatePrefs { it.copy(accessibleFont = checked) } }
+        }
+        item {
+            ToggleRow(
                 "Garder l'écran allumé pendant la saisie",
                 prefs.keepScreenOnWhileLogging,
             ) { checked -> updatePrefs { it.copy(keepScreenOnWhileLogging = checked) } }
