@@ -19,6 +19,7 @@ import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
+import com.example.mmarecomp.util.PerformanceTrend
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakCalculator
@@ -61,6 +62,11 @@ class DashboardViewModel(
     var daysSinceLastWorkout by mutableStateOf<Int?>(null)
         private set
 
+    /** Charges récentes en progression (30 jours) — voir PerformanceTrend.
+     *  Alimente plateauStatus ; reste false tant qu'on n'a pas de preuve
+     *  réelle de progression, jamais une supposition optimiste par défaut. */
+    private var performanceTrendUp by mutableStateOf(false)
+
     /** Vrai tant qu'aucune séance, repas ou pesée n'a jamais été loggué —
      *  sert à afficher un message d'accueil plutôt que des cartes à "0". */
     val hasAnyData: Boolean
@@ -90,11 +96,9 @@ class DashboardViewModel(
             val points = morningWeighIns.mapNotNull { w ->
                 DateUtils.date(w.date)?.let { it to w.poidsKg }
             }
-            // Sans historique de charges chargé ici, on reste positif par défaut ;
-            // ProgressViewModel affine ce signal avec les vraies charges loggées.
             return PlateauDetector.detect(
                 points,
-                performanceTrendUp = true,
+                performanceTrendUp = performanceTrendUp,
                 windowDays = AppPreferencesState.preferences.value.plateauSensitivityDays.toLong(),
             )
         }
@@ -140,6 +144,7 @@ class DashboardViewModel(
                     } else {
                         null
                     }
+                    performanceTrendUp = PerformanceTrend.isImproving(recentWorkouts)
                 }
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le dashboard pour le moment.")
