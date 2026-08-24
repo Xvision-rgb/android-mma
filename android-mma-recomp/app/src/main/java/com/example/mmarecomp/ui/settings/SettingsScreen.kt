@@ -381,6 +381,58 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Cible nutrition ajustée selon la phase",
+                prefs.nutritionTargetByPhase,
+            ) { checked -> updatePrefs { it.copy(nutritionTargetByPhase = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Répartition macro personnalisée (%)",
+                prefs.macroSplitEnabled,
+            ) { checked -> updatePrefs { it.copy(macroSplitEnabled = checked) } }
+        }
+        if (prefs.macroSplitEnabled) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = prefs.macroProteinPct.toString(),
+                        onValueChange = { text -> text.toIntOrNull()?.let { pct -> updatePrefs { it.copy(macroProteinPct = pct) } } },
+                        label = { Text("% protéines") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = prefs.macroCarbsPct.toString(),
+                        onValueChange = { text -> text.toIntOrNull()?.let { pct -> updatePrefs { it.copy(macroCarbsPct = pct) } } },
+                        label = { Text("% glucides") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = prefs.macroFatPct.toString(),
+                        onValueChange = { text -> text.toIntOrNull()?.let { pct -> updatePrefs { it.copy(macroFatPct = pct) } } },
+                        label = { Text("% lipides") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            item {
+                Text(
+                    "Idéalement, les trois pourcentages totalisent 100.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        item {
+            ToggleRow(
+                "Suivi de l'hydratation (carte dashboard)",
+                prefs.hydrationEnabled,
+            ) { checked -> updatePrefs { it.copy(hydrationEnabled = checked) } }
+        }
+        item {
+            ToggleRow(
                 "Afficher la dictée vocale",
                 prefs.showVoiceInput,
             ) { checked -> updatePrefs { it.copy(showVoiceInput = checked) } }

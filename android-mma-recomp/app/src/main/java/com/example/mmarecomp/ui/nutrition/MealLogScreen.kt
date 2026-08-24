@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Meal
+import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.AppPreferencesState
@@ -52,12 +53,13 @@ import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.displayLabel
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun MealLogScreen(viewModel: MealLogViewModel) {
+fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
 
     val context = LocalContext.current
@@ -106,12 +108,28 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         )
                     }
                 }
+                if (prefs.macroSplitEnabled) {
+                    item {
+                        val macros = NutritionTargetCalculator.macroGramsFromPercent(
+                            target.caloriesCible,
+                            prefs.macroProteinPct,
+                            prefs.macroCarbsPct,
+                            prefs.macroFatPct,
+                        )
+                        Text(
+                            "Répartition indicative : %.0fg protéines · %.0fg glucides · %.0fg lipides"
+                                .format(macros.proteinesG, macros.glucidesG, macros.lipidesG),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             } else if (prefs.autoNutritionTargets) {
                 item {
                     Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training) }) { Text("Jour training") }
-                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos) }) { Text("Jour repos") }
+                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training, currentPhase) }) { Text("Jour training") }
+                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos, currentPhase) }) { Text("Jour repos") }
                     }
                 }
             } else {

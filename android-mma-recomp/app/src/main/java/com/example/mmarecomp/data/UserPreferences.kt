@@ -83,4 +83,10 @@ data class UserPreferences(
     val defaultSeriesRepsByType: Map<String, SeriesReps> = emptyMap(),
     val autoFillLastDuration: Boolean = false,
     val showExerciseHistory: Boolean = false,
+    val nutritionTargetByPhase: Boolean = false,
+    val hydrationEnabled: Boolean = false,
+    val macroSplitEnabled: Boolean = false,
+    val macroProteinPct: Int = 30,
+    val macroCarbsPct: Int = 40,
+    val macroFatPct: Int = 30,
 )

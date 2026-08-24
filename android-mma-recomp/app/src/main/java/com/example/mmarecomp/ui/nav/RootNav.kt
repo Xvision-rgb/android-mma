@@ -116,7 +116,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
             }
             composable("meals") {
                 val vm = remember { MealLogViewModel() }
-                MealLogScreen(vm)
+                MealLogScreen(vm, currentPhase)
             }
             composable("weighin") {
                 val vm = remember { WeighInViewModel() }

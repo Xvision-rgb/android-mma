@@ -14,8 +14,10 @@ import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.NewMeal
 import com.example.mmarecomp.model.NewNutritionTarget
 import com.example.mmarecomp.model.NutritionTarget
+import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
@@ -74,10 +76,11 @@ class MealLogViewModel(
         }
     }
 
-    fun setTarget(typeJour: TypeJour) {
+    fun setTarget(typeJour: TypeJour, phase: Phase? = null) {
         viewModelScope.launch {
             val dateString = DateUtils.string(date)
-            val computed = NutritionTargetCalculator.target(typeJour)
+            val effectivePhase = phase.takeIf { AppPreferencesState.preferences.value.nutritionTargetByPhase }
+            val computed = NutritionTargetCalculator.target(typeJour, effectivePhase)
             val newTarget = NewNutritionTarget(
                 date = dateString,
                 typeJour = typeJour,
