@@ -5,9 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
@@ -29,10 +31,13 @@ class ProgressViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val profileRepository: ProfileRepository = ProfileRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
 ) : ViewModel() {
     var weighIns by mutableStateOf<List<WeighIn>>(emptyList())
         private set
     var workouts by mutableStateOf<List<Workout>>(emptyList())
+        private set
+    var mmaSessions by mutableStateOf<List<MmaSession>>(emptyList())
         private set
     var allTimeWorkouts by mutableStateOf<List<Workout>>(emptyList())
         private set
@@ -112,6 +117,7 @@ class ProgressViewModel(
                     val weighInsDeferred = async { weighInRepository.fetch(since) }
                     val workoutsDeferred = async { workoutRepository.fetchWeek(since) }
                     val allTimeDeferred = async { workoutRepository.fetchAll() }
+                    val mmaSessionsDeferred = async { mmaSessionRepository.fetch(since) }
                     val profileDeferred = if (AppPreferencesState.preferences.value.weightGoalEtaEnabled) {
                         async { runCatching { profileRepository.fetch(userId) }.getOrNull() }
                     } else {
@@ -120,6 +126,7 @@ class ProgressViewModel(
                     weighIns = weighInsDeferred.await()
                     workouts = workoutsDeferred.await()
                     allTimeWorkouts = allTimeDeferred.await()
+                    mmaSessions = mmaSessionsDeferred.await()
                     poidsObjectifKg = profileDeferred?.await()?.poidsObjectifKg
                 }
             } catch (e: Exception) {
@@ -164,6 +171,10 @@ class ProgressViewModel(
     val recentWeighInsDescending: List<WeighIn>
         get() = weighIns.sortedByDescending { it.date }
 
+    /** Séances MMA les plus récentes en premier — pour l'historique avec suppression. */
+    val recentMmaSessionsDescending: List<MmaSession>
+        get() = mmaSessions.sortedByDescending { it.date }
+
     /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
      *  avec un snackbar "Annuler" : [commitDeleteWorkout] si confirmé,
      *  [restoreWorkout] sinon. */
@@ -204,6 +215,28 @@ class ProgressViewModel(
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de supprimer cette pesée.")
                 restoreWeighIn(weighIn)
+            }
+        }
+    }
+
+    /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
+     *  avec un snackbar "Annuler" : [commitDeleteMmaSession] si confirmé,
+     *  [restoreMmaSession] sinon. */
+    fun removeMmaSessionLocally(session: MmaSession) {
+        mmaSessions = mmaSessions.filterNot { it.id == session.id }
+    }
+
+    fun restoreMmaSession(session: MmaSession) {
+        mmaSessions = (mmaSessions.filterNot { it.id == session.id } + session).sortedBy { it.date }
+    }
+
+    fun commitDeleteMmaSession(session: MmaSession) {
+        viewModelScope.launch {
+            try {
+                mmaSessionRepository.delete(session.id)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de supprimer cette séance MMA.")
+                restoreMmaSession(session)
             }
         }
     }

@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.ui.AppPreferencesState
@@ -74,6 +75,7 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
     val prefs by AppPreferencesState.preferences
     var pendingDeleteWorkout by remember { mutableStateOf<Workout?>(null) }
     var pendingDeleteWeighIn by remember { mutableStateOf<WeighIn?>(null) }
+    var pendingDeleteMmaSession by remember { mutableStateOf<MmaSession?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -262,6 +264,48 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                 }
             }
         }
+
+        if (viewModel.recentMmaSessionsDescending.isNotEmpty()) {
+            item { HorizontalDivider() }
+            item { Text("Séances MMA récentes", style = MaterialTheme.typography.titleMedium) }
+            items(viewModel.recentMmaSessionsDescending, key = { it.id }) { session ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(DateUtils.forDisplay(session.date, prefs.dateFormat), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            (session.roundsSets ?: "Séance MMA") + (session.ressenti?.let { " · Ressenti $it/5" } ?: ""),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = {
+                        if (prefs.confirmBeforeDelete) {
+                            pendingDeleteMmaSession = session
+                        } else {
+                            viewModel.removeMmaSessionLocally(session)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Séance MMA supprimée",
+                                    actionLabel = "Annuler",
+                                    duration = prefs.undoDuration.toSnackbarDuration(),
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreMmaSession(session)
+                                } else {
+                                    viewModel.commitDeleteMmaSession(session)
+                                }
+                            }
+                        }
+                    }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Supprimer la séance MMA du ${session.date}")
+                    }
+                }
+            }
+        }
     }
 
     ConfirmDeleteDialog(
@@ -284,6 +328,17 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
             pendingDeleteWeighIn = null
         },
         onDismiss = { pendingDeleteWeighIn = null },
+    )
+
+    ConfirmDeleteDialog(
+        item = pendingDeleteMmaSession,
+        title = "Supprimer la séance MMA du ${pendingDeleteMmaSession?.date} ?",
+        onConfirm = { session ->
+            viewModel.removeMmaSessionLocally(session)
+            viewModel.commitDeleteMmaSession(session)
+            pendingDeleteMmaSession = null
+        },
+        onDismiss = { pendingDeleteMmaSession = null },
     )
 }
 
