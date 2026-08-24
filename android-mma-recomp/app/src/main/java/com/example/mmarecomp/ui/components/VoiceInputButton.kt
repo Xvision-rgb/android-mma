@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.example.mmarecomp.ui.AppPreferencesState
 
 /**
  * Bouton micro qui délègue la reconnaissance vocale à l'app système via
@@ -19,9 +20,15 @@ import androidx.compose.ui.platform.LocalContext
  * pas de dépendance ajoutée, l'app système gère le micro elle-même. Reste un
  * simple raccourci de saisie : ne bloque jamais la saisie manuelle si la
  * reconnaissance vocale n'est pas disponible sur l'appareil.
+ *
+ * Se rend invisible (au lieu de composer un bouton désactivé) si la
+ * préférence "Afficher la dictée vocale" est coupée — un seul point de
+ * contrôle pour les trois écrans qui l'utilisent.
  */
 @Composable
 fun VoiceInputButton(onResult: (String) -> Unit) {
+    if (!AppPreferencesState.preferences.value.showVoiceInput) return
+
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {

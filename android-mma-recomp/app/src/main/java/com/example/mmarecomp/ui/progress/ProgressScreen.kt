@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.WeightTrendChart
@@ -87,15 +88,16 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
             }
         }
 
+        val averageWindowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
         item {
-            ProgressCard(title = "Poids (moy. 7j)") {
+            ProgressCard(title = "Poids (moy. ${averageWindowDays}j)") {
                 WeightTrendChart(points = viewModel.weightTrend, modifier = Modifier.fillMaxWidth().height(130.dp))
             }
         }
 
-        if (viewModel.bfTrend.isNotEmpty()) {
+        if (AppPreferencesState.preferences.value.showBodyFat && viewModel.bfTrend.isNotEmpty()) {
             item {
-                ProgressCard(title = "% Masse grasse (moy. 7j)") {
+                ProgressCard(title = "% Masse grasse (moy. ${averageWindowDays}j)") {
                     WeightTrendChart(
                         points = viewModel.bfTrend,
                         modifier = Modifier.fillMaxWidth().height(110.dp),

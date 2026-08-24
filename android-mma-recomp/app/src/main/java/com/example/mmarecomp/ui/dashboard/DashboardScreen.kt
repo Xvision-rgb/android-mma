@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.data.DashboardCard
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.PullToRefreshWrapper
 import com.example.mmarecomp.ui.components.SoftAlertBanner
@@ -36,6 +38,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
 
 @Composable
 private fun DashboardContent(viewModel: DashboardViewModel) {
+    val visibleCards = AppPreferencesState.preferences.value.visibleDashboardCards
+    val averageWindowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -49,16 +54,18 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
                 )
             }
         }
-        item {
-            DashCard {
-                Text("Séances", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    "${viewModel.seancesFaitesCount} faites / ${viewModel.seancesPlanifieesCount} prévues",
-                    style = MaterialTheme.typography.titleMedium,
-                )
+        if (DashboardCard.SEANCES in visibleCards) {
+            item {
+                DashCard {
+                    Text("Séances", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${viewModel.seancesFaitesCount} faites / ${viewModel.seancesPlanifieesCount} prévues",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
             }
         }
-        if (viewModel.consistencyStreak >= 1) {
+        if (DashboardCard.CONSTANCE in visibleCards && viewModel.consistencyStreak >= 1) {
             item {
                 DashCard {
                     Text("Constance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -72,29 +79,33 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
                 }
             }
         }
-        item {
-            DashCard {
-                Text(
-                    "Tendance poids (moyenne 7 jours)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
-                if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
-                    SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
+        if (DashboardCard.POIDS in visibleCards) {
+            item {
+                DashCard {
+                    Text(
+                        "Tendance poids (moyenne $averageWindowDays jours)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+                    if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
+                        SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
+                    }
                 }
             }
         }
-        item {
-            DashCard {
-                Text("Nutrition", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${viewModel.avgCaloriesLast7Days} kcal/jour (moy. 7j)", style = MaterialTheme.typography.titleMedium)
-                viewModel.todayTarget?.let { target ->
-                    Text(
-                        "Cible aujourd'hui : ${target.caloriesCible} kcal · ${target.proteinesCibleG.toInt()}g protéines",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+        if (DashboardCard.NUTRITION in visibleCards) {
+            item {
+                DashCard {
+                    Text("Nutrition", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${viewModel.avgCaloriesLast7Days} kcal/jour (moy. 7j)", style = MaterialTheme.typography.titleMedium)
+                    viewModel.todayTarget?.let { target ->
+                        Text(
+                            "Cible aujourd'hui : ${target.caloriesCible} kcal · ${target.proteinesCibleG.toInt()}g protéines",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

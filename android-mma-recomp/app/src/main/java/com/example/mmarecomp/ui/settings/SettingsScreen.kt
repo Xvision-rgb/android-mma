@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
@@ -11,6 +12,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.data.AccentPreset
+import com.example.mmarecomp.data.DashboardCard
 import com.example.mmarecomp.data.DefaultTab
 import com.example.mmarecomp.data.MovingAverageWindow
 import com.example.mmarecomp.data.ThemeMode
@@ -238,6 +241,29 @@ fun SettingsScreen(
                 labelFor = { it?.label ?: "Premier de la liste" },
                 onSelect = { type -> updatePrefs { it.copy(defaultWorkoutType = type?.name) } },
             )
+        }
+        item {
+            Text("Cartes visibles sur le dashboard", style = MaterialTheme.typography.bodyMedium)
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                DashboardCard.entries.forEach { card ->
+                    FilterChip(
+                        selected = card in prefs.visibleDashboardCards,
+                        onClick = {
+                            updatePrefs {
+                                val updatedCards = if (card in it.visibleDashboardCards) {
+                                    it.visibleDashboardCards - card
+                                } else {
+                                    it.visibleDashboardCards + card
+                                }
+                                it.copy(visibleDashboardCards = updatedCards)
+                            }
+                        },
+                        label = { Text(card.label) },
+                    )
+                }
+            }
         }
         item {
             ToggleRow(

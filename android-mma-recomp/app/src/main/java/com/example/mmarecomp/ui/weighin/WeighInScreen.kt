@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.ToggleRow
@@ -36,6 +37,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     var showSaved by remember { mutableStateOf(false) }
+    val prefs by AppPreferencesState.preferences
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -46,7 +48,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
 
         item {
             Text(
-                "Tendance (moyenne 7 jours, matin à jeun)",
+                "Tendance (moyenne ${prefs.movingAverageWindow.days} jours, matin à jeun)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -91,14 +93,16 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        item {
-            OutlinedTextField(
-                value = viewModel.bfPct,
-                onValueChange = { viewModel.bfPct = it },
-                label = { Text("% masse grasse (optionnel)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (prefs.showBodyFat) {
+            item {
+                OutlinedTextField(
+                    value = viewModel.bfPct,
+                    onValueChange = { viewModel.bfPct = it },
+                    label = { Text("% masse grasse (optionnel)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         item {
