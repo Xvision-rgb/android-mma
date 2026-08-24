@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.dashboard
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.data.DashboardCard
 import com.example.mmarecomp.data.HydrationStore
+import com.example.mmarecomp.data.WeightUnit
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.EmptyState
@@ -134,7 +137,46 @@ private fun DashboardContent(viewModel: DashboardViewModel) {
         if (AppPreferencesState.preferences.value.hydrationEnabled) {
             item { HydrationCard() }
         }
+        if (AppPreferencesState.preferences.value.weeklySummaryCardEnabled) {
+            item { WeeklySummaryCard(viewModel, weightUnit) }
+        }
     }
+}
+
+@Composable
+private fun WeeklySummaryCard(viewModel: DashboardViewModel, weightUnit: WeightUnit) {
+    val context = LocalContext.current
+    val summary = weeklySummaryText(viewModel, weightUnit)
+
+    DashCard {
+        Text("Résumé de la semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(summary, style = MaterialTheme.typography.bodyMedium)
+        TextButton(onClick = {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, summary)
+            }
+            context.startActivity(Intent.createChooser(intent, "Partager le résumé"))
+        }) { Text("Partager") }
+    }
+}
+
+/** Texte neutre, sans jugement, prêt à partager ou afficher tel quel. */
+private fun weeklySummaryText(viewModel: DashboardViewModel, weightUnit: WeightUnit): String {
+    val trend = viewModel.weightTrend7Day
+    val weightLine = if (trend.size >= 2) {
+        val delta = trend.last().value - trend.first().value
+        val sign = if (delta > 0) "+" else if (delta < 0) "-" else ""
+        "Poids (moy.) : $sign${formatWeight(kotlin.math.abs(delta), weightUnit)} sur la période"
+    } else {
+        null
+    }
+    return buildString {
+        appendLine("Résumé de la semaine — Recomp & MMA")
+        appendLine("${viewModel.seancesFaitesCount} séance(s) sur ${viewModel.seancesPlanifieesCount} prévue(s)")
+        appendLine("${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne")
+        weightLine?.let { appendLine(it) }
+    }.trim()
 }
 
 @Composable

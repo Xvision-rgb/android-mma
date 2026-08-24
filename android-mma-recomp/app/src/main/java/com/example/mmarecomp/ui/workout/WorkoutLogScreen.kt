@@ -189,8 +189,11 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     onClick = {
                         viewModel.save { saved ->
                             showSavedMessage = saved
-                            if (saved && prefs.celebratePrWithVibration && viewModel.newRecords.isNotEmpty()) {
-                                celebrationVibration(context)
+                            if (saved) {
+                                val hasNewRecord = viewModel.newRecords.isNotEmpty()
+                                if ((prefs.celebratePrWithVibration && hasNewRecord) || prefs.vibrateOnAnySave) {
+                                    celebrationVibration(context)
+                                }
                             }
                         }
                     },

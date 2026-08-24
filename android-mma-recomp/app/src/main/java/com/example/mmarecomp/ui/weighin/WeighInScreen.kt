@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
@@ -33,6 +34,7 @@ import com.example.mmarecomp.ui.components.densitySpacing
 import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.util.formatWeight
 import com.example.mmarecomp.viewmodel.WeighInViewModel
 
@@ -42,6 +44,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
 
     var showSaved by remember { mutableStateOf(false) }
     val prefs by AppPreferencesState.preferences
+    val context = LocalContext.current
     KeepScreenOn(enabled = prefs.keepScreenOnWhileLogging)
 
     LazyColumn(
@@ -132,7 +135,10 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 onClick = {
                     viewModel.save { saved ->
                         showSaved = saved
-                        if (saved) { viewModel.poidsKg = ""; viewModel.bfPct = "" }
+                        if (saved) {
+                            viewModel.poidsKg = ""; viewModel.bfPct = ""
+                            if (prefs.vibrateOnAnySave) celebrationVibration(context)
+                        }
                     }
                 },
                 enabled = !viewModel.isSaving,

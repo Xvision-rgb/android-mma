@@ -59,6 +59,7 @@ import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
 import com.example.mmarecomp.util.NutritionTargetCalculator
+import com.example.mmarecomp.util.celebrationVibration
 import com.example.mmarecomp.util.displayLabel
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
@@ -426,6 +427,7 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                         ) { saved ->
                             if (saved) {
                                 calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
+                                if (prefs.vibrateOnAnySave) celebrationVibration(context)
                             }
                         }
                     },

@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.settings
 
+import com.example.mmarecomp.BuildConfig
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -443,6 +444,12 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Résumé hebdomadaire (carte dashboard, partageable)",
+                prefs.weeklySummaryCardEnabled,
+            ) { checked -> updatePrefs { it.copy(weeklySummaryCardEnabled = checked) } }
+        }
+        item {
+            ToggleRow(
                 "Cibles nutrition affichées en %",
                 prefs.showTargetsAsPercent,
             ) { checked -> updatePrefs { it.copy(showTargetsAsPercent = checked) } }
@@ -788,6 +795,25 @@ fun SettingsScreen(
             OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
                 Text("Se déconnecter", color = MaterialTheme.colorScheme.error)
             }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("À propos", style = MaterialTheme.typography.titleMedium) }
+        item {
+            Text(
+                "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            Text(
+                "Dernières nouveautés : préférences utilisateur étendues (minuteur de repos, " +
+                    "favoris repas et collations, verrouillage biométrique, rappels, import/export CSV, " +
+                    "personnalisation de l'affichage et de la navigation).",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 
