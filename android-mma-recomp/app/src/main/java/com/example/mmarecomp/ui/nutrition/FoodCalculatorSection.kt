@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.nutrition
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,12 +10,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +54,7 @@ private val PORTION_PRESETS = listOf(
 fun FoodCalculatorSection(
     customFoods: List<FoodItem>,
     onSaveCustomFood: (FoodItem) -> Unit,
+    onDeleteCustomFood: (FoodItem) -> Unit,
     onApply: (calories: Int, proteinesG: Double, glucidesG: Double, lipidesG: Double, description: String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
@@ -78,6 +82,31 @@ fun FoodCalculatorSection(
             label = { Text("Chercher un aliment (ex: riz, poulet, œuf)") },
             modifier = Modifier,
         )
+        if (customFoods.isNotEmpty()) {
+            Text(
+                "Mes aliments personnels",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                customFoods.forEach { food ->
+                    FilterChip(
+                        selected = false,
+                        onClick = { selected = selected + SelectedFood(food, 100) },
+                        label = { Text(food.name) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Supprimer l'aliment personnel ${food.name}",
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .clickable { onDeleteCustomFood(food) },
+                            )
+                        },
+                    )
+                }
+            }
+        }
         if (matches.isNotEmpty()) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 matches.forEach { food ->

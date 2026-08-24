@@ -349,6 +349,7 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                     FoodCalculatorSection(
                         customFoods = viewModel.customFoods,
                         onSaveCustomFood = { food -> viewModel.saveCustomFood(food, context) },
+                        onDeleteCustomFood = { food -> viewModel.deleteCustomFood(food, context) },
                         onApply = { cal, prot, gluc, lip, desc ->
                             val currentCalories = calories.toIntOrNull() ?: 0
                             val currentProteines = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0
