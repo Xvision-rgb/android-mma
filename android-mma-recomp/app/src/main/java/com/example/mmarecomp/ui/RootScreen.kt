@@ -36,6 +36,10 @@ fun RootScreen() {
             )
         }
         is SessionStatus.NotAuthenticated -> AuthScreen(authViewModel)
+        // Rafraîchissement de session en échec (token invalide, hors-ligne au
+        // lancement…) : sans ce cas, l'utilisateur restait bloqué indéfiniment
+        // sur le spinner ci-dessous plutôt que de pouvoir se reconnecter.
+        is SessionStatus.RefreshFailure -> AuthScreen(authViewModel)
         else -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
