@@ -44,6 +44,7 @@ import com.example.mmarecomp.data.UserPreferencesStore
 import com.example.mmarecomp.data.WeekStart
 import com.example.mmarecomp.data.WeightUnit
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.LabeledDropdown
@@ -51,6 +52,7 @@ import com.example.mmarecomp.ui.components.LabeledSegmentedChoice
 import com.example.mmarecomp.ui.components.ToggleRow
 import com.example.mmarecomp.ui.theme.AppThemeState
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.displayLabel
 import com.example.mmarecomp.util.toFriendlyMessage
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
@@ -117,7 +119,7 @@ fun SettingsScreen(
             var expanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
-                    value = viewModel.phase.label,
+                    value = viewModel.phase.displayLabel(prefs.phaseLabelOverrides),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Phase") },
@@ -126,7 +128,10 @@ fun SettingsScreen(
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     Phase.entries.forEach { option ->
-                        DropdownMenuItem(text = { Text(option.label) }, onClick = { viewModel.phase = option; expanded = false })
+                        DropdownMenuItem(
+                            text = { Text(option.displayLabel(prefs.phaseLabelOverrides)) },
+                            onClick = { viewModel.phase = option; expanded = false },
+                        )
                     }
                 }
             }
@@ -294,6 +299,36 @@ fun SettingsScreen(
                 "Confirmer avant suppression (au lieu du \"Annuler\")",
                 prefs.confirmBeforeDelete,
             ) { checked -> updatePrefs { it.copy(confirmBeforeDelete = checked) } }
+        }
+
+        item { Text("Renommer les phases", style = MaterialTheme.typography.bodyMedium) }
+        Phase.entries.forEach { phase ->
+            item {
+                OutlinedTextField(
+                    value = prefs.phaseLabelOverrides[phase.name] ?: "",
+                    onValueChange = { newLabel ->
+                        updatePrefs { it.copy(phaseLabelOverrides = it.phaseLabelOverrides + (phase.name to newLabel)) }
+                    },
+                    label = { Text(phase.label) },
+                    placeholder = { Text(phase.label) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        item { Text("Renommer les créneaux repas", style = MaterialTheme.typography.bodyMedium) }
+        RepasSlot.entries.forEach { slot ->
+            item {
+                OutlinedTextField(
+                    value = prefs.mealSlotLabelOverrides[slot.name] ?: "",
+                    onValueChange = { newLabel ->
+                        updatePrefs { it.copy(mealSlotLabelOverrides = it.mealSlotLabelOverrides + (slot.name to newLabel)) }
+                    },
+                    label = { Text(slot.label) },
+                    placeholder = { Text(slot.label) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         item { HorizontalDivider() }

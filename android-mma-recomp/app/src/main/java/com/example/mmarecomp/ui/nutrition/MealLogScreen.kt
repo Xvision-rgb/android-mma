@@ -52,6 +52,7 @@ import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.components.VoiceInputButton
+import com.example.mmarecomp.util.displayLabel
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
 
@@ -195,7 +196,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
-                            Text(slot.label)
+                            Text(slot.displayLabel(prefs.mealSlotLabelOverrides))
                             Text(
                                 "${meal.calories} kcal · ${meal.proteinesG.toInt()}g prot",
                                 style = MaterialTheme.typography.bodySmall,
@@ -220,7 +221,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                                 }
                             }
                         }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Supprimer le repas ${slot.label}")
+                            Icon(Icons.Filled.Delete, contentDescription = "Supprimer le repas ${slot.displayLabel(prefs.mealSlotLabelOverrides)}")
                         }
                     }
                 }
@@ -265,7 +266,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
-                        value = selectedSlot.label,
+                        value = selectedSlot.displayLabel(prefs.mealSlotLabelOverrides),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Créneau") },
@@ -274,7 +275,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     )
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         RepasSlot.entries.forEach { slot ->
-                            DropdownMenuItem(text = { Text(slot.label) }, onClick = { selectedSlot = slot; expanded = false })
+                            DropdownMenuItem(
+                                text = { Text(slot.displayLabel(prefs.mealSlotLabelOverrides)) },
+                                onClick = { selectedSlot = slot; expanded = false },
+                            )
                         }
                     }
                 }
