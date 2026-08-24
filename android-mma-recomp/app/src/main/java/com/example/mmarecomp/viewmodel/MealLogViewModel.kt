@@ -40,6 +40,8 @@ class MealLogViewModel(
         private set
     var isLoading by mutableStateOf(false)
         private set
+    var isSavingMeal by mutableStateOf(false)
+        private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var isRepeatingYesterday by mutableStateOf(false)
@@ -171,6 +173,7 @@ class MealLogViewModel(
             return
         }
 
+        isSavingMeal = true
         viewModelScope.launch {
             val newMeal = NewMeal(
                 date = DateUtils.string(date),
@@ -188,6 +191,8 @@ class MealLogViewModel(
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible d'enregistrer ce repas.")
                 onResult(false)
+            } finally {
+                isSavingMeal = false
             }
         }
     }

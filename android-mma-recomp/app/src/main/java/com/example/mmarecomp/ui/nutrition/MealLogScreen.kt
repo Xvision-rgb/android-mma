@@ -474,8 +474,9 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                             }
                         }
                     },
+                    enabled = !viewModel.isSavingMeal,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Enregistrer ce repas") }
+                ) { Text(if (viewModel.isSavingMeal) "Enregistrement…" else "Enregistrer ce repas") }
             }
         }
 
