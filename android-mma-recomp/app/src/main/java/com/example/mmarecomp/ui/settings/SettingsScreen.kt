@@ -298,6 +298,20 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Verrouiller l'app par biométrie/PIN",
+                prefs.appLockEnabled,
+            ) { checked -> updatePrefs { it.copy(appLockEnabled = checked) } }
+        }
+        item {
+            Text(
+                "Utilise le déverrouillage d'écran de ton téléphone — n'a d'effet que si un appareil a une " +
+                    "empreinte, un visage ou un code configuré.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            ToggleRow(
                 "Suivre le % de masse grasse",
                 prefs.showBodyFat,
             ) { checked -> updatePrefs { it.copy(showBodyFat = checked) } }
