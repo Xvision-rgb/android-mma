@@ -29,4 +29,8 @@ class NutritionTargetRepository {
         client.postgrest.from("nutrition_targets")
             .upsert(target, onConflict = "user_id,date") { select() }
             .decodeSingle()
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("nutrition_targets").delete { filter { eq("user_id", userId) } }
+    }
 }

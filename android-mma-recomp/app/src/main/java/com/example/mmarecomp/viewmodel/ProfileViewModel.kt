@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.MmaSessionRepository
+import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WeighInRepository
@@ -30,6 +31,7 @@ class ProfileViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
     private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
+    private val nutritionTargetRepository: NutritionTargetRepository = NutritionTargetRepository(),
 ) : ViewModel() {
     var profile by mutableStateOf<Profile?>(null)
         private set
@@ -153,11 +155,13 @@ class ProfileViewModel(
                     val weighInsDeferred = async { weighInRepository.deleteAll(userId) }
                     val trainingPlanDeferred = async { trainingPlanRepository.deleteAll(userId) }
                     val mmaSessionsDeferred = async { mmaSessionRepository.deleteAll(userId) }
+                    val nutritionTargetsDeferred = async { nutritionTargetRepository.deleteAll(userId) }
                     workoutsDeferred.await()
                     mealsDeferred.await()
                     weighInsDeferred.await()
                     trainingPlanDeferred.await()
                     mmaSessionsDeferred.await()
+                    nutritionTargetsDeferred.await()
                 }
                 onResult(true)
             } catch (e: Exception) {
