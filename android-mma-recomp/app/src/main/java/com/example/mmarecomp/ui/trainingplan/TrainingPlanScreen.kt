@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.trainingplan
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,11 +36,33 @@ import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
+import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.viewmodel.TrainingPlanViewModel
 
 @Composable
-fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase) {
+fun TrainingPlanScreen(viewModel: TrainingPlanViewModel, phase: Phase, onBack: () -> Unit) {
     LaunchedEffect(phase) { viewModel.load(phase) }
+
+    val prefs by AppPreferencesState.preferences
+    var showDiscardConfirm by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = prefs.confirmDiscardUnsavedChanges && viewModel.hasUnsavedChanges) {
+        showDiscardConfirm = true
+    }
+
+    if (showDiscardConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirm = false },
+            title = { Text("Quitter sans enregistrer ?") },
+            text = { Text("Des modifications du split ne sont pas encore enregistrées pour au moins un jour.") },
+            confirmButton = {
+                TextButton(onClick = { showDiscardConfirm = false; onBack() }) { Text("Quitter") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirm = false }) { Text("Continuer la saisie") }
+            },
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),

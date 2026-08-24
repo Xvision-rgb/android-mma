@@ -152,7 +152,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
             }
             composable("training-plan") {
                 val vm = remember { TrainingPlanViewModel() }
-                TrainingPlanScreen(vm, currentPhase)
+                TrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
         }
     }

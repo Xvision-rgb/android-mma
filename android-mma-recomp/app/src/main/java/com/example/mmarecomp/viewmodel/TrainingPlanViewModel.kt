@@ -27,6 +27,14 @@ class TrainingPlanViewModel(
     var savingDay by mutableStateOf<Int?>(null)
         private set
 
+    /** Dernier état effectivement enregistré (ou chargé), un jour à la fois
+     *  — sert uniquement à détecter des modifications locales non
+     *  sauvegardées (préférence "Confirmation avant de quitter"). */
+    private var savedSnapshot: List<TrainingPlanDay> = emptyList()
+
+    val hasUnsavedChanges: Boolean
+        get() = days != savedSnapshot
+
     fun load(phase: Phase) {
         isLoading = true
         errorMessage = null
@@ -38,6 +46,7 @@ class TrainingPlanViewModel(
                 days = (1..7).map { jour ->
                     fetched.firstOrNull { it.jourSemaine == jour } ?: emptyDay(jour, phase)
                 }
+                savedSnapshot = days
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de charger le split.")
             } finally {
@@ -74,6 +83,9 @@ class TrainingPlanViewModel(
             )
             try {
                 repository.upsert(payload)
+                // On retient l'état local tel quel (pas la version filtrée envoyée
+                // au serveur) : c'est ce que l'écran affiche encore juste après.
+                savedSnapshot = savedSnapshot.map { if (it.jourSemaine == day.jourSemaine) day else it }
                 onResult(true)
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible d'enregistrer ce jour.")
