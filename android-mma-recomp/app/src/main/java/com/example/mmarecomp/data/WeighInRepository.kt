@@ -25,6 +25,10 @@ class WeighInRepository {
             .upsert(weighIn, onConflict = "user_id,date,type") { select() }
             .decodeSingle()
 
+    suspend fun delete(id: String) {
+        client.postgrest.from("weigh_ins").delete { filter { eq("id", id) } }
+    }
+
     suspend fun deleteAll(userId: String) {
         client.postgrest.from("weigh_ins").delete { filter { eq("user_id", userId) } }
     }

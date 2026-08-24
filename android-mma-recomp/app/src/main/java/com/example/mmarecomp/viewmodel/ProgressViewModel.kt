@@ -160,6 +160,10 @@ class ProgressViewModel(
     val recentWorkoutsDescending: List<Workout>
         get() = workouts.sortedByDescending { it.date }
 
+    /** Pesées les plus récentes en premier — pour l'historique avec suppression. */
+    val recentWeighInsDescending: List<WeighIn>
+        get() = weighIns.sortedByDescending { it.date }
+
     /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
      *  avec un snackbar "Annuler" : [commitDeleteWorkout] si confirmé,
      *  [restoreWorkout] sinon. */
@@ -178,6 +182,28 @@ class ProgressViewModel(
             } catch (e: Exception) {
                 errorMessage = e.toFriendlyMessage("Impossible de supprimer cette séance.")
                 restoreWorkout(workout)
+            }
+        }
+    }
+
+    /** Retrait optimiste pour l'UI — n'efface rien côté serveur. À combiner
+     *  avec un snackbar "Annuler" : [commitDeleteWeighIn] si confirmé,
+     *  [restoreWeighIn] sinon. */
+    fun removeWeighInLocally(weighIn: WeighIn) {
+        weighIns = weighIns.filterNot { it.id == weighIn.id }
+    }
+
+    fun restoreWeighIn(weighIn: WeighIn) {
+        weighIns = (weighIns.filterNot { it.id == weighIn.id } + weighIn).sortedBy { it.date }
+    }
+
+    fun commitDeleteWeighIn(weighIn: WeighIn) {
+        viewModelScope.launch {
+            try {
+                weighInRepository.delete(weighIn.id)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de supprimer cette pesée.")
+                restoreWeighIn(weighIn)
             }
         }
     }

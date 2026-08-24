@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.ui.AppPreferencesState
 import com.example.mmarecomp.ui.components.ConfirmDeleteDialog
@@ -72,6 +73,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
 private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: SnackbarHostState, scope: CoroutineScope) {
     val prefs by AppPreferencesState.preferences
     var pendingDeleteWorkout by remember { mutableStateOf<Workout?>(null) }
+    var pendingDeleteWeighIn by remember { mutableStateOf<WeighIn?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -218,6 +220,48 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
                 }
             }
         }
+
+        if (viewModel.recentWeighInsDescending.isNotEmpty()) {
+            item { HorizontalDivider() }
+            item { Text("Pesées récentes", style = MaterialTheme.typography.titleMedium) }
+            items(viewModel.recentWeighInsDescending, key = { it.id }) { weighIn ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(DateUtils.forDisplay(weighIn.date, prefs.dateFormat), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${weighIn.type.label} · ${formatWeight(weighIn.poidsKg, prefs.weightUnit)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = {
+                        if (prefs.confirmBeforeDelete) {
+                            pendingDeleteWeighIn = weighIn
+                        } else {
+                            viewModel.removeWeighInLocally(weighIn)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Pesée supprimée",
+                                    actionLabel = "Annuler",
+                                    duration = prefs.undoDuration.toSnackbarDuration(),
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restoreWeighIn(weighIn)
+                                } else {
+                                    viewModel.commitDeleteWeighIn(weighIn)
+                                }
+                            }
+                        }
+                    }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Supprimer la pesée du ${weighIn.date}")
+                    }
+                }
+            }
+        }
     }
 
     ConfirmDeleteDialog(
@@ -229,6 +273,17 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
             pendingDeleteWorkout = null
         },
         onDismiss = { pendingDeleteWorkout = null },
+    )
+
+    ConfirmDeleteDialog(
+        item = pendingDeleteWeighIn,
+        title = "Supprimer la pesée du ${pendingDeleteWeighIn?.date} ?",
+        onConfirm = { weighIn ->
+            viewModel.removeWeighInLocally(weighIn)
+            viewModel.commitDeleteWeighIn(weighIn)
+            pendingDeleteWeighIn = null
+        },
+        onDismiss = { pendingDeleteWeighIn = null },
     )
 }
 
