@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.example.mmarecomp.data.UserPreferencesStore
 
 const val DAILY_REMINDER_CHANNEL_ID = "daily_reminder"
 private const val NOTIFICATION_ID = 4201
@@ -27,12 +28,15 @@ class DailyReminderReceiver : BroadcastReceiver() {
             if (!granted) return
         }
 
-        val notification = NotificationCompat.Builder(context, DAILY_REMINDER_CHANNEL_ID)
+        val silent = UserPreferencesStore(context).load().dailyReminderSilent
+        val channelId = if (silent) DAILY_REMINDER_SILENT_CHANNEL_ID else DAILY_REMINDER_CHANNEL_ID
+
+        val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Recomp & MMA")
             .setContentText("Une minute pour logger ta journée si tu veux 👋")
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(if (silent) NotificationCompat.PRIORITY_LOW else NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)

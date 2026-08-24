@@ -126,4 +126,5 @@ data class UserPreferences(
     val confirmDiscardUnsavedChanges: Boolean = false,
     val dailyReminderSilent: Boolean = false,
     val vibrateOnAnySave: Boolean = false,
+    val nutritionTargetHistoryEnabled: Boolean = false,
 )

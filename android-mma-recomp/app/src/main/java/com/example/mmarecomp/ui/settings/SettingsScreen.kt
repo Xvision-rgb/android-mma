@@ -103,6 +103,7 @@ fun SettingsScreen(
                 val csv = viewModel.buildExportCsv()
                 context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
                 exportMessage = "Export enregistré."
+                updatePrefs { it.copy(lastCsvExportEpochMillis = System.currentTimeMillis()) }
             } catch (e: Exception) {
                 exportMessage = e.toFriendlyMessage("Échec de l'export.")
             }
@@ -376,6 +377,12 @@ fun SettingsScreen(
                         },
                     )
                 }
+            }
+            item {
+                ToggleRow(
+                    "Rappel silencieux (sans son ni vibration)",
+                    prefs.dailyReminderSilent,
+                ) { checked -> updatePrefs { it.copy(dailyReminderSilent = checked) } }
             }
         }
         item {
@@ -759,6 +766,24 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (viewModel.isExporting) "Export en cours…" else "Exporter mes données (CSV)")
+            }
+        }
+        val daysSinceExport = if (prefs.lastCsvExportEpochMillis == 0L) {
+            null
+        } else {
+            (System.currentTimeMillis() - prefs.lastCsvExportEpochMillis) / (1000L * 60 * 60 * 24)
+        }
+        if (daysSinceExport == null || daysSinceExport > 30) {
+            item {
+                Text(
+                    if (daysSinceExport == null) {
+                        "Tu n'as jamais exporté tes données — pense à faire une sauvegarde de temps en temps."
+                    } else {
+                        "Dernière sauvegarde il y a $daysSinceExport jours — pense à en refaire une."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         exportMessage?.let { message ->
