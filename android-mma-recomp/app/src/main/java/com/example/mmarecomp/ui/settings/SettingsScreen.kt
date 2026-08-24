@@ -502,6 +502,12 @@ fun SettingsScreen(
         }
         item {
             ToggleRow(
+                "Aide au calcul des calories (base d'aliments courants)",
+                prefs.foodCalculatorEnabled,
+            ) { checked -> updatePrefs { it.copy(foodCalculatorEnabled = checked) } }
+        }
+        item {
+            ToggleRow(
                 "Estimation de date d'objectif de poids",
                 prefs.weightGoalEtaEnabled,
             ) { checked -> updatePrefs { it.copy(weightGoalEtaEnabled = checked) } }

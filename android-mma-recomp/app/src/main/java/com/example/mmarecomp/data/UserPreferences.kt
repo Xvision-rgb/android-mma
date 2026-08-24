@@ -129,4 +129,5 @@ data class UserPreferences(
     val nutritionTargetHistoryEnabled: Boolean = false,
     val streakDisplayThreshold: Int = 1,
     val accessibleFont: Boolean = false,
+    val foodCalculatorEnabled: Boolean = true,
 )
