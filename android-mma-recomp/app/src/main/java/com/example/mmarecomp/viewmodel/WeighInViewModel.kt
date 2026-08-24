@@ -116,6 +116,10 @@ class WeighInViewModel(
             val points = history
                 .filter { it.type == WeighInType.MatinJeun }
                 .mapNotNull { w -> DateUtils.date(w.date)?.let { it to w.poidsKg } }
-            return PlateauDetector.detect(points, performanceTrendUp = true)
+            return PlateauDetector.detect(
+                points,
+                performanceTrendUp = true,
+                windowDays = AppPreferencesState.preferences.value.plateauSensitivityDays.toLong(),
+            )
         }
 }

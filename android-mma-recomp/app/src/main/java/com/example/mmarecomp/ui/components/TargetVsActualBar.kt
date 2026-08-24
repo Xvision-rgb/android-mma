@@ -24,6 +24,7 @@ fun TargetVsActualBar(
     target: Double,
     unit: String,
     modifier: Modifier = Modifier,
+    showAsPercent: Boolean = false,
 ) {
     val ratio = if (target > 0) (actual / target).coerceAtMost(1.2) else 0.0
     // Jamais rouge / culpabilisant : au pire un orange doux si largement dépassé.
@@ -33,7 +34,7 @@ fun TargetVsActualBar(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.bodyMedium)
             Text(
-                "${actual.toInt()}/${target.toInt()} $unit",
+                if (showAsPercent) "${(ratio * 100).toInt()}%" else "${actual.toInt()}/${target.toInt()} $unit",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

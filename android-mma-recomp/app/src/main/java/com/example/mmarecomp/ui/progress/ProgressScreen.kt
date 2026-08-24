@@ -97,6 +97,16 @@ private fun ProgressContent(viewModel: ProgressViewModel, snackbarHostState: Sna
             }
         }
 
+        viewModel.weightGoalEtaText?.let { eta ->
+            item {
+                Text(
+                    eta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         val averageWindowDays = AppPreferencesState.preferences.value.movingAverageWindow.days
         item {
             ProgressCard(title = "Poids (moy. ${averageWindowDays}j)") {

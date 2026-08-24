@@ -123,7 +123,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
                 WeighInScreen(vm)
             }
             composable("progress") {
-                val vm = remember { ProgressViewModel() }
+                val vm = remember(userId) { ProgressViewModel(userId) }
                 ProgressScreen(vm)
             }
             composable("settings") {

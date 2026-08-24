@@ -18,6 +18,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -94,10 +95,22 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
             if (target != null) {
                 item {
                     Text("Cible du jour", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TargetVsActualBar("Calories", viewModel.totalCalories.toDouble(), target.caloriesCible.toDouble(), "kcal")
+                    TargetVsActualBar(
+                        "Calories",
+                        viewModel.totalCalories.toDouble(),
+                        target.caloriesCible.toDouble(),
+                        "kcal",
+                        showAsPercent = prefs.showTargetsAsPercent,
+                    )
                 }
                 item {
-                    TargetVsActualBar("Protéines", viewModel.totalProteines, target.proteinesCibleG, "g")
+                    TargetVsActualBar(
+                        "Protéines",
+                        viewModel.totalProteines,
+                        target.proteinesCibleG,
+                        "g",
+                        showAsPercent = prefs.showTargetsAsPercent,
+                    )
                 }
                 if (viewModel.totalCalories < target.caloriesCible) {
                     item {
@@ -173,6 +186,28 @@ fun MealLogScreen(viewModel: MealLogViewModel, currentPhase: Phase? = null) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Définir la cible") }
+                }
+            }
+
+            if (prefs.quickAddSnacks.isNotEmpty()) {
+                item {
+                    Text(
+                        "Collations rapides — créneau ${selectedSlot.displayLabel(prefs.mealSlotLabelOverrides)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        prefs.quickAddSnacks.forEach { snack ->
+                            AssistChip(
+                                onClick = {
+                                    viewModel.quickAddSnack(selectedSlot, snack.name, snack.calories, snack.proteinesG)
+                                },
+                                label = { Text("+ ${snack.name}") },
+                            )
+                        }
+                    }
                 }
             }
 

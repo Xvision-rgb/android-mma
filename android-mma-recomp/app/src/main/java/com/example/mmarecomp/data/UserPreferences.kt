@@ -51,6 +51,9 @@ enum class DashboardCard(val label: String) {
 @Serializable
 data class SeriesReps(val series: Int, val reps: Int)
 
+@Serializable
+data class QuickAddSnack(val name: String, val calories: Int, val proteinesG: Double)
+
 /**
  * Préférences propres à cet appareil (pas des données de suivi à
  * synchroniser), stockées en local — voir [UserPreferencesStore]. Tous les
@@ -89,4 +92,11 @@ data class UserPreferences(
     val macroProteinPct: Int = 30,
     val macroCarbsPct: Int = 40,
     val macroFatPct: Int = 30,
+    val quickAddSnacks: List<QuickAddSnack> = listOf(
+        QuickAddSnack("Shake protéiné", 200, 25.0),
+        QuickAddSnack("Fruit", 100, 1.0),
+    ),
+    val weightGoalEtaEnabled: Boolean = false,
+    val plateauSensitivityDays: Int = 14,
+    val showTargetsAsPercent: Boolean = false,
 )

@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,6 +39,7 @@ import com.example.mmarecomp.data.AccentPreset
 import com.example.mmarecomp.data.DashboardCard
 import com.example.mmarecomp.data.DefaultTab
 import com.example.mmarecomp.data.MovingAverageWindow
+import com.example.mmarecomp.data.QuickAddSnack
 import com.example.mmarecomp.data.SeriesReps
 import com.example.mmarecomp.data.ThemeMode
 import com.example.mmarecomp.data.ThemePreferenceStore
@@ -430,6 +432,82 @@ fun SettingsScreen(
                 "Suivi de l'hydratation (carte dashboard)",
                 prefs.hydrationEnabled,
             ) { checked -> updatePrefs { it.copy(hydrationEnabled = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Cibles nutrition affichées en %",
+                prefs.showTargetsAsPercent,
+            ) { checked -> updatePrefs { it.copy(showTargetsAsPercent = checked) } }
+        }
+        item {
+            ToggleRow(
+                "Estimation de date d'objectif de poids",
+                prefs.weightGoalEtaEnabled,
+            ) { checked -> updatePrefs { it.copy(weightGoalEtaEnabled = checked) } }
+        }
+        item {
+            LabeledDropdown(
+                title = "Sensibilité du plateau",
+                options = listOf(7, 10, 14, 21, 28),
+                selected = prefs.plateauSensitivityDays,
+                labelFor = { "$it jours" },
+                onSelect = { days -> updatePrefs { it.copy(plateauSensitivityDays = days) } },
+            )
+        }
+        item { Text("Collations rapides", style = MaterialTheme.typography.bodyMedium) }
+        prefs.quickAddSnacks.forEach { snack ->
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("${snack.name} · ${snack.calories} kcal · ${snack.proteinesG.toInt()}g", style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = {
+                        updatePrefs { it.copy(quickAddSnacks = it.quickAddSnacks.filterNot { s -> s.name == snack.name }) }
+                    }) { Text("Retirer") }
+                }
+            }
+        }
+        item {
+            var newSnackName by remember { mutableStateOf("") }
+            var newSnackCalories by remember { mutableStateOf("") }
+            var newSnackProteines by remember { mutableStateOf("") }
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newSnackName,
+                        onValueChange = { newSnackName = it },
+                        label = { Text("Nom") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = newSnackCalories,
+                        onValueChange = { newSnackCalories = it },
+                        label = { Text("kcal") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = newSnackProteines,
+                        onValueChange = { newSnackProteines = it },
+                        label = { Text("Protéines") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                TextButton(
+                    onClick = {
+                        val calories = newSnackCalories.toIntOrNull()
+                        val proteines = newSnackProteines.replace(",", ".").toDoubleOrNull()
+                        if (newSnackName.isNotBlank() && calories != null && proteines != null) {
+                            updatePrefs {
+                                it.copy(quickAddSnacks = it.quickAddSnacks + QuickAddSnack(newSnackName, calories, proteines))
+                            }
+                            newSnackName = ""; newSnackCalories = ""; newSnackProteines = ""
+                        }
+                    },
+                ) { Text("Ajouter une collation") }
+            }
         }
         item {
             ToggleRow(

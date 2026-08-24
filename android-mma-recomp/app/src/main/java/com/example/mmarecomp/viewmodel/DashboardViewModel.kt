@@ -87,7 +87,11 @@ class DashboardViewModel(
             }
             // Sans historique de charges chargé ici, on reste positif par défaut ;
             // ProgressViewModel affine ce signal avec les vraies charges loggées.
-            return PlateauDetector.detect(points, performanceTrendUp = true)
+            return PlateauDetector.detect(
+                points,
+                performanceTrendUp = true,
+                windowDays = AppPreferencesState.preferences.value.plateauSensitivityDays.toLong(),
+            )
         }
 
     fun load(phase: Phase) {

@@ -115,6 +115,23 @@ class MealLogViewModel(
         }
     }
 
+    /** Ajoute une collation rapide au créneau donné — comme le schéma n'a
+     *  qu'une entrée par (date, créneau), une collation sur un créneau déjà
+     *  loggué s'ADDITIONNE au repas existant plutôt que de l'écraser. */
+    fun quickAddSnack(slot: RepasSlot, name: String, calories: Int, proteinesG: Double, onResult: (Boolean) -> Unit = {}) {
+        val existing = mealsForDay.firstOrNull { it.repas == slot.value }
+        val combinedDescription = listOfNotNull(existing?.description, name).joinToString(" + ")
+        logMeal(
+            slot = slot,
+            calories = (existing?.calories ?: 0) + calories,
+            proteinesG = (existing?.proteinesG ?: 0.0) + proteinesG,
+            glucidesG = existing?.glucidesG ?: 0.0,
+            lipidesG = existing?.lipidesG ?: 0.0,
+            description = combinedDescription,
+            onResult = onResult,
+        )
+    }
+
     fun logMeal(
         slot: RepasSlot,
         calories: Int,
