@@ -85,5 +85,30 @@ object FoodDatabase {
         FoodItem("Whey (poudre)", 380, 75.0, 8.0, 5.0),
         FoodItem("Miel", 304, 0.3, 82.0, 0.0),
         FoodItem("Chocolat noir 70%", 598, 7.8, 46.0, 43.0),
+
+        // Boissons (pour 100ml)
+        FoodItem("Coca-Cola", 42, 0.0, 10.6, 0.0),
+        FoodItem("Jus d'orange", 45, 0.7, 10.0, 0.2),
+        FoodItem("Bière (5°)", 43, 0.5, 3.6, 0.0),
+        FoodItem("Vin rouge", 85, 0.1, 2.6, 0.0),
+        FoodItem("Lait entier", 61, 3.2, 4.8, 3.6),
+
+        // Sauces et condiments
+        FoodItem("Mayonnaise", 680, 1.0, 1.0, 75.0),
+        FoodItem("Ketchup", 101, 1.2, 24.0, 0.1),
+        FoodItem("Vinaigrette (huile + vinaigre)", 450, 0.0, 2.0, 48.0),
+        FoodItem("Moutarde", 66, 4.4, 5.0, 3.3),
+        FoodItem("Sauce soja", 53, 8.0, 5.0, 0.0),
+
+        // Plats composés courants (valeurs approx. pour 100g du plat préparé)
+        FoodItem("Pizza margherita", 266, 11.0, 33.0, 10.0),
+        FoodItem("Sushi (assortiment)", 150, 6.0, 28.0, 1.0),
+        FoodItem("Kebab (sandwich)", 250, 13.0, 25.0, 11.0),
+        FoodItem("Quiche lorraine", 300, 9.0, 18.0, 22.0),
+        FoodItem("Ratatouille", 65, 1.5, 7.0, 3.5),
+        FoodItem("Couscous (plat complet)", 150, 8.0, 18.0, 5.0),
+        FoodItem("Lasagnes", 145, 8.0, 13.0, 7.0),
+        FoodItem("Burger (fast-food)", 280, 14.0, 25.0, 14.0),
+        FoodItem("Salade César", 190, 10.0, 8.0, 14.0),
     )
 }
