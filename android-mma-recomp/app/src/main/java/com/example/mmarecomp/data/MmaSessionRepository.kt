@@ -4,6 +4,7 @@ import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.NewMmaSession
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.eq
 
 class MmaSessionRepository {
     private val client = SupabaseProvider.client
@@ -20,4 +21,8 @@ class MmaSessionRepository {
         client.postgrest.from("mma_sessions")
             .insert(session) { select() }
             .decodeSingle()
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("mma_sessions").delete { filter { eq("user_id", userId) } }
+    }
 }

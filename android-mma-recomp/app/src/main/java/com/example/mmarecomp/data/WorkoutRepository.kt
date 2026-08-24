@@ -41,4 +41,8 @@ class WorkoutRepository {
     suspend fun delete(id: String) {
         client.postgrest.from("workouts").delete { filter { eq("id", id) } }
     }
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("workouts").delete { filter { eq("user_id", userId) } }
+    }
 }

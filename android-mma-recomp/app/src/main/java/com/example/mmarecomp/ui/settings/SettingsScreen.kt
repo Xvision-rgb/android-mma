@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -21,6 +22,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +90,30 @@ fun SettingsScreen(
             }
         }
     }
+
+    var importMessage by remember { mutableStateOf<String?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            try {
+                val csv = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                if (csv.isNullOrBlank()) {
+                    importMessage = "Fichier vide ou illisible."
+                } else {
+                    val (imported, skipped) = viewModel.importWeighInsCsv(csv)
+                    importMessage = if (skipped == 0) {
+                        "$imported pesée(s) importée(s)."
+                    } else {
+                        "$imported pesée(s) importée(s), $skipped ligne(s) ignorée(s)."
+                    }
+                }
+            } catch (e: Exception) {
+                importMessage = e.toFriendlyMessage("Échec de l'import.")
+            }
+        }
+    }
+
+    var showResetConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -354,6 +380,30 @@ fun SettingsScreen(
             item { Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
 
+        item {
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("text/*")) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Importer des pesées (CSV)") }
+        }
+        importMessage?.let { message ->
+            item { Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+
+        item { HorizontalDivider() }
+
+        item {
+            OutlinedButton(
+                onClick = { showResetConfirm = true },
+                enabled = !viewModel.isResetting,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (viewModel.isResetting) "Réinitialisation…" else "Réinitialiser toutes mes données",
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
         item { HorizontalDivider() }
 
         item {
@@ -361,5 +411,27 @@ fun SettingsScreen(
                 Text("Se déconnecter", color = MaterialTheme.colorScheme.error)
             }
         }
+    }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text("Tout réinitialiser ?") },
+            text = {
+                Text(
+                    "Toutes tes séances, repas, pesées et ton split programmé seront supprimés " +
+                        "définitivement. Tes objectifs et ta phase restent inchangés.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetConfirm = false
+                    viewModel.resetAllData { }
+                }) { Text("Réinitialiser", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) { Text("Annuler") }
+            },
+        )
     }
 }

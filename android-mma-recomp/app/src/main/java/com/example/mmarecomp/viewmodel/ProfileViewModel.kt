@@ -6,15 +6,20 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MealRepository
+import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.data.ProfileRepository
+import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.Profile
 import com.example.mmarecomp.model.ProfileUpdate
 import com.example.mmarecomp.util.CsvExporter
+import com.example.mmarecomp.util.CsvImporter
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.toFriendlyMessage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
@@ -23,6 +28,8 @@ class ProfileViewModel(
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val mealRepository: MealRepository = MealRepository(),
     private val weighInRepository: WeighInRepository = WeighInRepository(),
+    private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
 ) : ViewModel() {
     var profile by mutableStateOf<Profile?>(null)
         private set
@@ -35,6 +42,8 @@ class ProfileViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var isExporting by mutableStateOf(false)
+        private set
+    var isResetting by mutableStateOf(false)
         private set
 
     fun load() {
@@ -107,6 +116,56 @@ class ProfileViewModel(
             }
         } finally {
             isExporting = false
+        }
+    }
+
+    /** Importe les pesées d'un CSV au format d'export de l'app — les
+     *  entrées valides sont upsertées (une pesée du même jour/type existante
+     *  est remplacée, jamais dupliquée), les lignes invalides sont
+     *  simplement ignorées. Renvoie (nombre importé, nombre ignoré). */
+    suspend fun importWeighInsCsv(csv: String): Pair<Int, Int> {
+        val result = CsvImporter.parseWeighIns(csv)
+        var imported = 0
+        for (newWeighIn in result.parsed) {
+            try {
+                weighInRepository.log(newWeighIn)
+                imported++
+            } catch (e: Exception) {
+                // Best-effort : une ligne qui échoue à l'insertion (ex. date
+                // invalide côté serveur) ne doit pas bloquer les suivantes.
+            }
+        }
+        return imported to (result.skipped + (result.parsed.size - imported))
+    }
+
+    /** Supprime tout l'historique loggué (séances, MMA, repas, pesées, split
+     *  programmé) pour repartir de zéro — le profil (objectifs, phase,
+     *  notes coach) n'est pas touché, ce n'est pas une suppression de
+     *  compte. Toujours précédé d'une confirmation côté écran. */
+    fun resetAllData(onResult: (Boolean) -> Unit) {
+        isResetting = true
+        errorMessage = null
+        viewModelScope.launch {
+            try {
+                coroutineScope {
+                    val workoutsDeferred = async { workoutRepository.deleteAll(userId) }
+                    val mealsDeferred = async { mealRepository.deleteAll(userId) }
+                    val weighInsDeferred = async { weighInRepository.deleteAll(userId) }
+                    val trainingPlanDeferred = async { trainingPlanRepository.deleteAll(userId) }
+                    val mmaSessionsDeferred = async { mmaSessionRepository.deleteAll(userId) }
+                    workoutsDeferred.await()
+                    mealsDeferred.await()
+                    weighInsDeferred.await()
+                    trainingPlanDeferred.await()
+                    mmaSessionsDeferred.await()
+                }
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = e.toFriendlyMessage("Impossible de réinitialiser toutes les données.")
+                onResult(false)
+            } finally {
+                isResetting = false
+            }
         }
     }
 }

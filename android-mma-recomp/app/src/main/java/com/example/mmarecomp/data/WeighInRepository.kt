@@ -4,6 +4,7 @@ import com.example.mmarecomp.model.NewWeighIn
 import com.example.mmarecomp.model.WeighIn
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.eq
 import io.github.jan.supabase.postgrest.query.filter.gte
 
 class WeighInRepository {
@@ -23,4 +24,8 @@ class WeighInRepository {
         client.postgrest.from("weigh_ins")
             .upsert(weighIn, onConflict = "user_id,date,type") { select() }
             .decodeSingle()
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("weigh_ins").delete { filter { eq("user_id", userId) } }
+    }
 }

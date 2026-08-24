@@ -36,4 +36,8 @@ class MealRepository {
     suspend fun delete(id: String) {
         client.postgrest.from("meals").delete { filter { eq("id", id) } }
     }
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("meals").delete { filter { eq("user_id", userId) } }
+    }
 }

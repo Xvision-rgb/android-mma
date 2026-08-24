@@ -25,4 +25,8 @@ class TrainingPlanRepository {
         client.postgrest.from("training_plan")
             .upsert(day, onConflict = "user_id,jour_semaine,phase")
     }
+
+    suspend fun deleteAll(userId: String) {
+        client.postgrest.from("training_plan").delete { filter { eq("user_id", userId) } }
+    }
 }
