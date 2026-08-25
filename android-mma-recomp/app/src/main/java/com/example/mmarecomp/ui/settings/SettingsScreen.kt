@@ -121,7 +121,7 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
                 ThemeMode.entries.forEachIndexed { index, mode ->
                     SegmentedButton(
                         selected = ThemePreference.mode == mode,
-                        onClick = { ThemePreference.setMode(mode) },
+                        onClick = { ThemePreference.updateMode(mode) },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = ThemeMode.entries.size),
                     ) { Text(mode.label) }
                 }
