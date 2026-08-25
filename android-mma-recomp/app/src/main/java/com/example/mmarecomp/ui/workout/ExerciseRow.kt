@@ -48,14 +48,14 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = exercice.series.toString(),
-                onValueChange = { onChange(exercice.copy(series = it.toIntOrNull() ?: exercice.series)) },
+                onValueChange = { onChange(exercice.copy(series = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.series)) },
                 label = { Text("Séries") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
             )
             OutlinedTextField(
                 value = exercice.reps.toString(),
-                onValueChange = { onChange(exercice.copy(reps = it.toIntOrNull() ?: exercice.reps)) },
+                onValueChange = { onChange(exercice.copy(reps = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.reps)) },
                 label = { Text("Reps") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),

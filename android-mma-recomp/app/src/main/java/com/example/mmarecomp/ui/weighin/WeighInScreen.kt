@@ -101,19 +101,28 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                     }
                     if (showHistory) {
                         viewModel.history.sortedByDescending { it.date }.take(20).forEach { entry ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(
-                                    "${entry.date} · ${entry.type.label}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(
-                                    "${entry.poidsKg} kg" + (entry.bfPct?.let { " · ${Formatting.oneDecimal(it)}%" } ?: ""),
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        "${entry.date} · ${entry.type.label}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        "${entry.poidsKg} kg" + (entry.bfPct?.let { " · ${Formatting.oneDecimal(it)}%" } ?: ""),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                                if (entry.contexte.hasAnyFlag) {
+                                    Text(
+                                        entry.contexte.flagLabels.joinToString(" · "),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }
@@ -154,14 +163,15 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         item {
-            val poidsInvalide = viewModel.poidsKg.isNotBlank() && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() == null
+            val poidsValeur = viewModel.poidsKg.replace(",", ".").toDoubleOrNull()
+            val poidsInvalide = viewModel.poidsKg.isNotBlank() && (poidsValeur == null || poidsValeur < 20 || poidsValeur > 400)
             OutlinedTextField(
                 value = viewModel.poidsKg,
                 onValueChange = { viewModel.poidsKg = it },
                 label = { Text("Poids (kg)") },
                 isError = poidsInvalide,
                 supportingText = if (poidsInvalide) {
-                    { Text("Entre un nombre valide, ex. 82.5") }
+                    { Text("Entre un poids réaliste, ex. 82.5") }
                 } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
@@ -217,7 +227,8 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                             }
                         }
                     },
-                    enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
+                    enabled = !viewModel.isSaving &&
+                        (viewModel.poidsKg.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it in 20.0..400.0 },
                     modifier = Modifier.weight(1f),
                 ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
                 TextButton(onClick = { viewModel.resetForm() }) { Text("Vider") }

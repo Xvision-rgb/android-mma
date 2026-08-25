@@ -20,8 +20,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -106,6 +111,21 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                if (viewModel.planThisWeek.isNotEmpty()) {
+                    var showProgram by remember { mutableStateOf(false) }
+                    TextButton(onClick = { showProgram = !showProgram }) {
+                        Text(if (showProgram) "Masquer le programme" else "Voir le programme de la semaine")
+                    }
+                    if (showProgram) {
+                        viewModel.planThisWeek.sortedBy { it.jourSemaine }.forEach { day ->
+                            Text(
+                                "${com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: ""} : ${day.type.label}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
         }

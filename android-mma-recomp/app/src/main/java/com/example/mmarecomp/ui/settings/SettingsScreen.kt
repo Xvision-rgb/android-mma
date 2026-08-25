@@ -75,8 +75,8 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
         item { Text("Objectifs", style = MaterialTheme.typography.titleMedium) }
 
         item {
-            val poidsInvalide = viewModel.poidsObjectifKg.isNotBlank() &&
-                viewModel.poidsObjectifKg.replace(",", ".").toDoubleOrNull() == null
+            val poidsValeur = viewModel.poidsObjectifKg.replace(",", ".").toDoubleOrNull()
+            val poidsInvalide = viewModel.poidsObjectifKg.isNotBlank() && (poidsValeur == null || poidsValeur < 20 || poidsValeur > 400)
             OutlinedTextField(
                 value = viewModel.poidsObjectifKg,
                 onValueChange = { viewModel.poidsObjectifKg = it },
