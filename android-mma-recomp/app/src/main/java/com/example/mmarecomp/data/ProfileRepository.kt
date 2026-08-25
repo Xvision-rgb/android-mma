@@ -3,7 +3,6 @@ package com.example.mmarecomp.data
 import com.example.mmarecomp.model.Profile
 import com.example.mmarecomp.model.ProfileUpdate
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.filter.eq
 
 class ProfileRepository {
     private val client = SupabaseProvider.client

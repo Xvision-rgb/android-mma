@@ -5,7 +5,6 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.TrainingPlanDay
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.query.filter.eq
 
 class TrainingPlanRepository {
     private val client = SupabaseProvider.client
@@ -23,6 +22,8 @@ class TrainingPlanRepository {
 
     suspend fun upsert(day: NewTrainingPlanDay) {
         client.postgrest.from("training_plan")
-            .upsert(day, onConflict = "user_id,jour_semaine,phase")
+            .upsert(day) {
+                onConflict = "user_id,jour_semaine,phase"
+            }
     }
 }
