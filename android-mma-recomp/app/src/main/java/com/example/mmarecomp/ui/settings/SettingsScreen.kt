@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -23,6 +24,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.ThemeMode
 import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -100,7 +103,7 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
 
         item {
@@ -147,8 +150,22 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         item { HorizontalDivider() }
 
         item {
-            OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
+            var showSignOutConfirm by remember { mutableStateOf(false) }
+            OutlinedButton(onClick = { showSignOutConfirm = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Se déconnecter", color = MaterialTheme.colorScheme.error)
+            }
+            if (showSignOutConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showSignOutConfirm = false },
+                    title = { Text("Se déconnecter ?") },
+                    text = { Text("Tes données restent sauvegardées, tu pourras te reconnecter à tout moment.") },
+                    confirmButton = {
+                        TextButton(onClick = { showSignOutConfirm = false; onSignOut() }) { Text("Se déconnecter") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSignOutConfirm = false }) { Text("Annuler") }
+                    },
+                )
             }
         }
     }

@@ -47,7 +47,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -56,7 +56,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Dashboard", style = MaterialTheme.typography.titleLarge)
+                val hour = java.time.LocalTime.now().hour
+                val greeting = when {
+                    hour < 12 -> "Bonjour"
+                    hour < 18 -> "Bon après-midi"
+                    else -> "Bonsoir"
+                }
+                Text(greeting, style = MaterialTheme.typography.titleLarge)
                 IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
                     if (viewModel.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp))
@@ -95,6 +101,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
             DashCard {
                 Text("Nutrition", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${viewModel.avgCaloriesLast7Days} kcal/jour (moy. 7j)", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${viewModel.mealsLoggedToday} repas loggé(s) aujourd'hui",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 viewModel.todayTarget?.let { target ->
                     Text(
                         "Cible aujourd'hui : ${target.caloriesCible} kcal · ${target.proteinesCibleG.toInt()}g protéines",

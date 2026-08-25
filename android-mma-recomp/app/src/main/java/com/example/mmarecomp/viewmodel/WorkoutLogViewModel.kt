@@ -36,11 +36,15 @@ class WorkoutLogViewModel(
 
     /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
     fun loadPlan(phase: Phase) {
+        errorMessage = null
         viewModelScope.launch {
             val jour = DateUtils.weekdayIso(DateUtils.string(date))
-            val plan = runCatching { trainingPlanRepository.fetchWeek(phase) }
-                .getOrNull()
-                ?.firstOrNull { it.jourSemaine == jour } ?: return@launch
+            val plan = try {
+                trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
+            } catch (e: Exception) {
+                errorMessage = "Impossible de charger le plan de séance."
+                return@launch
+            } ?: return@launch
 
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
             exercices = plan.exercices.map { it.toLogged() }
@@ -53,6 +57,27 @@ class WorkoutLogViewModel(
 
     fun removeExercise(index: Int) {
         exercices = exercices.filterIndexed { i, _ -> i != index }
+    }
+
+    /** Réinsère un exercice supprimé par erreur, à sa position d'origine
+     *  (ou en fin de liste si l'index n'est plus valide). */
+    fun restoreExercise(index: Int, exercice: LoggedExercise) {
+        val safeIndex = index.coerceIn(0, exercices.size)
+        exercices = exercices.toMutableList().also { it.add(safeIndex, exercice) }
+    }
+
+    fun moveExerciseUp(index: Int) {
+        if (index <= 0) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index - 1]; it[index - 1] = it[index]; it[index] = tmp
+        }
+    }
+
+    fun moveExerciseDown(index: Int) {
+        if (index >= exercices.size - 1) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index + 1]; it[index + 1] = it[index]; it[index] = tmp
+        }
     }
 
     fun updateExercise(index: Int, updated: LoggedExercise) {

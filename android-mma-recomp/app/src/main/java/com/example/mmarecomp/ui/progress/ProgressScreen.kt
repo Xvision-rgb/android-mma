@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.CsvExport
 import com.example.mmarecomp.viewmodel.ProgressViewModel
@@ -40,6 +41,10 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
+
+        viewModel.errorMessage?.let { error ->
+            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
+        }
 
         if (viewModel.weighIns.isNotEmpty()) {
             item {

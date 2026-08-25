@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
@@ -65,11 +67,29 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
             item { SoftAlertBanner("Poids stable mais tu progresses — recomposition en cours 💪") }
         }
+        viewModel.daysSinceLastMorningEntry?.let { days ->
+            item {
+                val label = when (days) {
+                    0L -> "Dernière pesée : aujourd'hui"
+                    1L -> "Dernière pesée : hier"
+                    else -> "Dernière pesée : il y a $days jours"
+                }
+                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
 
         item { HorizontalDivider() }
         item { Text("Nouvelle pesée", style = MaterialTheme.typography.titleMedium) }
 
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
+
+        if (viewModel.history.any { it.type == viewModel.type }) {
+            item {
+                TextButton(onClick = { viewModel.prefillFromLastEntry() }) {
+                    Text("Reprendre les valeurs de la dernière pesée")
+                }
+            }
+        }
 
         item {
             var expanded by remember { mutableStateOf(false) }
@@ -100,16 +120,26 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 supportingText = if (poidsInvalide) {
                     { Text("Entre un nombre valide, ex. 82.5") }
                 } else null,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
                 value = viewModel.bfPct,
                 onValueChange = { viewModel.bfPct = it },
                 label = { Text("% masse grasse (optionnel)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -125,7 +155,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.loadHistory() }) }
         }
 
         item {

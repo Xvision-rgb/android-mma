@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -31,6 +34,14 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
             value = exercice.nom,
             onValueChange = { onChange(exercice.copy(nom = it)) },
             label = { Text("Nom de l'exercice") },
+            trailingIcon = {
+                if (exercice.nom.isNotEmpty()) {
+                    IconButton(onClick = { onChange(exercice.copy(nom = "")) }) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Effacer le nom de l'exercice")
+                    }
+                }
+            },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -72,7 +83,14 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Toutes les reps faites proprement", style = MaterialTheme.typography.bodySmall)
+            Column(modifier = Modifier.weight(1f, fill = false)) {
+                Text("Toutes les reps faites proprement", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "Sans compensation ni forme dégradée sur la dernière série",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Switch(checked = exercice.propre, onCheckedChange = { onChange(exercice.copy(propre = it)) })
         }
 
