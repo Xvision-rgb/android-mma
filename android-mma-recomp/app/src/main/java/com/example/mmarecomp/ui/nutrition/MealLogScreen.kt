@@ -97,6 +97,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var selectedFood by remember { mutableStateOf<Food?>(null) }
     var quantiteG by remember { mutableStateOf("100") }
     var showSaved by remember { mutableStateOf(false) }
+    var showChangeTarget by remember { mutableStateOf(false) }
 
     fun applyFood(food: Food, grams: String) {
         val g = grams.replace(",", ".").toDoubleOrNull() ?: return
@@ -119,7 +120,6 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         val target = viewModel.target
-        var showChangeTarget by remember { mutableStateOf(false) }
         if (target != null) {
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
