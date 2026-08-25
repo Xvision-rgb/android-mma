@@ -64,6 +64,26 @@ class DashboardViewModel(
 
     val mealsLoggedToday: Int get() = mealsLast7Days.count { it.date == DateUtils.today() }
 
+    /** Nombre de jours consécutifs (jusqu'à aujourd'hui) avec au moins une
+     *  activité loggée (repas, séance ou pesée). Purement positif — ne
+     *  redescend jamais à un nombre négatif ni n'affiche de message de
+     *  "série brisée" : on compte juste ce qui est là. */
+    val activityStreakDays: Int
+        get() {
+            val loggedDates = buildSet {
+                addAll(mealsLast7Days.map { it.date })
+                addAll(workoutsThisWeek.map { it.date })
+                addAll(morningWeighIns.map { it.date })
+            }
+            var streak = 0
+            var cursor = java.time.LocalDate.now()
+            while (loggedDates.contains(DateUtils.string(cursor))) {
+                streak++
+                cursor = cursor.minusDays(1)
+            }
+            return streak
+        }
+
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
 

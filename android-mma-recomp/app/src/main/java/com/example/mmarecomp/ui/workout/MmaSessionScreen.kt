@@ -1,5 +1,9 @@
 package com.example.mmarecomp.ui.workout
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,14 +19,28 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
     val parsed = remember(viewModel.wodContent) { viewModel.parsedMovements }
+    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    var showSaved by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -30,6 +48,8 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Text("Log MMA", style = MaterialTheme.typography.titleLarge) }
+
+        item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
             OutlinedTextField(
@@ -43,7 +63,7 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
 
         if (parsed.isNotEmpty()) {
             item {
-                Text("Mouvements détectés", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Mouvements détectés (${parsed.size})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -53,6 +73,9 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
                             onClick = {},
                             label = { Text(if (movement.quantite != null) "${movement.nom} ×${movement.quantite}" else movement.nom) },
                         )
+                    }
+                    if (parsed.size > 4) {
+                        FilterChip(selected = false, onClick = {}, label = { Text("+${parsed.size - 4} autres") })
                     }
                 }
             }
@@ -70,10 +93,14 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         }
 
         item {
-            Text("Ressenti", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Ressenti (1 = très difficile, 5 = facile)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.fillMaxWidth().semantics {
+                    contentDescription = "Ressenti : ${viewModel.ressenti} sur 5"
+                },
+            ) {
                 (1..5).forEach { value ->
                     SegmentedButton(
                         selected = viewModel.ressenti == value,
@@ -94,16 +121,34 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item {
+                ErrorBanner(error, onRetry = { viewModel.save { saved -> if (saved) onSaved() } })
+            }
         }
 
         item {
             Button(
-                onClick = { viewModel.save { saved -> if (saved) onSaved() } },
+                onClick = {
+                    viewModel.save { saved ->
+                        showSaved = saved
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            scope.launch {
+                                kotlinx.coroutines.delay(500)
+                                onSaved()
+                            }
+                        }
+                    }
+                },
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance MMA")
+            }
+        }
+        item {
+            AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Séance MMA enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
             }
         }
     }
