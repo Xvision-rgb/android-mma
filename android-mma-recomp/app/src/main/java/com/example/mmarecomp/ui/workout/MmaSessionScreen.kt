@@ -18,6 +18,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,10 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         item { Text("Log MMA", style = MaterialTheme.typography.titleLarge) }
 
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
+
+        item {
+            TextButton(onClick = { viewModel.resetForm() }) { Text("Vider le formulaire") }
+        }
 
         item {
             OutlinedTextField(

@@ -30,6 +30,7 @@ fun RootScreen() {
         is SessionStatus.Authenticated -> {
             MainNav(
                 userId = status.session.user?.id.orEmpty(),
+                userEmail = status.session.user?.email.orEmpty(),
                 authRepository = authRepository,
                 currentPhase = currentPhase,
                 onPhaseChange = { currentPhase = it },

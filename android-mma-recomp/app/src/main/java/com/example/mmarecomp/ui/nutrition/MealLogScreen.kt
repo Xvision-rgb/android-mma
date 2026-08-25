@@ -395,25 +395,31 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         item {
-            Button(
-                onClick = {
-                    viewModel.logMeal(
-                        slot = selectedSlot,
-                        calories = calories.toIntOrNull() ?: 0,
-                        proteinesG = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                        glucidesG = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                        lipidesG = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                        description = description,
-                    ) { saved ->
-                        showSaved = saved
-                        if (saved) {
-                            calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
-                            scope.launch { listState.animateScrollToItem(0) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        viewModel.logMeal(
+                            slot = selectedSlot,
+                            calories = calories.toIntOrNull() ?: 0,
+                            proteinesG = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                            glucidesG = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                            lipidesG = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                            description = description,
+                        ) { saved ->
+                            showSaved = saved
+                            if (saved) {
+                                calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
+                                scope.launch { listState.animateScrollToItem(0) }
+                            }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Enregistrer ce repas") }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) { Text("Enregistrer ce repas") }
+                TextButton(onClick = {
+                    calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
+                    selectedFood = null; viewModel.foodQuery = ""
+                }) { Text("Vider") }
+            }
         }
         item {
             AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {

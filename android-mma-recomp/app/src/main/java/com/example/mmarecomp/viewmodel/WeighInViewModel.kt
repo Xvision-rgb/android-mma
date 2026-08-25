@@ -78,6 +78,15 @@ class WeighInViewModel(
         bfPct = last.bfPct?.toString() ?: ""
     }
 
+    /** Vide le formulaire de saisie (garde la date et le type sélectionnés). */
+    fun resetForm() {
+        poidsKg = ""
+        bfPct = ""
+        creatineRecente = false
+        alcoolRecent = false
+        postTraining = false
+    }
+
     fun save(onResult: (Boolean) -> Unit) {
         val poids = poidsKg.replace(",", ".").toDoubleOrNull()
         if (poids == null) {

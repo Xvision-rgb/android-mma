@@ -43,7 +43,7 @@ import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 
 @Composable
-fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, onSignOut: () -> Unit) {
+fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved: (Phase) -> Unit, onSignOut: () -> Unit) {
     LaunchedEffect(Unit) { viewModel.load() }
 
     val context = LocalContext.current
@@ -63,6 +63,15 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Text("Réglages", style = MaterialTheme.typography.titleLarge) }
+        if (userEmail.isNotBlank()) {
+            item {
+                Text(
+                    "Connecté en tant que $userEmail",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item { Text("Objectifs", style = MaterialTheme.typography.titleMedium) }
 
         item {

@@ -68,7 +68,7 @@ private val tabs = listOf(
 )
 
 @Composable
-fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
+fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
     var fabExpanded by remember { mutableStateOf(false) }
@@ -165,6 +165,7 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
                 val vm = remember(userId) { ProfileViewModel(userId) }
                 SettingsScreen(
                     vm,
+                    userEmail = userEmail,
                     onPhaseSaved = onPhaseChange,
                     onSignOut = { scope.launch { authRepository.signOut() } },
                 )
