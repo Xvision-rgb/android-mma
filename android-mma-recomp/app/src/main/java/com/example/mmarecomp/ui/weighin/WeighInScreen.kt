@@ -23,6 +23,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
@@ -37,6 +39,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     var showSaved by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -126,7 +129,10 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 onClick = {
                     viewModel.save { saved ->
                         showSaved = saved
-                        if (saved) { viewModel.poidsKg = ""; viewModel.bfPct = "" }
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.poidsKg = ""; viewModel.bfPct = ""
+                        }
                     }
                 },
                 enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
