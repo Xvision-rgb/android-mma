@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.FoodRepository
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
+import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.NewMeal
 import com.example.mmarecomp.model.NewNutritionTarget
@@ -22,6 +24,7 @@ import kotlinx.coroutines.launch
 class MealLogViewModel(
     private val mealRepository: MealRepository = MealRepository(),
     private val targetRepository: NutritionTargetRepository = NutritionTargetRepository(),
+    private val foodRepository: FoodRepository = FoodRepository(),
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var mealsForDay by mutableStateOf<List<Meal>>(emptyList())
@@ -32,6 +35,21 @@ class MealLogViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+
+    // Bibliothèque d'aliments préchargée (recherche par nom + calcul des
+    // macros au grammage saisi, pour pré-remplir le formulaire de repas).
+    var foods by mutableStateOf<List<Food>>(emptyList())
+        private set
+    var foodQuery by mutableStateOf("")
+    val filteredFoods: List<Food>
+        get() = if (foodQuery.isBlank()) emptyList()
+        else foods.filter { it.nom.contains(foodQuery, ignoreCase = true) }.take(8)
+
+    fun loadFoods() {
+        viewModelScope.launch {
+            foods = runCatching { foodRepository.fetchAll() }.getOrDefault(emptyList())
+        }
+    }
 
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
     val totalProteines: Double get() = mealsForDay.sumOf { it.proteinesG }
