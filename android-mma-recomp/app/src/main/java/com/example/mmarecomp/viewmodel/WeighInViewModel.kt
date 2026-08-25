@@ -87,6 +87,42 @@ class WeighInViewModel(
         postTraining = false
     }
 
+    /** Suppression optimiste d'une pesée de l'historique, avec restauration
+     *  possible (pattern undo côté écran, comme repas/séances). */
+    fun deleteFromHistory(weighIn: WeighIn, onDeleted: () -> Unit) {
+        val previous = history
+        history = history.filterNot { it.id == weighIn.id }
+        viewModelScope.launch {
+            try {
+                repository.delete(weighIn.id)
+                onDeleted()
+            } catch (e: Exception) {
+                history = previous
+                errorMessage = "Impossible de supprimer cette pesée."
+            }
+        }
+    }
+
+    /** Réenregistre une pesée supprimée par erreur (action "Annuler" du snackbar). */
+    fun restoreToHistory(weighIn: WeighIn) {
+        viewModelScope.launch {
+            val restored = NewWeighIn(
+                date = weighIn.date,
+                heure = weighIn.heure,
+                type = weighIn.type,
+                poidsKg = weighIn.poidsKg,
+                bfPct = weighIn.bfPct,
+                contexte = weighIn.contexte,
+            )
+            try {
+                val saved = repository.log(restored)
+                history = (history.filterNot { it.date == saved.date && it.type == saved.type }) + saved
+            } catch (e: Exception) {
+                errorMessage = "Impossible de restaurer cette pesée."
+            }
+        }
+    }
+
     fun save(onResult: (Boolean) -> Unit) {
         val poids = poidsKg.replace(",", ".").toDoubleOrNull()
         if (poids == null) {

@@ -151,6 +151,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                viewModel.yesterdayCalories?.let { hier ->
+                    Text(
+                        "Hier : $hier kcal — juste un repère, pas une comparaison",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 viewModel.todayTarget?.let { target ->
                     Text(
                         "Cible aujourd'hui : ${target.caloriesCible} kcal · ${target.proteinesCibleG.toInt()}g protéines",
