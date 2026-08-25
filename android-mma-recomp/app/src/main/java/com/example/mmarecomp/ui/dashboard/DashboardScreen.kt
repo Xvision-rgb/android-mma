@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -74,6 +75,19 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
+        }
+        if (viewModel.activityStreakDays >= 2) {
+            item {
+                DashCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                        Text(
+                            "${viewModel.activityStreakDays} jours d'affilée avec au moins une activité loggée",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
         }
         item {
             DashCard {
