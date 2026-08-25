@@ -30,6 +30,7 @@ import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 
@@ -98,9 +99,14 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item { Text("Repas déjà loggés", style = MaterialTheme.typography.titleMedium) }
 
         if (viewModel.mealsForDay.isEmpty()) {
-            item { Text("Aucun repas pour l'instant.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item {
+                EmptyState(
+                    title = "Aucun repas loggé pour l'instant",
+                    subtitle = "Ajoute ton premier repas ci-dessous, ça prend 10 secondes.",
+                )
+            }
         }
-        items(viewModel.mealsForDay) { meal ->
+        items(viewModel.mealsForDay, key = { it.id }) { meal ->
             meal.repasSlot?.let { slot ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(slot.label)
@@ -143,7 +149,16 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        items(viewModel.filteredFoods) { food ->
+        if (viewModel.foodQuery.isNotBlank() && viewModel.filteredFoods.isEmpty()) {
+            item {
+                Text(
+                    "Aucun aliment ne correspond — tu peux saisir les valeurs manuellement ci-dessous.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        items(viewModel.filteredFoods, key = { it.id }) { food ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

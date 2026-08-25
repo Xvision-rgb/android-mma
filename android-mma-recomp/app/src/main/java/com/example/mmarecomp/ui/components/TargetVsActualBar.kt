@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -29,7 +31,11 @@ fun TargetVsActualBar(
     // Jamais rouge / culpabilisant : au pire un orange doux si largement dépassé.
     val barColor = if (ratio > 1.15) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth().semantics {
+            contentDescription = "$label : ${actual.toInt()} sur ${target.toInt()} $unit"
+        },
+    ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.bodyMedium)
             Text(

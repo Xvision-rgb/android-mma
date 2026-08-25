@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
@@ -67,10 +68,9 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         val charges = viewModel.chargeProgressionByExercise
         if (charges.isEmpty()) {
             item {
-                Text(
-                    "Log des séances avec charge réelle pour voir apparaître ta progression ici.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                EmptyState(
+                    title = "Pas encore de progression à afficher",
+                    subtitle = "Log tes séances avec la charge réelle pour la voir apparaître ici.",
                 )
             }
         }

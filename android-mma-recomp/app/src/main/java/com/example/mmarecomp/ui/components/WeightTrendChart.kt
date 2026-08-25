@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.example.mmarecomp.util.TrendPoint
 
 /** N'affiche QUE la moyenne mobile 7 jours — jamais le point brut du jour —
@@ -35,7 +37,20 @@ fun WeightTrendChart(points: List<TrendPoint>, modifier: Modifier = Modifier, li
     val maxV = values.max()
     val range = (maxV - minV).let { if (it < 0.01) 1.0 else it }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    val trendDescription = when {
+        values.size < 2 -> "tendance sur un seul point"
+        values.last() > values.first() -> "tendance en hausse"
+        values.last() < values.first() -> "tendance en baisse"
+        else -> "tendance stable"
+    }
+
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .semantics {
+                contentDescription = "Graphique de tendance, moyenne mobile 7 jours, $trendDescription"
+            },
+    ) {
         val w = size.width
         val h = size.height
         val stepX = if (points.size > 1) w / (points.size - 1) else 0f

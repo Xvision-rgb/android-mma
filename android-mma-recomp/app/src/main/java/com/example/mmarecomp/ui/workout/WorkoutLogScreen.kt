@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 
 @Composable
@@ -90,6 +91,15 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         item { HorizontalDivider() }
         item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
+
+        if (viewModel.exercices.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "Aucun exercice pour l'instant",
+                    subtitle = "Ajoute-en un avec le bouton ci-dessous.",
+                )
+            }
+        }
 
         itemsIndexed(viewModel.exercices) { index, exercice ->
             Column {
