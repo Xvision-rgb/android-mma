@@ -203,6 +203,14 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
+            val volumeTotal = viewModel.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+            if (volumeTotal > 0) {
+                Text(
+                    "Volume estimé : ${volumeTotal.toInt()}kg (séries × reps × charge réelle)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         if (viewModel.exercices.isEmpty()) {

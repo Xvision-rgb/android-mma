@@ -213,6 +213,18 @@ Amélioration continue par petits lots, fusionnés au fur et à mesure :
   exercice dans WorkoutLogScreen, basé sur l'historique déjà chargé.
 - **Rappel repas du soir** (lot 8) : second rappel local opt-in (20h),
   même structure que le rappel pesée.
+- **Suppression pesée + undo** (lot 9) : dernière table sans endpoint de
+  suppression, comblée pour cohérence avec repas/séances.
+- **Record personnel** (lot 9) : badge sur la charge max atteinte par
+  exercice suivi (ProgressScreen).
+- **Repères contextuels non comparatifs** (lot 9) : total calorique d'hier
+  sur le Dashboard, explicitement présenté comme un repère et non une
+  comparaison.
+- **Fenêtre 12 semaines** (lot 10) : ajoutée à ProgressScreen (4/8/12).
+- **Volume d'entraînement estimé** (lot 10) : séries × reps × charge
+  réelle affiché dans WorkoutLogScreen.
+- **Permission notification refusée** (lot 10) : message explicatif au
+  lieu d'un échec silencieux.
 
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.

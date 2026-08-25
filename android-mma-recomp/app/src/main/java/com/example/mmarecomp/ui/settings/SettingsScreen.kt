@@ -50,14 +50,18 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
     var reminderEnabled by remember { mutableStateOf(WeighInReminder.isEnabled(context)) }
     var mealReminderEnabled by remember { mutableStateOf(com.example.mmarecomp.notification.MealReminder.isEnabled(context)) }
     var pendingReminder by remember { mutableStateOf<String?>(null) }
+    var permissionDenied by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) {
+            permissionDenied = false
             when (pendingReminder) {
                 "weighin" -> { reminderEnabled = true; WeighInReminder.setEnabled(context, true) }
                 "meal" -> { mealReminderEnabled = true; com.example.mmarecomp.notification.MealReminder.setEnabled(context, true) }
             }
+        } else {
+            permissionDenied = true
         }
         pendingReminder = null
     }
@@ -152,6 +156,15 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
 
         item { HorizontalDivider() }
         item { Text("Rappels", style = MaterialTheme.typography.titleMedium) }
+        if (permissionDenied) {
+            item {
+                Text(
+                    "Permission de notification refusée — active-la dans les réglages système de l'app pour utiliser les rappels.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Rappel doux pesée du matin (7h30)", style = MaterialTheme.typography.bodyMedium)
