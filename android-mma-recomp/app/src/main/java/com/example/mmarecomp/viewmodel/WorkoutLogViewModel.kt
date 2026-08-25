@@ -33,6 +33,85 @@ class WorkoutLogViewModel(
         private set
     var lastSaved by mutableStateOf<Workout?>(null)
         private set
+    var recentWorkouts by mutableStateOf<List<Workout>>(emptyList())
+        private set
+
+    /** Charge les dernières séances loguées, pour l'historique dépliable. */
+    fun loadRecent() {
+        viewModelScope.launch {
+            recentWorkouts = try {
+                workoutRepository.fetchRecent()
+            } catch (e: Exception) {
+                errorMessage = "Impossible de charger l'historique des séances."
+                emptyList()
+            }
+        }
+    }
+
+    /** Suppression optimiste d'une séance de l'historique, avec restauration
+     *  possible via le callback (pattern undo côté écran). */
+    fun deleteFromHistory(workout: Workout, onDeleted: () -> Unit) {
+        val previous = recentWorkouts
+        recentWorkouts = recentWorkouts.filterNot { it.id == workout.id }
+        viewModelScope.launch {
+            try {
+                workoutRepository.delete(workout.id)
+                onDeleted()
+            } catch (e: Exception) {
+                recentWorkouts = previous
+                errorMessage = "Impossible de supprimer cette séance."
+            }
+        }
+    }
+
+    /** Réenregistre une séance supprimée par erreur (action "Annuler" du snackbar). */
+    fun restoreToHistory(workout: Workout) {
+        viewModelScope.launch {
+            val restored = NewWorkout(
+                date = workout.date,
+                type = workout.type,
+                exercices = workout.exercices,
+                dureeMin = workout.dureeMin,
+                notes = workout.notes,
+            )
+            try {
+                val saved = workoutRepository.log(restored)
+                recentWorkouts = (recentWorkouts + saved).sortedByDescending { it.date }
+            } catch (e: Exception) {
+                errorMessage = "Impossible de restaurer cette séance."
+            }
+        }
+    }
+
+    /** Vide le formulaire en cours (garde la date) — pour repartir d'une
+     *  séance vierge sans naviguer ailleurs et revenir. */
+    fun resetForm() {
+        exercices = emptyList()
+        dureeMin = ""
+        notes = ""
+    }
+
+    /** Reprend le type/exercices/durée de la séance loguée hier, si elle
+     *  existe. Ne fait rien sinon. */
+    fun duplicateFromYesterday(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val yesterday = DateUtils.string(date.minusDays(1))
+                val match = workoutRepository.fetchWeek(yesterday).firstOrNull { it.date == yesterday }
+                if (match == null) {
+                    onResult(false)
+                    return@launch
+                }
+                type = match.type
+                exercices = match.exercices
+                dureeMin = match.dureeMin?.toString() ?: ""
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = "Impossible de reprendre la séance d'hier."
+                onResult(false)
+            }
+        }
+    }
 
     /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
     fun loadPlan(phase: Phase) {

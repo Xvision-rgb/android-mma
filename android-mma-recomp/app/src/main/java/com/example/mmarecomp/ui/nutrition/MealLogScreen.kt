@@ -283,7 +283,22 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (viewModel.foodQuery.isNotBlank() && viewModel.filteredFoods.isEmpty()) {
+        if (viewModel.foodCategories.isNotEmpty()) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    viewModel.foodCategories.forEach { category ->
+                        FilterChip(
+                            selected = viewModel.foodCategoryFilter == category,
+                            onClick = {
+                                viewModel.foodCategoryFilter = if (viewModel.foodCategoryFilter == category) null else category
+                            },
+                            label = { Text(category) },
+                        )
+                    }
+                }
+            }
+        }
+        if ((viewModel.foodQuery.isNotBlank() || viewModel.foodCategoryFilter != null) && viewModel.filteredFoods.isEmpty()) {
             item {
                 Text(
                     "Aucun aliment ne correspond — tu peux saisir les valeurs manuellement ci-dessous.",
