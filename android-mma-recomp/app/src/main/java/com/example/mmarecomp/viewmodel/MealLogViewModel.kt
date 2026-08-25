@@ -211,9 +211,4 @@ class MealLogViewModel(
             }
         }
     }
-
-    /** Alerte douce : plusieurs jours d'affilée nettement en dessous de la
-     *  cible. Ne culpabilise jamais un jour isolé en dessous de l'objectif. */
-    fun softUnderTargetAlert(recentDailyTotals: List<Triple<String, Int, Int>>): Boolean =
-        NutritionTargetCalculator.softUnderTargetAlert(recentDailyTotals)
 }
