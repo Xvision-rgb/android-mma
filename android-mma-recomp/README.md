@@ -228,6 +228,12 @@ Amélioration continue par petits lots, fusionnés au fur et à mesure :
 - **Cible nutrition personnalisée** (lot 11) : calories/protéines cible
   ajustables librement dans MealLogScreen, en plus des préréglages
   training/repos.
+- **Historique des séances MMA** (lot 13) : dernier écran de log sans
+  historique/suppression, comblé (MmaSessionRepository.delete ajouté).
+- **Modifier le programme depuis le Dashboard** (lot 14) : le type de
+  séance de chaque jour du split hebdo est modifiable directement dans la
+  section "Voir le programme de la semaine" — TrainingPlanRepository.upsert
+  existait déjà côté données mais n'avait aucune UI pour l'appeler.
 
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.
