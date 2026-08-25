@@ -20,4 +20,8 @@ class MmaSessionRepository {
         client.postgrest.from("mma_sessions")
             .insert(session) { select() }
             .decodeSingle()
+
+    suspend fun delete(id: String) {
+        client.postgrest.from("mma_sessions").delete { filter { eq("id", id) } }
+    }
 }
