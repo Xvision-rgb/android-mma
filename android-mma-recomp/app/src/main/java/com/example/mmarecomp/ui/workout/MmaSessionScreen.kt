@@ -22,6 +22,8 @@ import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 
 @Composable
 fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
+    val parsed = remember(viewModel.wodContent) { viewModel.parsedMovements }
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -39,7 +41,6 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
             )
         }
 
-        val parsed = remember(viewModel.wodContent) { viewModel.parsedMovements }
         if (parsed.isNotEmpty()) {
             item {
                 Text("Mouvements détectés", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

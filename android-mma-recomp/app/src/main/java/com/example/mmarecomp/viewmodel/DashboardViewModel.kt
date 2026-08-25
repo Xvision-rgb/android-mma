@@ -86,7 +86,7 @@ class DashboardViewModel(
 
                 planThisWeek = trainingPlanRepository.fetchWeek(phase)
                 workoutsThisWeek = workoutRepository.fetchWeek(mondayOfWeek)
-                mealsLast7Days = mealRepository.fetch(sevenDaysAgo)
+                mealsLast7Days = mealRepository.fetchSince(sevenDaysAgo)
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
             } catch (e: Exception) {

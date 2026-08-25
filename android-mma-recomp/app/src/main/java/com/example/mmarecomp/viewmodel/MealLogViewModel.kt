@@ -48,7 +48,7 @@ class MealLogViewModel(
         viewModelScope.launch {
             val dateString = DateUtils.string(date)
             try {
-                mealsForDay = mealRepository.fetch(forDate = dateString)
+                mealsForDay = mealRepository.fetchForDate(forDate = dateString)
                 target = targetRepository.fetch(forDate = dateString)
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger les repas du jour."

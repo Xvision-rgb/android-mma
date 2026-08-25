@@ -4,7 +4,6 @@ import com.example.mmarecomp.model.NewWeighIn
 import com.example.mmarecomp.model.WeighIn
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.query.filter.gte
 
 class WeighInRepository {
     private val client = SupabaseProvider.client
@@ -21,6 +20,9 @@ class WeighInRepository {
      *  remplace la précédente au lieu de dupliquer. */
     suspend fun log(weighIn: NewWeighIn): WeighIn =
         client.postgrest.from("weigh_ins")
-            .upsert(weighIn, onConflict = "user_id,date,type") { select() }
+            .upsert(weighIn) {
+                onConflict = "user_id,date,type"
+                select()
+            }
             .decodeSingle()
 }

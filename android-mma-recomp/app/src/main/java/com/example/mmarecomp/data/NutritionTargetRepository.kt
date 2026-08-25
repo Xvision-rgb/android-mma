@@ -3,7 +3,6 @@ package com.example.mmarecomp.data
 import com.example.mmarecomp.model.NewNutritionTarget
 import com.example.mmarecomp.model.NutritionTarget
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.filter.eq
 
 class NutritionTargetRepository {
     private val client = SupabaseProvider.client
@@ -16,6 +15,9 @@ class NutritionTargetRepository {
 
     suspend fun set(target: NewNutritionTarget): NutritionTarget =
         client.postgrest.from("nutrition_targets")
-            .upsert(target, onConflict = "user_id,date") { select() }
+            .upsert(target) {
+                onConflict = "user_id,date"
+                select()
+            }
             .decodeSingle()
 }

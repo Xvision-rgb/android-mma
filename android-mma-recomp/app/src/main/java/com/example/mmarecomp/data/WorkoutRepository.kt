@@ -4,8 +4,6 @@ import com.example.mmarecomp.model.NewWorkout
 import com.example.mmarecomp.model.Workout
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.query.filter.eq
-import io.github.jan.supabase.postgrest.query.filter.gte
 
 class WorkoutRepository {
     private val client = SupabaseProvider.client
