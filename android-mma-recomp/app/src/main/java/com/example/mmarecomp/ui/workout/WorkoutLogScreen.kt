@@ -113,7 +113,11 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.removeExercise(index) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Retirer cet exercice")
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Retirer cet exercice",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
                 }
