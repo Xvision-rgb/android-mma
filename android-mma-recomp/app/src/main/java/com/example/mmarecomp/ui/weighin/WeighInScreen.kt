@@ -172,10 +172,14 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
         item {
             val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+            val bfInvalide = viewModel.bfPct.isNotBlank() &&
+                (viewModel.bfPct.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it < 0 || it > 60 }
             OutlinedTextField(
                 value = viewModel.bfPct,
                 onValueChange = { viewModel.bfPct = it },
                 label = { Text("% masse grasse (optionnel)") },
+                isError = bfInvalide,
+                supportingText = if (bfInvalide) { { Text("Entre un pourcentage entre 0 et 60") } } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Done,

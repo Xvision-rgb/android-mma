@@ -66,19 +66,27 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         item { Text("Objectifs", style = MaterialTheme.typography.titleMedium) }
 
         item {
+            val poidsInvalide = viewModel.poidsObjectifKg.isNotBlank() &&
+                viewModel.poidsObjectifKg.replace(",", ".").toDoubleOrNull() == null
             OutlinedTextField(
                 value = viewModel.poidsObjectifKg,
                 onValueChange = { viewModel.poidsObjectifKg = it },
                 label = { Text("Poids objectif (kg)") },
+                isError = poidsInvalide,
+                supportingText = if (poidsInvalide) { { Text("Entre un nombre valide, ex. 78") } } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
+            val bfInvalide = viewModel.bfObjectifPct.isNotBlank() &&
+                (viewModel.bfObjectifPct.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it < 0 || it > 60 }
             OutlinedTextField(
                 value = viewModel.bfObjectifPct,
                 onValueChange = { viewModel.bfObjectifPct = it },
                 label = { Text("% BF objectif") },
+                isError = bfInvalide,
+                supportingText = if (bfInvalide) { { Text("Entre un pourcentage entre 0 et 60") } } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )

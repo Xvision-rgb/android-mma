@@ -134,6 +134,13 @@ class WorkoutLogViewModel(
         exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10)
     }
 
+    /** Duplique un exercice juste après lui — pratique pour les supersets
+     *  ou une variante de la même série de mouvements. */
+    fun duplicateExercise(index: Int) {
+        val source = exercices.getOrNull(index) ?: return
+        exercices = exercices.toMutableList().also { it.add(index + 1, source.copy()) }
+    }
+
     fun removeExercise(index: Int) {
         exercices = exercices.filterIndexed { i, _ -> i != index }
     }
