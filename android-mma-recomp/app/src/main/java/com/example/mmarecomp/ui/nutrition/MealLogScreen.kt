@@ -119,9 +119,19 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         val target = viewModel.target
+        var showChangeTarget by remember { mutableStateOf(false) }
         if (target != null) {
             item {
-                Text("Cible du jour", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Cible du jour", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { showChangeTarget = !showChangeTarget }) { Text("Changer") }
+                }
+                if (showChangeTarget) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training); showChangeTarget = false }) { Text("Jour training") }
+                        OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos); showChangeTarget = false }) { Text("Jour repos") }
+                    }
+                }
                 TargetVsActualBar("Calories", viewModel.totalCalories.toDouble(), target.caloriesCible.toDouble(), "kcal")
             }
             item {

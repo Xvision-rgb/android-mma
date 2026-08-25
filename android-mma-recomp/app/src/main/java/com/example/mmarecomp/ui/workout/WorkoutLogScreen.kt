@@ -185,6 +185,15 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
 
         item { HorizontalDivider() }
+        if (viewModel.prefilledFromPlan) {
+            item {
+                Text(
+                    "Pré-rempli depuis ton split programmé — modifie librement si besoin.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item {
             val totalSeries = viewModel.exercices.sumOf { it.series }
             Text(

@@ -80,7 +80,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
             item {
                 DashCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                        Icon(
+                            Icons.Filled.LocalFireDepartment,
+                            contentDescription = "Série d'activité",
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
                         Text(
                             "${viewModel.activityStreakDays} jours d'affilée avec au moins une activité loggée",
                             style = MaterialTheme.typography.bodyMedium,
@@ -96,6 +100,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                     "${viewModel.seancesFaitesCount} faites / ${viewModel.seancesPlanifieesCount} prévues",
                     style = MaterialTheme.typography.titleMedium,
                 )
+                viewModel.todayPlan?.let { plan ->
+                    Text(
+                        "Aujourd'hui : ${plan.type.label}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         item {

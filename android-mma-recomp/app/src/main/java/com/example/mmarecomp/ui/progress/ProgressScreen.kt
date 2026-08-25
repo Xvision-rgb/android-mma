@@ -65,6 +65,25 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                 }
             }
         }
+        if (viewModel.workouts.isNotEmpty()) {
+            item {
+                OutlinedButton(
+                    onClick = {
+                        val csv = CsvExport.workouts(viewModel.workouts)
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_SUBJECT, "Historique séances")
+                            putExtra(Intent.EXTRA_TEXT, csv)
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des séances"))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                    Text("  Exporter l'historique des séances (CSV)")
+                }
+            }
+        }
 
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
