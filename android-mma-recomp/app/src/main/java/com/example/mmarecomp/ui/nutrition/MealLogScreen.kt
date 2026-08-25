@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -178,11 +179,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             }
         }
 
-        // remember évite de refiltrer la liste à chaque recomposition tant que
-        // les repas du jour et le filtre sélectionné n'ont pas changé.
-        val visibleMeals = remember(viewModel.mealsForDay, slotFilter) {
-            viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
-        }
+        val visibleMeals = viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
         if (visibleMeals.isEmpty()) {
             item {
                 EmptyState(
