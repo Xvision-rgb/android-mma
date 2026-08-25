@@ -144,3 +144,36 @@ Supabase ni la logique métier :
 Tout respecte les règles UX non négociables existantes : moyenne mobile 7
 jours uniquement pour le poids, messages toujours positifs sur les
 plateaux, jamais de ton culpabilisant sur les écarts caloriques.
+
+## 8. Améliorations UX — round 2
+
+Deuxième lot de 30 améliorations, complémentaire au premier (§7) :
+
+- **Robustesse réseau** : `ErrorBanner` + "Réessayer" branché sur les cinq
+  écrans de log (pesée, séance, repas, progression, réglages) —
+  `WorkoutLogViewModel.loadPlan` remontait auparavant ses erreurs en
+  silence.
+- **DateField enrichi** : labels relatifs ("Aujourd'hui"/"Hier"), raccourci
+  "Aujourd'hui", et date future bloquée par défaut (log rétroactif
+  uniquement, `maxDate` reste surchargeable).
+- **Répétition intelligente** : reprendre le repas d'hier sur un créneau,
+  reprendre les valeurs de la dernière pesée, répartition indicative
+  calories/protéines par créneau affichée dans le formulaire repas.
+- **Séances** : exercices réordonnables (flèches), suppression avec undo,
+  chips de durée rapide, compteur d'exercices et de séries dans l'en-tête,
+  pastille de couleur par type de séance, texte d'aide sous "reps propres".
+- **Confiance & repères doux** : confirmation avant déconnexion, repère
+  "Dernière pesée : il y a X jours" (jamais le poids brut), badge neutre
+  "✓ atteint" sur `TargetVsActualBar` (jamais de mention négative),
+  message d'accueil contextualisé et compteur de repas loggés aujourd'hui
+  sur le Dashboard.
+- **Clavier & perf** : navigation clavier cohérente (Next/Done + fermeture)
+  sur les derniers champs numériques, liste de repas filtrée mémoïsée
+  (`remember`) pour éviter un refiltre à chaque recomposition.
+- **Contraste états désactivés** : vérifié plutôt que modifié — les
+  `Button`/`OutlinedButton` Material3 appliquent déjà une opacité réduite
+  conforme aux specs d'accessibilité sur leur état `disabled`, pas de
+  changement nécessaire.
+
+Même discipline que le round 1 : aucune modification du schéma Supabase ni
+de la logique métier, règles UX non négociables toujours respectées.

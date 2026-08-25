@@ -156,8 +156,12 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         item { HorizontalDivider() }
         item {
+            val totalSeries = viewModel.exercices.sumOf { it.series }
             Text(
-                if (viewModel.exercices.isEmpty()) "Exercices" else "Exercices (${viewModel.exercices.size})",
+                when {
+                    viewModel.exercices.isEmpty() -> "Exercices"
+                    else -> "Exercices (${viewModel.exercices.size}) · $totalSeries séries au total"
+                },
                 style = MaterialTheme.typography.titleMedium,
             )
         }
