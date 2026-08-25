@@ -87,11 +87,11 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
 
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                listOf(4, 8).forEachIndexed { index, weeks ->
+                listOf(4, 8, 12).forEachIndexed { index, weeks ->
                     SegmentedButton(
                         selected = viewModel.windowWeeks == weeks,
                         onClick = { viewModel.windowWeeks = weeks },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 3),
                     ) { Text("$weeks semaines") }
                 }
             }
