@@ -131,6 +131,35 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training); showChangeTarget = false }) { Text("Jour training") }
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos); showChangeTarget = false }) { Text("Jour repos") }
                     }
+                    var showCustom by remember { mutableStateOf(false) }
+                    TextButton(onClick = { showCustom = !showCustom }) { Text("Cible personnalisée…") }
+                    if (showCustom) {
+                        var customCalories by remember { mutableStateOf(target.caloriesCible.toString()) }
+                        var customProteines by remember { mutableStateOf(target.proteinesCibleG.toInt().toString()) }
+                        OutlinedTextField(
+                            value = customCalories,
+                            onValueChange = { customCalories = it },
+                            label = { Text("Calories cible") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = customProteines,
+                            onValueChange = { customProteines = it },
+                            label = { Text("Protéines cible (g)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Button(onClick = {
+                            val cal = customCalories.toIntOrNull()
+                            val prot = customProteines.toDoubleOrNull()
+                            if (cal != null && prot != null) {
+                                viewModel.setCustomTarget(cal, prot)
+                                showChangeTarget = false
+                                showCustom = false
+                            }
+                        }) { Text("Appliquer") }
+                    }
                 }
                 TargetVsActualBar("Calories", viewModel.totalCalories.toDouble(), target.caloriesCible.toDouble(), "kcal")
             }
