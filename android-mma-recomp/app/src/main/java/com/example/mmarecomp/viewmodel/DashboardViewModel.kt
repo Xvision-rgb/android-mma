@@ -11,8 +11,10 @@ import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.Meal
+import com.example.mmarecomp.model.NewTrainingPlanDay
 import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
@@ -132,6 +134,26 @@ class DashboardViewModel(
             // ProgressViewModel affine ce signal avec les vraies charges loggées.
             return PlateauDetector.detect(points, performanceTrendUp = true)
         }
+
+    /** Change le type de séance programmé pour un jour de la semaine, sans
+     *  toucher aux exercices déjà définis pour ce jour. */
+    fun updatePlanDayType(day: TrainingPlanDay, newType: PlanDayType) {
+        viewModelScope.launch {
+            val updated = NewTrainingPlanDay(
+                jourSemaine = day.jourSemaine,
+                type = newType,
+                exercices = day.exercices,
+                phase = day.phase,
+                notes = day.notes,
+            )
+            try {
+                trainingPlanRepository.upsert(updated)
+                planThisWeek = planThisWeek.map { if (it.id == day.id) it.copy(type = newType) else it }
+            } catch (e: Exception) {
+                errorMessage = "Impossible de mettre à jour le programme."
+            }
+        }
+    }
 
     fun load(phase: Phase) {
         isLoading = true

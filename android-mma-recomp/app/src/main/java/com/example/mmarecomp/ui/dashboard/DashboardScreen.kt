@@ -1,6 +1,7 @@
 package com.example.mmarecomp.ui.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -119,11 +122,31 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                     }
                     if (showProgram) {
                         viewModel.planThisWeek.sortedBy { it.jourSemaine }.forEach { day ->
-                            Text(
-                                "${com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: ""} : ${day.type.label}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            var expanded by remember(day.id) { mutableStateOf(false) }
+                            Box {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(day.type.label, style = MaterialTheme.typography.bodySmall)
+                                }
+                                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                    com.example.mmarecomp.model.PlanDayType.entries.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option.label) },
+                                            onClick = {
+                                                viewModel.updatePlanDayType(day, option)
+                                                expanded = false
+                                            },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
