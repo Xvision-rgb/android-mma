@@ -71,8 +71,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     fun deleteWithUndo(meal: Meal) {
+        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
         viewModel.deleteMeal(meal) {
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
@@ -330,10 +332,13 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
         selectedFood?.let { food ->
             item {
+                val quantiteInvalide = quantiteG.isNotBlank() && (quantiteG.toDoubleOrNull() ?: 0.0) <= 0.0
                 OutlinedTextField(
                     value = quantiteG,
                     onValueChange = { quantiteG = it; applyFood(food, it) },
                     label = { Text("Quantité (g)") },
+                    isError = quantiteInvalide,
+                    supportingText = if (quantiteInvalide) { { Text("La quantité doit être supérieure à 0") } } else null,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )

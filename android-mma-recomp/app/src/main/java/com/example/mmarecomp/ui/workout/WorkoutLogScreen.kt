@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -66,6 +67,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     val scope = rememberCoroutineScope()
 
     fun removeWithUndo(index: Int, exercice: LoggedExercise) {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         viewModel.removeExercise(index)
         scope.launch {
             val result = snackbarHostState.showSnackbar(message = "Exercice retiré", actionLabel = "Annuler")
@@ -74,6 +76,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     }
 
     fun deleteWorkoutWithUndo(workout: com.example.mmarecomp.model.Workout) {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         viewModel.deleteFromHistory(workout) {
             scope.launch {
                 val result = snackbarHostState.showSnackbar(message = "Séance supprimée", actionLabel = "Annuler")
@@ -217,6 +220,13 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
                             contentDescription = "Descendre cet exercice",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = { viewModel.duplicateExercise(index) }) {
+                        Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = "Dupliquer cet exercice",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

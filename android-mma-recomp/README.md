@@ -177,3 +177,27 @@ Deuxième lot de 30 améliorations, complémentaire au premier (§7) :
 
 Même discipline que le round 1 : aucune modification du schéma Supabase ni
 de la logique métier, règles UX non négociables toujours respectées.
+
+## 9. Améliorations UX — round 3 (en continu)
+
+Amélioration continue par petits lots, fusionnés au fur et à mesure :
+
+- **Écran MMA complété** (lot 1) : champ Date manquant ajouté (la séance
+  MMA était toujours loguée à la date du jour), ErrorBanner + retry,
+  feedback de succès animé + haptique, tous les mouvements détectés
+  affichés, accessibilité sur l'échelle de ressenti.
+- **Dashboard** (lot 1) : carte "série" — jours consécutifs avec au moins
+  une activité loguée, jamais de message négatif si la série est courte.
+- **WeighInScreen** (lot 2) : historique complet dépliable, indicateur de
+  tendance texte (hausse/baisse/stable, jamais de valeur brute).
+- **ProgressScreen** (lot 2) : carte résumé (séances/pesées loguées sur la
+  fenêtre sélectionnée).
+- **MealLogScreen** (lot 2, 3) : totaux glucides/lipides du jour affichés,
+  filtre par catégorie d'aliment en plus de la recherche par nom.
+- **Settings** (lot 2) : section "À propos" avec le numéro de version.
+- **WorkoutLogScreen** (lot 3) : historique des séances dépliable avec
+  suppression + undo, bouton "Reprendre la séance d'hier", bouton "Vider
+  le formulaire".
+
+Toujours la même discipline : aucun changement de schéma Supabase, règles
+UX non négociables respectées, petits commits testables.
