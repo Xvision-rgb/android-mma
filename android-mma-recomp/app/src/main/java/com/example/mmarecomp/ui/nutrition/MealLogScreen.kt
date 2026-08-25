@@ -14,6 +14,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var lipides by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
+    var slotFilter by remember { mutableStateOf<RepasSlot?>(null) }
     var selectedFood by remember { mutableStateOf<Food?>(null) }
     var quantiteG by remember { mutableStateOf("100") }
 
@@ -102,15 +104,31 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item { HorizontalDivider() }
         item { Text("Repas déjà loggés", style = MaterialTheme.typography.titleMedium) }
 
-        if (viewModel.mealsForDay.isEmpty()) {
+        if (viewModel.mealsForDay.isNotEmpty()) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = slotFilter == null, onClick = { slotFilter = null }, label = { Text("Tous") })
+                    RepasSlot.entries.forEach { slot ->
+                        FilterChip(
+                            selected = slotFilter == slot,
+                            onClick = { slotFilter = if (slotFilter == slot) null else slot },
+                            label = { Text(slot.label) },
+                        )
+                    }
+                }
+            }
+        }
+
+        val visibleMeals = viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
+        if (visibleMeals.isEmpty()) {
             item {
                 EmptyState(
-                    title = "Aucun repas loggé pour l'instant",
-                    subtitle = "Ajoute ton premier repas ci-dessous, ça prend 10 secondes.",
+                    title = if (viewModel.mealsForDay.isEmpty()) "Aucun repas loggé pour l'instant" else "Aucun repas pour ce créneau",
+                    subtitle = if (viewModel.mealsForDay.isEmpty()) "Ajoute ton premier repas ci-dessous, ça prend 10 secondes." else null,
                 )
             }
         }
-        items(viewModel.mealsForDay, key = { it.id }) { meal ->
+        items(visibleMeals, key = { it.id }) { meal ->
             meal.repasSlot?.let { slot ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(slot.label)

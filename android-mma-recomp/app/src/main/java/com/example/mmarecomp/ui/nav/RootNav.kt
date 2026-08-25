@@ -1,5 +1,8 @@
 package com.example.mmarecomp.ui.nav
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
@@ -84,6 +87,8 @@ fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase,
             navController = navController,
             startDestination = "dashboard",
             modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(150)) },
+            exitTransition = { fadeOut(animationSpec = tween(150)) },
         ) {
             composable("dashboard") {
                 val vm = remember { DashboardViewModel() }
