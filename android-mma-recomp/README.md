@@ -225,6 +225,9 @@ Amélioration continue par petits lots, fusionnés au fur et à mesure :
   réelle affiché dans WorkoutLogScreen.
 - **Permission notification refusée** (lot 10) : message explicatif au
   lieu d'un échec silencieux.
+- **Cible nutrition personnalisée** (lot 11) : calories/protéines cible
+  ajustables librement dans MealLogScreen, en plus des préréglages
+  training/repos.
 
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.

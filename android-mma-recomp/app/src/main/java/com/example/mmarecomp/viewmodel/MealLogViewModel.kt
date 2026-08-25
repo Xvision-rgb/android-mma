@@ -99,6 +99,21 @@ class MealLogViewModel(
         }
     }
 
+    /** Cible personnalisée saisie librement — les préréglages training/repos
+     *  restent la valeur par défaut recommandée, mais rien n'empêche
+     *  d'ajuster manuellement si besoin. */
+    fun setCustomTarget(calories: Int, proteinesG: Double) {
+        viewModelScope.launch {
+            val newTarget = NewNutritionTarget(
+                date = DateUtils.string(date),
+                typeJour = target?.typeJour ?: TypeJour.Training,
+                caloriesCible = calories,
+                proteinesCibleG = proteinesG,
+            )
+            target = runCatching { targetRepository.set(newTarget) }.getOrNull()
+        }
+    }
+
     /** Suppression optimiste : retire immédiatement de la liste, restaure en
      *  cas d'échec réseau. Permet le pattern "undo" côté écran. */
     fun deleteMeal(meal: Meal, onDeleted: () -> Unit) {
