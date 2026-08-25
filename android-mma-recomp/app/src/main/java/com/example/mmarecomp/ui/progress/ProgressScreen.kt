@@ -139,12 +139,20 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         }
         charges.toSortedMap().forEach { (name, series) ->
             item {
+                val record = series.maxByOrNull { it.chargeKg }
                 ProgressCard(title = name) {
                     WeightTrendChart(
                         points = series.map { com.example.mmarecomp.util.TrendPoint(it.date, it.chargeKg) },
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         lineColor = MaterialTheme.colorScheme.tertiary,
                     )
+                    record?.let {
+                        Text(
+                            "Record personnel : ${com.example.mmarecomp.util.Formatting.oneDecimal(it.chargeKg)}kg",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
                 }
             }
         }

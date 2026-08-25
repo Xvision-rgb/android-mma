@@ -64,6 +64,15 @@ class DashboardViewModel(
 
     val mealsLoggedToday: Int get() = mealsLast7Days.count { it.date == DateUtils.today() }
 
+    /** Total calorique d'hier — repère de contexte, jamais une comparaison
+     *  culpabilisante. Null si rien n'a été loggé hier. */
+    val yesterdayCalories: Int?
+        get() {
+            val yesterday = DateUtils.daysAgo(1)
+            val meals = mealsLast7Days.filter { it.date == yesterday }
+            return if (meals.isEmpty()) null else meals.sumOf { it.calories }
+        }
+
     /** Nombre de jours consécutifs (jusqu'à aujourd'hui) avec au moins une
      *  activité loggée (repas, séance ou pesée). Purement positif — ne
      *  redescend jamais à un nombre négatif ni n'affiche de message de

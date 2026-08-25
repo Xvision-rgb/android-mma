@@ -25,4 +25,8 @@ class WeighInRepository {
                 select()
             }
             .decodeSingle()
+
+    suspend fun delete(id: String) {
+        client.postgrest.from("weigh_ins").delete { filter { eq("id", id) } }
+    }
 }

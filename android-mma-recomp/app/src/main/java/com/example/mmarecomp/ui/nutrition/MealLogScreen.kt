@@ -166,6 +166,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         Column {
                             Text(slot.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("~${slotTarget.calories} kcal", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "~${Formatting.oneDecimal(slotTarget.proteinesG)}g prot",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
