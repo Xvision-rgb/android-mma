@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.nutrition
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
@@ -34,6 +36,7 @@ import com.example.mmarecomp.viewmodel.MealLogViewModel
 @Composable
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
+    LaunchedEffect(Unit) { viewModel.loadFoods() }
 
     var selectedSlot by remember { mutableStateOf(RepasSlot.Matin) }
     var calories by remember { mutableStateOf("") }
@@ -41,6 +44,18 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var glucides by remember { mutableStateOf("") }
     var lipides by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+
+    var selectedFood by remember { mutableStateOf<Food?>(null) }
+    var quantiteG by remember { mutableStateOf("100") }
+
+    fun applyFood(food: Food, grams: String) {
+        val g = grams.replace(",", ".").toDoubleOrNull() ?: return
+        calories = food.caloriesFor(g).toString()
+        proteines = "%.1f".format(food.proteinesFor(g))
+        glucides = "%.1f".format(food.glucidesFor(g))
+        lipides = "%.1f".format(food.lipidesFor(g))
+        if (description.isBlank()) description = food.nom
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -116,6 +131,47 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         DropdownMenuItem(text = { Text(slot.label) }, onClick = { selectedSlot = slot; expanded = false })
                     }
                 }
+            }
+        }
+
+        item { Text("Aliment préchargé (optionnel)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item {
+            OutlinedTextField(
+                value = viewModel.foodQuery,
+                onValueChange = { viewModel.foodQuery = it; selectedFood = null },
+                label = { Text("Rechercher un aliment") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        items(viewModel.filteredFoods) { food ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    food.nom,
+                    modifier = Modifier.clickable {
+                        selectedFood = food
+                        viewModel.foodQuery = food.nom
+                        applyFood(food, quantiteG)
+                    },
+                )
+                Text(
+                    "${food.kcal100g.toInt()} kcal/100g",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        selectedFood?.let { food ->
+            item {
+                OutlinedTextField(
+                    value = quantiteG,
+                    onValueChange = { quantiteG = it; applyFood(food, it) },
+                    label = { Text("Quantité (g)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
