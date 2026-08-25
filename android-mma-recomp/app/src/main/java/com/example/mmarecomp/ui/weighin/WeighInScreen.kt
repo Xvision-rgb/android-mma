@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.viewmodel.WeighInViewModel
 
@@ -64,6 +66,18 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         item {
             WeightTrendChart(points = viewModel.trend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
         }
+        item {
+            val direction = com.example.mmarecomp.util.MovingAverage.direction(viewModel.trend7Day)
+            val label = when (direction) {
+                com.example.mmarecomp.util.TrendDirection.HAUSSE -> "Tendance : légère hausse"
+                com.example.mmarecomp.util.TrendDirection.BAISSE -> "Tendance : légère baisse"
+                com.example.mmarecomp.util.TrendDirection.STABLE -> "Tendance : stable"
+                com.example.mmarecomp.util.TrendDirection.INDETERMINE -> null
+            }
+            label?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
             item { SoftAlertBanner("Poids stable mais tu progresses — recomposition en cours 💪") }
         }
@@ -75,6 +89,35 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                     else -> "Dernière pesée : il y a $days jours"
                 }
                 Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        if (viewModel.history.isNotEmpty()) {
+            item {
+                var showHistory by remember { mutableStateOf(false) }
+                Column {
+                    TextButton(onClick = { showHistory = !showHistory }) {
+                        Text(if (showHistory) "Masquer l'historique" else "Voir l'historique complet")
+                    }
+                    if (showHistory) {
+                        viewModel.history.sortedByDescending { it.date }.take(20).forEach { entry ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    "${entry.date} · ${entry.type.label}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    "${entry.poidsKg} kg" + (entry.bfPct?.let { " · ${Formatting.oneDecimal(it)}%" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 

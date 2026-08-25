@@ -125,6 +125,13 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             item {
                 TargetVsActualBar("Protéines", viewModel.totalProteines, target.proteinesCibleG, "g")
             }
+            item {
+                Text(
+                    "Glucides : ${Formatting.oneDecimal(viewModel.totalGlucides)}g · Lipides : ${Formatting.oneDecimal(viewModel.totalLipides)}g",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (viewModel.totalCalories < target.caloriesCible) {
                 item {
                     Text(

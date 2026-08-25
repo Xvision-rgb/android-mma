@@ -78,6 +78,17 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             }
         }
 
+        if (viewModel.weighIns.isNotEmpty() || viewModel.workouts.isNotEmpty()) {
+            item {
+                ProgressCard(title = "Résumé sur ${viewModel.windowWeeks} semaines") {
+                    Text(
+                        "${viewModel.workouts.size} séance(s) loguée(s) · ${viewModel.weighIns.size} pesée(s) loguée(s)",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+
         item {
             ProgressCard(title = "Poids (moy. 7j)") {
                 WeightTrendChart(points = viewModel.weightTrend, modifier = Modifier.fillMaxWidth().height(130.dp))
