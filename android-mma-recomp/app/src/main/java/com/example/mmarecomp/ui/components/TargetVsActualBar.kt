@@ -37,7 +37,14 @@ fun TargetVsActualBar(
         },
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(label, style = MaterialTheme.typography.bodyMedium)
+                // Badge neutre, jamais négatif : uniquement un "atteint" positif,
+                // jamais de mention "pas encore" ou "en retard".
+                if (ratio in 0.95..1.15) {
+                    Text("✓ atteint", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                }
+            }
             Text(
                 "${actual.toInt()}/${target.toInt()} $unit",
                 style = MaterialTheme.typography.bodySmall,

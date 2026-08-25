@@ -120,16 +120,26 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 supportingText = if (poidsInvalide) {
                     { Text("Entre un nombre valide, ex. 82.5") }
                 } else null,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
                 value = viewModel.bfPct,
                 onValueChange = { viewModel.bfPct = it },
                 label = { Text("% masse grasse (optionnel)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }

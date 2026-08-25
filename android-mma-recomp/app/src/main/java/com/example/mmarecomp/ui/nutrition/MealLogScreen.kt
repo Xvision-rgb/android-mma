@@ -178,7 +178,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             }
         }
 
-        val visibleMeals = viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
+        // remember évite de refiltrer la liste à chaque recomposition tant que
+        // les repas du jour et le filtre sélectionné n'ont pas changé.
+        val visibleMeals = remember(viewModel.mealsForDay, slotFilter) {
+            viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
+        }
         if (visibleMeals.isEmpty()) {
             item {
                 EmptyState(
