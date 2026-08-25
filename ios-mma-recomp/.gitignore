@@ -1,7 +1,0 @@
-.DS_Store
-.build/
-.swiftpm/
-DerivedData/
-*.xcodeproj
-xcuserdata/
-MMARecomp/App/Secrets.swift
