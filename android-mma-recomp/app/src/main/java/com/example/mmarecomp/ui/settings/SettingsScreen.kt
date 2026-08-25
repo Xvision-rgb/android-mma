@@ -1,7 +1,12 @@
 package com.example.mmarecomp.ui.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
@@ -13,6 +18,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,12 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.notification.WeighInReminder
 import com.example.mmarecomp.ui.theme.ThemeMode
 import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -34,6 +42,17 @@ import com.example.mmarecomp.viewmodel.ProfileViewModel
 @Composable
 fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, onSignOut: () -> Unit) {
     LaunchedEffect(Unit) { viewModel.load() }
+
+    val context = LocalContext.current
+    var reminderEnabled by remember { mutableStateOf(WeighInReminder.isEnabled(context)) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            reminderEnabled = true
+            WeighInReminder.setEnabled(context, true)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -103,6 +122,25 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = ThemeMode.entries.size),
                     ) { Text(mode.label) }
                 }
+            }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Rappels", style = MaterialTheme.typography.titleMedium) }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Rappel doux pesée du matin (7h30)", style = MaterialTheme.typography.bodyMedium)
+                Switch(
+                    checked = reminderEnabled,
+                    onCheckedChange = { checked ->
+                        if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            reminderEnabled = checked
+                            WeighInReminder.setEnabled(context, checked)
+                        }
+                    },
+                )
             }
         }
 

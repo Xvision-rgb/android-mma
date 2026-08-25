@@ -4,11 +4,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,10 +53,12 @@ import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.TargetVsActualBar
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
@@ -162,15 +167,26 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 )
             }
         }
-        items(visibleMeals, key = { it.id }) { meal ->
-            meal.repasSlot?.let { slot ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(slot.label)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+        val mealsBySlot = visibleMeals.groupBy { it.repasSlot }
+        RepasSlot.entries.forEach { slot ->
+            val slotMeals = mealsBySlot[slot].orEmpty()
+            if (slotMeals.isNotEmpty()) {
+                stickyHeader(key = "header-${slot.value}") {
+                    Surface(color = MaterialTheme.colorScheme.background) {
+                        Text(
+                            slot.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        )
+                    }
+                }
+                items(slotMeals, key = { it.id }) { meal ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
                             "${meal.calories} kcal · ${meal.proteinesG.toInt()}g prot",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -237,17 +253,18 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
         items(viewModel.filteredFoods, key = { it.id }) { food ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    food.nom,
-                    modifier = Modifier.clickable {
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = Dimens.minTouchTarget)
+                    .clickable {
                         selectedFood = food
                         viewModel.foodQuery = food.nom
                         applyFood(food, quantiteG)
                     },
-                )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(food.nom)
                 Text(
                     "${food.kcal100g.toInt()} kcal/100g",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
