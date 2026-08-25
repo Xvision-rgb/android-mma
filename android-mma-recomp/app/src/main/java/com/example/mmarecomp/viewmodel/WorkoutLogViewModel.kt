@@ -175,6 +175,17 @@ class WorkoutLogViewModel(
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
 
+    /** Dernière charge réelle loguée pour un exercice du même nom, dans
+     *  l'historique déjà chargé — simple repère, jamais imposé. */
+    fun lastKnownCharge(exerciseName: String): Double? {
+        if (exerciseName.isBlank()) return null
+        return recentWorkouts
+            .sortedByDescending { it.date }
+            .flatMap { it.exercices }
+            .firstOrNull { it.nom.equals(exerciseName, ignoreCase = true) && it.chargeReelleKg != null }
+            ?.chargeReelleKg
+    }
+
     fun save(onResult: (Boolean) -> Unit) {
         errorMessage = null
         isSaving = true

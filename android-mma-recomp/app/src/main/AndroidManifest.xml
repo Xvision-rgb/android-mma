@@ -26,6 +26,10 @@
             android:name=".notification.WeighInReminderReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".notification.MealReminderReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>

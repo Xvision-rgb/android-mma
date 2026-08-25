@@ -199,5 +199,20 @@ Amélioration continue par petits lots, fusionnés au fur et à mesure :
   suppression + undo, bouton "Reprendre la séance d'hier", bouton "Vider
   le formulaire".
 
+- **Validation & robustesse** (lot 4) : bornes réalistes sur poids/BF/
+  quantités, duplication d'exercice, haptics sur les suppressions.
+- **AuthScreen** (lot 6, 8) : afficher/masquer le mot de passe, navigation
+  clavier Next/Done, message de confirmation après inscription.
+- **Vider le formulaire** (lot 6) : ajouté sur tous les écrans de log pour
+  cohérence.
+- **Programme de la semaine** (lot 7) : section dépliable sur le Dashboard
+  listant le split programmé jour par jour.
+- **Flags de pesée visibles** (lot 7) : créatine/alcool/post-training
+  enfin affichés dans l'historique (calculés mais jamais rendus avant).
+- **Dernière charge connue** (lot 8) : repère "Dernière fois : Xkg" par
+  exercice dans WorkoutLogScreen, basé sur l'historique déjà chargé.
+- **Rappel repas du soir** (lot 8) : second rappel local opt-in (20h),
+  même structure que le rappel pesée.
+
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.

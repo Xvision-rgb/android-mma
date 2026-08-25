@@ -48,13 +48,18 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
 
     val context = LocalContext.current
     var reminderEnabled by remember { mutableStateOf(WeighInReminder.isEnabled(context)) }
+    var mealReminderEnabled by remember { mutableStateOf(com.example.mmarecomp.notification.MealReminder.isEnabled(context)) }
+    var pendingReminder by remember { mutableStateOf<String?>(null) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) {
-            reminderEnabled = true
-            WeighInReminder.setEnabled(context, true)
+            when (pendingReminder) {
+                "weighin" -> { reminderEnabled = true; WeighInReminder.setEnabled(context, true) }
+                "meal" -> { mealReminderEnabled = true; com.example.mmarecomp.notification.MealReminder.setEnabled(context, true) }
+            }
         }
+        pendingReminder = null
     }
 
     LazyColumn(
@@ -154,10 +159,28 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
                     checked = reminderEnabled,
                     onCheckedChange = { checked ->
                         if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            pendingReminder = "weighin"
                             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
                             reminderEnabled = checked
                             WeighInReminder.setEnabled(context, checked)
+                        }
+                    },
+                )
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Rappel doux repas du soir (20h)", style = MaterialTheme.typography.bodyMedium)
+                Switch(
+                    checked = mealReminderEnabled,
+                    onCheckedChange = { checked ->
+                        if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            pendingReminder = "meal"
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            mealReminderEnabled = checked
+                            com.example.mmarecomp.notification.MealReminder.setEnabled(context, checked)
                         }
                     },
                 )

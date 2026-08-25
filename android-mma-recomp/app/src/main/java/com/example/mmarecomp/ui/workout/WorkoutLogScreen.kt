@@ -216,7 +216,11 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         itemsIndexed(viewModel.exercices) { index, exercice ->
             Column {
-                ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
+                ExerciseRow(
+                    exercice = exercice,
+                    onChange = { viewModel.updateExercise(index, it) },
+                    lastKnownCharge = viewModel.lastKnownCharge(exercice.nom),
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.moveExerciseUp(index) }, enabled = index > 0) {
                         Icon(
