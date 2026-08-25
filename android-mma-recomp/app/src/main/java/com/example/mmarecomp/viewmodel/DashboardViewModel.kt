@@ -87,6 +87,16 @@ class DashboardViewModel(
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
 
+    /** Séance prévue aujourd'hui d'après le split programmé, si elle
+     *  n'a pas déjà été loguée. */
+    val todayPlan: com.example.mmarecomp.model.TrainingPlanDay?
+        get() {
+            val jourAujourdhui = DateUtils.weekdayIso(DateUtils.today())
+            val plan = planThisWeek.firstOrNull { it.jourSemaine == jourAujourdhui } ?: return null
+            val dejaLoguee = workoutsThisWeek.any { it.date == DateUtils.today() }
+            return if (dejaLoguee) null else plan
+        }
+
     val plateauStatus: PlateauStatus
         get() {
             val points = morningWeighIns.mapNotNull { w ->

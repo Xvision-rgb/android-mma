@@ -35,6 +35,8 @@ class WorkoutLogViewModel(
         private set
     var recentWorkouts by mutableStateOf<List<Workout>>(emptyList())
         private set
+    var prefilledFromPlan by mutableStateOf(false)
+        private set
 
     /** Charge les dernières séances loguées, pour l'historique dépliable. */
     fun loadRecent() {
@@ -89,6 +91,7 @@ class WorkoutLogViewModel(
         exercices = emptyList()
         dureeMin = ""
         notes = ""
+        prefilledFromPlan = false
     }
 
     /** Reprend le type/exercices/durée de la séance loguée hier, si elle
@@ -105,6 +108,7 @@ class WorkoutLogViewModel(
                 type = match.type
                 exercices = match.exercices
                 dureeMin = match.dureeMin?.toString() ?: ""
+                prefilledFromPlan = false
                 onResult(true)
             } catch (e: Exception) {
                 errorMessage = "Impossible de reprendre la séance d'hier."
@@ -127,6 +131,7 @@ class WorkoutLogViewModel(
 
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
             exercices = plan.exercices.map { it.toLogged() }
+            prefilledFromPlan = true
         }
     }
 
