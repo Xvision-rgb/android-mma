@@ -53,6 +53,8 @@ class MealLogViewModel(
 
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
     val totalProteines: Double get() = mealsForDay.sumOf { it.proteinesG }
+    val totalGlucides: Double get() = mealsForDay.sumOf { it.glucidesG }
+    val totalLipides: Double get() = mealsForDay.sumOf { it.lipidesG }
 
     val indicativeSplit: Map<RepasSlot, SlotTarget>
         get() {

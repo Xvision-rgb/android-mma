@@ -148,6 +148,21 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         }
 
         item { HorizontalDivider() }
+        item { Text("À propos", style = MaterialTheme.typography.titleMedium) }
+        item {
+            val versionName = remember {
+                runCatching {
+                    context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                }.getOrNull() ?: "—"
+            }
+            Text(
+                "Recomp & MMA · version $versionName",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        item { HorizontalDivider() }
 
         item {
             var showSignOutConfirm by remember { mutableStateOf(false) }

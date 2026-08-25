@@ -4,7 +4,19 @@ import java.time.LocalDate
 
 data class TrendPoint(val date: LocalDate, val value: Double)
 
+enum class TrendDirection { HAUSSE, BAISSE, STABLE, INDETERMINE }
+
 object MovingAverage {
+    /** Direction de la tendance moyenne mobile — jamais de valeur brute,
+     *  juste hausse/baisse/stable entre le premier et le dernier point de
+     *  la fenêtre. */
+    fun direction(points: List<TrendPoint>): TrendDirection = when {
+        points.size < 2 -> TrendDirection.INDETERMINE
+        points.last().value > points.first().value -> TrendDirection.HAUSSE
+        points.last().value < points.first().value -> TrendDirection.BAISSE
+        else -> TrendDirection.STABLE
+    }
+
     /** Moyenne mobile 7 jours sur une série (date, valeur).
      *  C'est TOUJOURS cette série qu'il faut afficher pour le poids —
      *  jamais le point brut du jour — pour désamorcer l'anxiété liée
