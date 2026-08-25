@@ -206,19 +206,22 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         item {
-            Button(
-                onClick = {
-                    viewModel.save { saved ->
-                        showSaved = saved
-                        if (saved) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.poidsKg = ""; viewModel.bfPct = ""
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        viewModel.save { saved ->
+                            showSaved = saved
+                            if (saved) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.poidsKg = ""; viewModel.bfPct = ""
+                            }
                         }
-                    }
-                },
-                enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
+                    },
+                    enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
+                    modifier = Modifier.weight(1f),
+                ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
+                TextButton(onClick = { viewModel.resetForm() }) { Text("Vider") }
+            }
         }
 
         item {

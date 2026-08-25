@@ -28,6 +28,14 @@ class MmaSessionViewModel(
 
     val parsedMovements: List<ParsedWodMovement> get() = WodParser.parse(wodContent)
 
+    /** Vide le formulaire (garde la date sélectionnée). */
+    fun resetForm() {
+        wodContent = ""
+        roundsSets = ""
+        ressenti = 3
+        notesTechnique = ""
+    }
+
     fun save(onResult: (Boolean) -> Unit) {
         errorMessage = null
         isSaving = true
