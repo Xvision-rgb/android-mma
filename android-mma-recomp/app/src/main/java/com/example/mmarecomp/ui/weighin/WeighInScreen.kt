@@ -1,5 +1,9 @@
 package com.example.mmarecomp.ui.weighin
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -140,8 +144,10 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
             ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
         }
 
-        if (showSaved) {
-            item { Text("Pesée enregistrée", color = MaterialTheme.colorScheme.tertiary) }
+        item {
+            AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Pesée enregistrée ✓", color = MaterialTheme.colorScheme.tertiary)
+            }
         }
     }
 }

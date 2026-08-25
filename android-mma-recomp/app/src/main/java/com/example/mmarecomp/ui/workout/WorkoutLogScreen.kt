@@ -1,5 +1,9 @@
 package com.example.mmarecomp.ui.workout
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -153,8 +157,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
 
-        if (showSavedMessage) {
-            item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
+        item {
+            AnimatedVisibility(visible = showSavedMessage, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
+            }
         }
     }
 }

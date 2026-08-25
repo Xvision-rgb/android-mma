@@ -1,14 +1,21 @@
 package com.example.mmarecomp.ui.nutrition
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -21,28 +28,50 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Food
+import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.viewmodel.MealLogViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
     LaunchedEffect(Unit) { viewModel.loadFoods() }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    fun deleteWithUndo(meal: Meal) {
+        viewModel.deleteMeal(meal) {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Repas supprimé",
+                    actionLabel = "Annuler",
+                )
+                if (result == SnackbarResult.ActionPerformed) viewModel.restoreMeal(meal)
+            }
+        }
+    }
 
     var selectedSlot by remember { mutableStateOf(RepasSlot.Matin) }
     var calories by remember { mutableStateOf("") }
@@ -54,6 +83,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var slotFilter by remember { mutableStateOf<RepasSlot?>(null) }
     var selectedFood by remember { mutableStateOf<Food?>(null) }
     var quantiteG by remember { mutableStateOf("100") }
+    var showSaved by remember { mutableStateOf(false) }
 
     fun applyFood(food: Food, grams: String) {
         val g = grams.replace(",", ".").toDoubleOrNull() ?: return
@@ -64,6 +94,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         if (description.isBlank()) description = food.nom
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -130,12 +161,25 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
         items(visibleMeals, key = { it.id }) { meal ->
             meal.repasSlot?.let { slot ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(slot.label)
-                    Text(
-                        "${meal.calories} kcal · ${meal.proteinesG.toInt()}g prot",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "${meal.calories} kcal · ${meal.proteinesG.toInt()}g prot",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        IconButton(onClick = { deleteWithUndo(meal) }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = "Supprimer le repas ${slot.label}",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -270,6 +314,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         lipidesG = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
                         description = description,
                     ) { saved ->
+                        showSaved = saved
                         if (saved) {
                             calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
                         }
@@ -278,5 +323,12 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Enregistrer ce repas") }
         }
+        item {
+            AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Repas enregistré ✓", color = MaterialTheme.colorScheme.tertiary)
+            }
+        }
+    }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

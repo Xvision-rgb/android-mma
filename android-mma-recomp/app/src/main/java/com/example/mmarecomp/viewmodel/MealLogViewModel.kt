@@ -90,6 +90,43 @@ class MealLogViewModel(
         }
     }
 
+    /** Suppression optimiste : retire immédiatement de la liste, restaure en
+     *  cas d'échec réseau. Permet le pattern "undo" côté écran. */
+    fun deleteMeal(meal: Meal, onDeleted: () -> Unit) {
+        val previous = mealsForDay
+        mealsForDay = mealsForDay.filterNot { it.id == meal.id }
+        viewModelScope.launch {
+            try {
+                mealRepository.delete(meal.id)
+                onDeleted()
+            } catch (e: Exception) {
+                mealsForDay = previous
+                errorMessage = "Impossible de supprimer ce repas."
+            }
+        }
+    }
+
+    /** Réenregistre un repas supprimé par erreur (action "Annuler" du snackbar). */
+    fun restoreMeal(meal: Meal) {
+        viewModelScope.launch {
+            val restored = NewMeal(
+                date = meal.date,
+                repas = meal.repas,
+                calories = meal.calories,
+                proteinesG = meal.proteinesG,
+                glucidesG = meal.glucidesG,
+                lipidesG = meal.lipidesG,
+                description = meal.description,
+            )
+            try {
+                val saved = mealRepository.log(restored)
+                mealsForDay = (mealsForDay.filterNot { it.repas == saved.repas } + saved).sortedBy { it.repas }
+            } catch (e: Exception) {
+                errorMessage = "Impossible de restaurer ce repas."
+            }
+        }
+    }
+
     fun logMeal(
         slot: RepasSlot,
         calories: Int,
