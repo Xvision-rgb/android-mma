@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.ThemeMode
 import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -100,7 +101,7 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
 
         item {

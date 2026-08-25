@@ -52,6 +52,7 @@ import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
@@ -320,7 +321,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
 
         item {

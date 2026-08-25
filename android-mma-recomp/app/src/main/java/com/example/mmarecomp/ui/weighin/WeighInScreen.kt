@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.util.PlateauStatus
@@ -125,7 +126,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.loadHistory() }) }
         }
 
         item {

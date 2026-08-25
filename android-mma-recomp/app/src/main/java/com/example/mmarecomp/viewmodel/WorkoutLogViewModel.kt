@@ -36,11 +36,15 @@ class WorkoutLogViewModel(
 
     /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
     fun loadPlan(phase: Phase) {
+        errorMessage = null
         viewModelScope.launch {
             val jour = DateUtils.weekdayIso(DateUtils.string(date))
-            val plan = runCatching { trainingPlanRepository.fetchWeek(phase) }
-                .getOrNull()
-                ?.firstOrNull { it.jourSemaine == jour } ?: return@launch
+            val plan = try {
+                trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
+            } catch (e: Exception) {
+                errorMessage = "Impossible de charger le plan de séance."
+                return@launch
+            } ?: return@launch
 
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
             exercices = plan.exercices.map { it.toLogged() }

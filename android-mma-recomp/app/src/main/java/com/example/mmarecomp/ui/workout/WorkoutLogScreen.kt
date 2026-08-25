@@ -42,6 +42,7 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
+import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 
 @Composable
@@ -143,7 +144,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
 
         viewModel.errorMessage?.let { error ->
-            item { Text(error, color = MaterialTheme.colorScheme.error) }
+            item { ErrorBanner(error, onRetry = { viewModel.loadPlan(phase) }) }
         }
 
         item {
