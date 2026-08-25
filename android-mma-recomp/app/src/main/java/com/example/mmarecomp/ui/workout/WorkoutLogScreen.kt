@@ -5,25 +5,33 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,20 +47,33 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaSheet: () -> Unit) {
     var showSavedMessage by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    fun removeWithUndo(index: Int, exercice: LoggedExercise) {
+        viewModel.removeExercise(index)
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(message = "Exercice retiré", actionLabel = "Annuler")
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreExercise(index, exercice)
+        }
+    }
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
@@ -96,9 +118,25 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(30, 45, 60, 90).forEach { minutes ->
+                    FilterChip(
+                        selected = viewModel.dureeMin == minutes.toString(),
+                        onClick = { viewModel.dureeMin = minutes.toString() },
+                        label = { Text("${minutes}min") },
+                    )
+                }
+            }
+        }
 
         item { HorizontalDivider() }
-        item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
+        item {
+            Text(
+                if (viewModel.exercices.isEmpty()) "Exercices" else "Exercices (${viewModel.exercices.size})",
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
 
         if (viewModel.exercices.isEmpty()) {
             item {
@@ -113,7 +151,21 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             Column {
                 ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.removeExercise(index) }) {
+                    IconButton(onClick = { viewModel.moveExerciseUp(index) }, enabled = index > 0) {
+                        Icon(
+                            Icons.Filled.KeyboardArrowUp,
+                            contentDescription = "Monter cet exercice",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = { viewModel.moveExerciseDown(index) }, enabled = index < viewModel.exercices.size - 1) {
+                        Icon(
+                            Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "Descendre cet exercice",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = { removeWithUndo(index, exercice) }) {
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = "Retirer cet exercice",
@@ -167,5 +219,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
             }
         }
+    }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

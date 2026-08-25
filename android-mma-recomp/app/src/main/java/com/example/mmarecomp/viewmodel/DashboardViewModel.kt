@@ -62,6 +62,8 @@ class DashboardViewModel(
             return MovingAverage.sevenDay(points)
         }
 
+    val mealsLoggedToday: Int get() = mealsLast7Days.count { it.date == DateUtils.today() }
+
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
 

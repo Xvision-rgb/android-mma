@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -23,6 +24,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -148,8 +150,22 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
         item { HorizontalDivider() }
 
         item {
-            OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
+            var showSignOutConfirm by remember { mutableStateOf(false) }
+            OutlinedButton(onClick = { showSignOutConfirm = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Se déconnecter", color = MaterialTheme.colorScheme.error)
+            }
+            if (showSignOutConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showSignOutConfirm = false },
+                    title = { Text("Se déconnecter ?") },
+                    text = { Text("Tes données restent sauvegardées, tu pourras te reconnecter à tout moment.") },
+                    confirmButton = {
+                        TextButton(onClick = { showSignOutConfirm = false; onSignOut() }) { Text("Se déconnecter") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSignOutConfirm = false }) { Text("Annuler") }
+                    },
+                )
             }
         }
     }

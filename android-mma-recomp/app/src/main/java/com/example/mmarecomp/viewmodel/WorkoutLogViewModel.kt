@@ -59,6 +59,27 @@ class WorkoutLogViewModel(
         exercices = exercices.filterIndexed { i, _ -> i != index }
     }
 
+    /** Réinsère un exercice supprimé par erreur, à sa position d'origine
+     *  (ou en fin de liste si l'index n'est plus valide). */
+    fun restoreExercise(index: Int, exercice: LoggedExercise) {
+        val safeIndex = index.coerceIn(0, exercices.size)
+        exercices = exercices.toMutableList().also { it.add(safeIndex, exercice) }
+    }
+
+    fun moveExerciseUp(index: Int) {
+        if (index <= 0) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index - 1]; it[index - 1] = it[index]; it[index] = tmp
+        }
+    }
+
+    fun moveExerciseDown(index: Int) {
+        if (index >= exercices.size - 1) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index + 1]; it[index + 1] = it[index]; it[index] = tmp
+        }
+    }
+
     fun updateExercise(index: Int, updated: LoggedExercise) {
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
