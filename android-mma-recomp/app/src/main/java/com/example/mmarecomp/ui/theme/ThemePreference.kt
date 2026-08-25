@@ -30,7 +30,7 @@ object ThemePreference {
             ?: ThemeMode.Systeme
     }
 
-    fun setMode(newMode: ThemeMode) {
+    fun updateMode(newMode: ThemeMode) {
         mode = newMode
         prefs?.edit()?.putString(KEY_MODE, newMode.name)?.apply()
     }
