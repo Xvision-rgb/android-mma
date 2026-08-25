@@ -13,6 +13,11 @@ class NutritionTargetRepository {
             .decodeList<NutritionTarget>()
             .firstOrNull()
 
+    suspend fun fetchSince(sinceDate: String): List<NutritionTarget> =
+        client.postgrest.from("nutrition_targets")
+            .select { filter { gte("date", sinceDate) } }
+            .decodeList()
+
     suspend fun set(target: NewNutritionTarget): NutritionTarget =
         client.postgrest.from("nutrition_targets")
             .upsert(target) {

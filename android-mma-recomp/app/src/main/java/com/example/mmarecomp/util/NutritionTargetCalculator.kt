@@ -25,4 +25,13 @@ object NutritionTargetCalculator {
                 proteinesG = (proteinesG * slot.shareIndicatif * 10).roundToInt() / 10.0,
             )
         }
+
+    /** Alerte douce : plusieurs jours d'affilée nettement en dessous de la
+     *  cible calorique. Ne culpabilise jamais un jour isolé en dessous de
+     *  l'objectif — il faut trois jours consécutifs sous 85% de la cible. */
+    fun softUnderTargetAlert(recentDailyTotals: List<Triple<String, Int, Int>>): Boolean {
+        val lastThree = recentDailyTotals.takeLast(3)
+        if (lastThree.size != 3) return false
+        return lastThree.all { (_, calories, cible) -> calories < (cible * 0.85).toInt() }
+    }
 }
