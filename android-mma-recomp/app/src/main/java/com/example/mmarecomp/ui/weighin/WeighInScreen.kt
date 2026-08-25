@@ -84,10 +84,15 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         item {
+            val poidsInvalide = viewModel.poidsKg.isNotBlank() && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() == null
             OutlinedTextField(
                 value = viewModel.poidsKg,
                 onValueChange = { viewModel.poidsKg = it },
                 label = { Text("Poids (kg)") },
+                isError = poidsInvalide,
+                supportingText = if (poidsInvalide) {
+                    { Text("Entre un nombre valide, ex. 82.5") }
+                } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -124,7 +129,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                         if (saved) { viewModel.poidsKg = ""; viewModel.bfPct = "" }
                     }
                 },
-                enabled = !viewModel.isSaving,
+                enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
         }

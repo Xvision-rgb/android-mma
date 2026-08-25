@@ -10,10 +10,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.mmarecomp.ui.RootScreen
 import com.example.mmarecomp.ui.theme.MMARecompTheme
+import com.example.mmarecomp.ui.theme.ThemePreference
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemePreference.init(applicationContext)
         setContent {
             MMARecompTheme {
                 Surface(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {

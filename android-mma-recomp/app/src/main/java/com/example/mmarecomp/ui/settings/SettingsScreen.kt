@@ -23,7 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.theme.ThemeMode
+import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 
 @Composable
@@ -85,6 +90,20 @@ fun SettingsScreen(viewModel: ProfileViewModel, onPhaseSaved: (Phase) -> Unit, o
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Enregistrer") }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Apparence", style = MaterialTheme.typography.titleMedium) }
+        item {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                ThemeMode.entries.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = ThemePreference.mode == mode,
+                        onClick = { ThemePreference.setMode(mode) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = ThemeMode.entries.size),
+                    ) { Text(mode.label) }
+                }
+            }
         }
 
         item { HorizontalDivider() }

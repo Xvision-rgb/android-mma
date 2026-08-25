@@ -32,7 +32,11 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun MMARecompTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = when (ThemePreference.mode) {
+        ThemeMode.Systeme -> isSystemInDarkTheme()
+        ThemeMode.Clair -> false
+        ThemeMode.Sombre -> true
+    },
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
