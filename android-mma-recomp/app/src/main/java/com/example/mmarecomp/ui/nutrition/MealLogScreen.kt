@@ -8,6 +8,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -35,6 +36,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,6 +133,23 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     )
                 }
             }
+            item {
+                Text(
+                    "Répartition indicative par créneau",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    viewModel.indicativeSplit.forEach { (slot, slotTarget) ->
+                        Column {
+                            Text(slot.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("~${slotTarget.calories} kcal", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
         } else {
             item {
                 Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -223,6 +242,19 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         DropdownMenuItem(text = { Text(slot.label) }, onClick = { selectedSlot = slot; expanded = false })
                     }
                 }
+            }
+        }
+        item {
+            var duplicateFeedback by remember(selectedSlot) { mutableStateOf<Boolean?>(null) }
+            TextButton(onClick = {
+                viewModel.duplicateFromYesterday(selectedSlot) { found -> duplicateFeedback = found }
+            }) { Text("Reprendre le repas d'hier sur ce créneau") }
+            duplicateFeedback?.let { found ->
+                Text(
+                    if (found) "Repas d'hier repris ✓" else "Rien à reprendre — pas de repas loggé hier sur ce créneau",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 

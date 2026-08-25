@@ -127,6 +127,37 @@ class MealLogViewModel(
         }
     }
 
+    /** Reprend le repas loggé hier sur ce créneau, pour aujourd'hui — évite
+     *  de re-saisir un repas répétitif. Ne fait rien si rien n'a été loggé
+     *  hier sur ce créneau. */
+    fun duplicateFromYesterday(slot: RepasSlot, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val yesterday = DateUtils.string(date.minusDays(1))
+                val match = mealRepository.fetchForDate(yesterday).firstOrNull { it.repas == slot.value }
+                if (match == null) {
+                    onResult(false)
+                    return@launch
+                }
+                val newMeal = NewMeal(
+                    date = DateUtils.string(date),
+                    repas = slot.value,
+                    calories = match.calories,
+                    proteinesG = match.proteinesG,
+                    glucidesG = match.glucidesG,
+                    lipidesG = match.lipidesG,
+                    description = match.description,
+                )
+                val saved = mealRepository.log(newMeal)
+                mealsForDay = (mealsForDay.filterNot { it.repas == slot.value } + saved).sortedBy { it.repas }
+                onResult(true)
+            } catch (e: Exception) {
+                errorMessage = "Impossible de dupliquer le repas d'hier."
+                onResult(false)
+            }
+        }
+    }
+
     fun logMeal(
         slot: RepasSlot,
         calories: Int,

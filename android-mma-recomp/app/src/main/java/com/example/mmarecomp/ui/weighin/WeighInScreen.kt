@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,11 +67,29 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
             item { SoftAlertBanner("Poids stable mais tu progresses — recomposition en cours 💪") }
         }
+        viewModel.daysSinceLastMorningEntry?.let { days ->
+            item {
+                val label = when (days) {
+                    0L -> "Dernière pesée : aujourd'hui"
+                    1L -> "Dernière pesée : hier"
+                    else -> "Dernière pesée : il y a $days jours"
+                }
+                Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
 
         item { HorizontalDivider() }
         item { Text("Nouvelle pesée", style = MaterialTheme.typography.titleMedium) }
 
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
+
+        if (viewModel.history.any { it.type == viewModel.type }) {
+            item {
+                TextButton(onClick = { viewModel.prefillFromLastEntry() }) {
+                    Text("Reprendre les valeurs de la dernière pesée")
+                }
+            }
+        }
 
         item {
             var expanded by remember { mutableStateOf(false) }

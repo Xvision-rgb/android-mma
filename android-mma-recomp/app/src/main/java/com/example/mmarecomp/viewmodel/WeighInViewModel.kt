@@ -51,6 +51,15 @@ class WeighInViewModel(
 
     val eveningWeighIns: List<WeighIn> get() = history.filter { it.type == WeighInType.Soir }
 
+    /** Jours écoulés depuis la dernière pesée matin à jeun — jamais le poids
+     *  lui-même, juste un repère temporel pour encourager la régularité. */
+    val daysSinceLastMorningEntry: Long?
+        get() {
+            val last = history.filter { it.type == WeighInType.MatinJeun }.lastOrNull() ?: return null
+            val lastDate = DateUtils.date(last.date) ?: return null
+            return java.time.temporal.ChronoUnit.DAYS.between(lastDate, LocalDate.now())
+        }
+
     fun loadHistory(days: Long = 60) {
         viewModelScope.launch {
             try {
@@ -59,6 +68,14 @@ class WeighInViewModel(
                 errorMessage = "Impossible de charger l'historique des pesées."
             }
         }
+    }
+
+    /** Pré-remplit le formulaire avec la dernière pesée du même type — utile
+     *  quand le poids n'a presque pas bougé, sans avoir à re-saisir. */
+    fun prefillFromLastEntry() {
+        val last = history.filter { it.type == type }.lastOrNull() ?: return
+        poidsKg = last.poidsKg.toString()
+        bfPct = last.bfPct?.toString() ?: ""
     }
 
     fun save(onResult: (Boolean) -> Unit) {
