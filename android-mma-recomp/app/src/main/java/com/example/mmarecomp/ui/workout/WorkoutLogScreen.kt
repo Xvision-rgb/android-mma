@@ -1,5 +1,9 @@
 package com.example.mmarecomp.ui.workout
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,16 +34,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.ui.components.DateField
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 
 @Composable
 fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaSheet: () -> Unit) {
     var showSavedMessage by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
 
@@ -91,12 +99,25 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         item { HorizontalDivider() }
         item { Text("Exercices", style = MaterialTheme.typography.titleMedium) }
 
+        if (viewModel.exercices.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "Aucun exercice pour l'instant",
+                    subtitle = "Ajoute-en un avec le bouton ci-dessous.",
+                )
+            }
+        }
+
         itemsIndexed(viewModel.exercices) { index, exercice ->
             Column {
                 ExerciseRow(exercice = exercice, onChange = { viewModel.updateExercise(index, it) })
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.removeExercise(index) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Retirer cet exercice")
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Retirer cet exercice",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
                 }
@@ -127,7 +148,12 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         item {
             Button(
-                onClick = { viewModel.save { showSavedMessage = it } },
+                onClick = {
+                    viewModel.save { saved ->
+                        showSavedMessage = saved
+                        if (saved) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                },
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -135,8 +161,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
 
-        if (showSavedMessage) {
-            item { Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary) }
+        item {
+            AnimatedVisibility(visible = showSavedMessage, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
+            }
         }
     }
 }

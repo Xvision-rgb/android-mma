@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui.progress
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -17,13 +22,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.util.CsvExport
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
 @Composable
 fun ProgressScreen(viewModel: ProgressViewModel) {
     LaunchedEffect(viewModel.windowWeeks) { viewModel.load() }
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -31,6 +40,26 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
+
+        if (viewModel.weighIns.isNotEmpty()) {
+            item {
+                OutlinedButton(
+                    onClick = {
+                        val csv = CsvExport.weighIns(viewModel.weighIns)
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_SUBJECT, "Historique pesées")
+                            putExtra(Intent.EXTRA_TEXT, csv)
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des pesées"))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                    Text("  Exporter l'historique des pesées (CSV)")
+                }
+            }
+        }
 
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -67,10 +96,9 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         val charges = viewModel.chargeProgressionByExercise
         if (charges.isEmpty()) {
             item {
-                Text(
-                    "Log des séances avec charge réelle pour voir apparaître ta progression ici.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                EmptyState(
+                    title = "Pas encore de progression à afficher",
+                    subtitle = "Log tes séances avec la charge réelle pour la voir apparaître ici.",
                 )
             }
         }

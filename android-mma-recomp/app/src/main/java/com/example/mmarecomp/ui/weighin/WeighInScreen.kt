@@ -1,5 +1,9 @@
 package com.example.mmarecomp.ui.weighin
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +27,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighInType
@@ -37,6 +43,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     var showSaved by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -84,10 +91,15 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         item {
+            val poidsInvalide = viewModel.poidsKg.isNotBlank() && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() == null
             OutlinedTextField(
                 value = viewModel.poidsKg,
                 onValueChange = { viewModel.poidsKg = it },
                 label = { Text("Poids (kg)") },
+                isError = poidsInvalide,
+                supportingText = if (poidsInvalide) {
+                    { Text("Entre un nombre valide, ex. 82.5") }
+                } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -121,16 +133,21 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
                 onClick = {
                     viewModel.save { saved ->
                         showSaved = saved
-                        if (saved) { viewModel.poidsKg = ""; viewModel.bfPct = "" }
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.poidsKg = ""; viewModel.bfPct = ""
+                        }
                     }
                 },
-                enabled = !viewModel.isSaving,
+                enabled = !viewModel.isSaving && viewModel.poidsKg.replace(",", ".").toDoubleOrNull() != null,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
         }
 
-        if (showSaved) {
-            item { Text("Pesée enregistrée", color = MaterialTheme.colorScheme.tertiary) }
+        item {
+            AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+                Text("Pesée enregistrée ✓", color = MaterialTheme.colorScheme.tertiary)
+            }
         }
     }
 }

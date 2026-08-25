@@ -109,3 +109,38 @@ un plateau + performances en hausse en message positif, et
   réinitialise le formulaire en cours. À corriger si ça gêne à l'usage.
 - Pas de compilation possible dans cet environnement (pas d'Android SDK/Gradle
   ici) — le code est écrit avec soin mais pas vérifié par le compilateur.
+- `LoggedExercise` (exercices d'une séance) n'a pas d'identifiant stable côté
+  client : la liste `itemsIndexed` de `WorkoutLogScreen` recompose donc par
+  index plutôt que par clé stable. Ajouter un id générerait un champ qui
+  n'existe pas dans le schéma Postgres (`workouts.exercices` est un JSON de
+  `LoggedExercise` tel quel) — à traiter avec une migration de schéma si ça
+  devient gênant.
+
+## 7. Améliorations UX (itérations récentes)
+
+Ajouts successifs à l'expérience utilisateur, tous sans changer le schéma
+Supabase ni la logique métier :
+
+- **États vides & erreurs** : écrans repas/séances/progression avec des
+  états vides encourageants (`EmptyState`), bannière d'erreur réseau avec
+  bouton "Réessayer" (`ErrorBanner`), gestion du chargement/erreur sur le
+  Dashboard.
+- **Accessibilité** : `contentDescription`/semantics TalkBack sur
+  `TargetVsActualBar` et `WeightTrendChart` (le graphique décrit une
+  tendance, jamais une valeur brute), touch targets ≥ 48dp sur la liste
+  d'aliments préchargés.
+- **Formulaires** : validation en temps réel (poids, email), clavier
+  adapté, auto-focus, bouton pour effacer une recherche.
+- **Petits ajouts utiles** : mode sombre manuel (Système/Clair/Sombre),
+  export CSV de l'historique des pesées, rappel local doux pour la pesée du
+  matin (opt-in, 7h30), suppression de repas avec "Annuler" (undo),
+  recherche/filtre des repas par créneau avec en-têtes collants, FAB
+  d'accès rapide (Pesée/Repas/Séance) sur le Dashboard.
+- **Feedback & cohérence visuelle** : transitions animées entre onglets,
+  retour haptique à la sauvegarde, confirmations de succès animées,
+  formatage numérique cohérent (`Formatting.oneDecimal`), tokens
+  d'espacement partagés (`Dimens`).
+
+Tout respecte les règles UX non négociables existantes : moyenne mobile 7
+jours uniquement pour le poids, messages toujours positifs sur les
+plateaux, jamais de ton culpabilisant sur les écarts caloriques.

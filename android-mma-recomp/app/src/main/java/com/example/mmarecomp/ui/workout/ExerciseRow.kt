@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.util.Formatting
 
 @Composable
 fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
@@ -77,7 +78,7 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
 
         exercice.suggestionProgression?.let { suggestion ->
             SoftAlertBanner(
-                message = "Séance propre — essaie +2.5kg la prochaine fois (%.1fkg)".format(suggestion),
+                message = "Séance propre — essaie +2.5kg la prochaine fois (${Formatting.oneDecimal(suggestion)}kg)",
                 icon = Icons.Filled.NorthEast,
             )
         }
