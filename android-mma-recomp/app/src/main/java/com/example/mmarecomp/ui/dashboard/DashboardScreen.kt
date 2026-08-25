@@ -158,6 +158,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                if (viewModel.showsUnderTargetPattern) {
+                    SoftAlertBanner(
+                        "Tu manges nettement moins que ta cible depuis quelques jours — pense à ajuster un peu si ce n'est pas volontaire, sans stress.",
+                        tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    )
+                }
                 viewModel.todayTarget?.let { target ->
                     Text(
                         "Cible aujourd'hui : ${target.caloriesCible} kcal · ${target.proteinesCibleG.toInt()}g protéines",

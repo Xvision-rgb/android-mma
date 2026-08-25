@@ -41,6 +41,8 @@ class DashboardViewModel(
         private set
     var todayTarget by mutableStateOf<NutritionTarget?>(null)
         private set
+    var recentTargets by mutableStateOf<List<NutritionTarget>>(emptyList())
+        private set
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -106,6 +108,21 @@ class DashboardViewModel(
             return if (dejaLoguee) null else plan
         }
 
+    /** Repas nettement en dessous de la cible trois jours d'affilée — signal
+     *  doux (jamais culpabilisant), utile pour repérer une sous-alimentation
+     *  involontaire plutôt qu'un déficit volontaire ponctuel. */
+    val showsUnderTargetPattern: Boolean
+        get() {
+            val dailyTotals = mealsLast7Days
+                .groupBy { it.date }
+                .mapValues { (_, meals) -> meals.sumOf { it.calories } }
+            val triples = recentTargets.mapNotNull { target ->
+                val total = dailyTotals[target.date] ?: return@mapNotNull null
+                Triple(target.date, total, target.caloriesCible)
+            }.sortedBy { it.first }
+            return com.example.mmarecomp.util.NutritionTargetCalculator.softUnderTargetAlert(triples)
+        }
+
     val plateauStatus: PlateauStatus
         get() {
             val points = morningWeighIns.mapNotNull { w ->
@@ -130,6 +147,7 @@ class DashboardViewModel(
                 mealsLast7Days = mealRepository.fetchSince(sevenDaysAgo)
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
+                recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger le dashboard pour le moment."
             } finally {
