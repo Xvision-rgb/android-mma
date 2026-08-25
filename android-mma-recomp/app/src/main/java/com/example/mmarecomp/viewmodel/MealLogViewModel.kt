@@ -41,9 +41,16 @@ class MealLogViewModel(
     var foods by mutableStateOf<List<Food>>(emptyList())
         private set
     var foodQuery by mutableStateOf("")
+    var foodCategoryFilter by mutableStateOf<String?>(null)
+    val foodCategories: List<String> get() = foods.map { it.categorie }.distinct().sorted()
     val filteredFoods: List<Food>
-        get() = if (foodQuery.isBlank()) emptyList()
-        else foods.filter { it.nom.contains(foodQuery, ignoreCase = true) }.take(8)
+        get() {
+            if (foodQuery.isBlank() && foodCategoryFilter == null) return emptyList()
+            return foods
+                .filter { foodQuery.isBlank() || it.nom.contains(foodQuery, ignoreCase = true) }
+                .filter { foodCategoryFilter == null || it.categorie == foodCategoryFilter }
+                .take(8)
+        }
 
     fun loadFoods() {
         viewModelScope.launch {

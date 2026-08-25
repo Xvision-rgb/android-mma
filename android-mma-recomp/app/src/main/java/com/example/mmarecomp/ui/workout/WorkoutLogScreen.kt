@@ -73,7 +73,17 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
     }
 
+    fun deleteWorkoutWithUndo(workout: com.example.mmarecomp.model.Workout) {
+        viewModel.deleteFromHistory(workout) {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(message = "Séance supprimée", actionLabel = "Annuler")
+                if (result == SnackbarResult.ActionPerformed) viewModel.restoreToHistory(workout)
+            }
+        }
+    }
+
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
+    LaunchedEffect(Unit) { viewModel.loadRecent() }
 
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
@@ -124,6 +134,23 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         if (viewModel.type == WorkoutType.MmaWod) {
             item { TextButton(onClick = onOpenMmaSheet) { Text("Ouvrir le log WOD MMA") } }
+        }
+
+        item {
+            var duplicateFeedback by remember { mutableStateOf<Boolean?>(null) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { viewModel.duplicateFromYesterday { found -> duplicateFeedback = found } }) {
+                    Text("Reprendre la séance d'hier")
+                }
+                TextButton(onClick = { viewModel.resetForm() }) { Text("Vider le formulaire") }
+            }
+            duplicateFeedback?.let { found ->
+                Text(
+                    if (found) "Séance d'hier reprise ✓" else "Rien à reprendre — pas de séance loguée hier",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         item {
@@ -223,6 +250,45 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             )
         }
 
+        if (viewModel.recentWorkouts.isNotEmpty()) {
+            item {
+                var showHistory by remember { mutableStateOf(false) }
+                Column {
+                    TextButton(onClick = { showHistory = !showHistory }) {
+                        Text(if (showHistory) "Masquer l'historique des séances" else "Voir l'historique des séances")
+                    }
+                    if (showHistory) {
+                        viewModel.recentWorkouts.forEach { workout ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "${workout.date} · ${workout.type.label}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "${workout.exercices.size} exercice(s)" + (workout.dureeMin?.let { " · ${it}min" } ?: ""),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    IconButton(onClick = { deleteWorkoutWithUndo(workout) }) {
+                                        Icon(
+                                            Icons.Filled.Delete,
+                                            contentDescription = "Supprimer cette séance du ${workout.date}",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.loadPlan(phase) }) }
         }
@@ -232,7 +298,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 onClick = {
                     viewModel.save { saved ->
                         showSavedMessage = saved
-                        if (saved) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.loadRecent()
+                        }
                     }
                 },
                 enabled = !viewModel.isSaving,
