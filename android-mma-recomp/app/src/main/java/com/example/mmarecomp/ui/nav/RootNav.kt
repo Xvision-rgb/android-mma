@@ -1,16 +1,23 @@
 package com.example.mmarecomp.ui.nav
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,9 +25,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -60,8 +71,41 @@ private val tabs = listOf(
 fun MainNav(userId: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
+    var fabExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
+        floatingActionButton = {
+            val backStackEntry by navController.currentBackStackEntryAsState()
+            if (backStackEntry?.destination?.route == "dashboard") {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AnimatedVisibility(visible = fabExpanded) {
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ExtendedFloatingActionButton(
+                                onClick = { fabExpanded = false; navController.navigate("weighin") },
+                                icon = { Icon(Icons.Filled.MonitorWeight, contentDescription = null) },
+                                text = { Text("Pesée") },
+                            )
+                            ExtendedFloatingActionButton(
+                                onClick = { fabExpanded = false; navController.navigate("meals") },
+                                icon = { Icon(Icons.Filled.Restaurant, contentDescription = null) },
+                                text = { Text("Repas") },
+                            )
+                            ExtendedFloatingActionButton(
+                                onClick = { fabExpanded = false; navController.navigate("workout") },
+                                icon = { Icon(Icons.Filled.FitnessCenter, contentDescription = null) },
+                                text = { Text("Séance") },
+                            )
+                        }
+                    }
+                    FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
+                        Icon(
+                            if (fabExpanded) Icons.Filled.Close else Icons.Filled.Add,
+                            contentDescription = if (fabExpanded) "Fermer" else "Accès rapide",
+                        )
+                    }
+                }
+            }
+        },
         bottomBar = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination

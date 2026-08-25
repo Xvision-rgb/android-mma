@@ -50,6 +50,7 @@ import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.TargetVsActualBar
+import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
 
@@ -60,6 +61,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     fun deleteWithUndo(meal: Meal) {
         viewModel.deleteMeal(meal) {
@@ -88,14 +90,15 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     fun applyFood(food: Food, grams: String) {
         val g = grams.replace(",", ".").toDoubleOrNull() ?: return
         calories = food.caloriesFor(g).toString()
-        proteines = "%.1f".format(food.proteinesFor(g))
-        glucides = "%.1f".format(food.glucidesFor(g))
-        lipides = "%.1f".format(food.lipidesFor(g))
+        proteines = Formatting.oneDecimal(food.proteinesFor(g))
+        glucides = Formatting.oneDecimal(food.glucidesFor(g))
+        lipides = Formatting.oneDecimal(food.lipidesFor(g))
         if (description.isBlank()) description = food.nom
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -317,6 +320,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                         showSaved = saved
                         if (saved) {
                             calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
+                            scope.launch { listState.animateScrollToItem(0) }
                         }
                     }
                 },
