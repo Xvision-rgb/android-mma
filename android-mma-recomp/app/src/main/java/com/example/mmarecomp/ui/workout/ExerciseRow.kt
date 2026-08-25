@@ -23,7 +23,7 @@ import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.util.Formatting
 
 @Composable
-fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
+fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, lastKnownCharge: Double? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -76,6 +76,14 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit) {
                 label = { Text("Charge réelle (kg)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
+            )
+        }
+
+        lastKnownCharge?.let { charge ->
+            Text(
+                "Dernière fois : ${Formatting.oneDecimal(charge)}kg",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 

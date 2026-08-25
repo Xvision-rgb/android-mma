@@ -15,9 +15,12 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
         private set
     var isSubmitting by mutableStateOf(false)
         private set
+    var signUpSuccessMessage by mutableStateOf<String?>(null)
+        private set
 
     fun signIn() {
         errorMessage = null
+        signUpSuccessMessage = null
         isSubmitting = true
         viewModelScope.launch {
             try {
@@ -32,10 +35,12 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
 
     fun signUp() {
         errorMessage = null
+        signUpSuccessMessage = null
         isSubmitting = true
         viewModelScope.launch {
             try {
                 authRepository.signUp(email, password)
+                signUpSuccessMessage = "Compte créé — vérifie tes emails si une confirmation est demandée, sinon connecte-toi directement."
             } catch (e: Exception) {
                 errorMessage = "Inscription impossible. Réessaie."
             } finally {

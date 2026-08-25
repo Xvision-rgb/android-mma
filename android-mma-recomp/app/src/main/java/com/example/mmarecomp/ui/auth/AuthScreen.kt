@@ -101,6 +101,10 @@ fun AuthScreen(viewModel: AuthViewModel) {
             Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
+        viewModel.signUpSuccessMessage?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodySmall)
+        }
 
         val formValide = emailValide && viewModel.password.isNotBlank()
 
