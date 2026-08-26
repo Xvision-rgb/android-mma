@@ -154,6 +154,12 @@ class DashboardViewModel(
             return current - target
         }
 
+    /** Cible calorique moyenne sur les jours où une cible a été définie
+     *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans
+     *  le récap hebdomadaire, jamais recalculé différemment. */
+    val avgTargetCaloriesLast7Days: Int?
+        get() = recentTargets.takeIf { it.isNotEmpty() }?.map { it.caloriesCible }?.average()?.toInt()
+
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
 
