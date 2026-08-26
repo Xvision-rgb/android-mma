@@ -77,13 +77,24 @@ class ImportTrainingPlanViewModel(
         }
     }
 
+    /** Ré-analyser le texte (ex. après une correction) ne doit jamais faire
+     *  disparaître un jour déjà enregistré dans cette session d'import : ces
+     *  jours gardent leur état "Enregistré ✓" tel quel plutôt que d'être
+     *  remplacés par un nouveau brouillon non enregistré. Les brouillons pas
+     *  encore enregistrés sont, eux, régénérés depuis le nouveau texte —
+     *  d'éventuelles modifications manuelles faites dessus avant une
+     *  ré-analyse ne sont pas préservées (cas plus rare, non géré ici). */
     fun parse() {
         hasParsed = true
         val parsed = TrainingPlanParser.parse(rawText)
-        drafts = parsed.map { day ->
-            val hasExisting = existingDays[day.jourSemaine]?.exercices?.isNotEmpty() == true
-            ImportDayDraft(jourSemaine = day.jourSemaine, exercices = day.exercices, appendToExisting = hasExisting)
-        }
+        val alreadySaved = drafts.filter { it.saved }.associateBy { it.jourSemaine }
+        val fromNewParse = parsed
+            .filterNot { alreadySaved.containsKey(it.jourSemaine) }
+            .map { day ->
+                val hasExisting = existingDays[day.jourSemaine]?.exercices?.isNotEmpty() == true
+                ImportDayDraft(jourSemaine = day.jourSemaine, exercices = day.exercices, appendToExisting = hasExisting)
+            }
+        drafts = (alreadySaved.values + fromNewParse).sortedBy { it.jourSemaine }
     }
 
     fun setAppendMode(jourSemaine: Int, append: Boolean) {

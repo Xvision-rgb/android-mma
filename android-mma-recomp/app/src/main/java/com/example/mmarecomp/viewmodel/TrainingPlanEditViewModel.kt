@@ -35,6 +35,14 @@ class TrainingPlanEditViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    /** true si le dernier errorMessage vient d'un enregistrement raté plutôt
+     *  que d'un chargement raté — pour que "Réessayer" relance la bonne
+     *  action. Un retry qui rechargerait depuis le serveur après un
+     *  échec de save() effacerait silencieusement les modifications que
+     *  l'utilisateur vient de faire. */
+    var errorIsFromSave by mutableStateOf(false)
+        private set
+
     // Instantané du dernier état chargé/enregistré, pour savoir si le
     // brouillon en cours contient des modifications non enregistrées.
     private var loadedSnapshot: Triple<PlanDayType, List<PlannedExercise>, String> =
@@ -48,6 +56,7 @@ class TrainingPlanEditViewModel(
         this.phase = phase
         isLoading = true
         errorMessage = null
+        errorIsFromSave = false
         viewModelScope.launch {
             try {
                 val day = trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jourSemaine }
@@ -104,6 +113,7 @@ class TrainingPlanEditViewModel(
     fun save(onResult: (Boolean) -> Unit) {
         if (hasBlankExerciseName) {
             errorMessage = "Un exercice a un nom vide — complète-le ou retire-le avant d'enregistrer."
+            errorIsFromSave = true
             onResult(false)
             return
         }
@@ -123,9 +133,11 @@ class TrainingPlanEditViewModel(
                 onResult(true)
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                errorIsFromSave = true
                 onResult(false)
             } catch (e: Exception) {
                 errorMessage = "Impossible d'enregistrer le programme."
+                errorIsFromSave = true
                 onResult(false)
             } finally {
                 isSaving = false

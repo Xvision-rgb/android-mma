@@ -99,62 +99,73 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
                     style = MaterialTheme.typography.titleMedium,
                 )
 
-                val existingCount = viewModel.existingDays[draft.jourSemaine]?.exercices?.size ?: 0
-                val hasExisting = existingCount > 0
-                if (hasExisting) {
-                    Text(
-                        "Ce jour a déjà $existingCount exercice(s) programmé(s) :",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = draft.appendToExisting,
-                            onClick = { viewModel.setAppendMode(draft.jourSemaine, true) },
-                            label = { Text("Compléter") },
-                        )
-                        FilterChip(
-                            selected = !draft.appendToExisting,
-                            onClick = { viewModel.setAppendMode(draft.jourSemaine, false) },
-                            label = { Text("Remplacer") },
-                        )
-                    }
-                }
-
-                if (draft.exercices.isEmpty()) {
-                    Text(
-                        "Jour détecté mais aucun exercice reconnu en dessous — ajoute-les manuellement.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                draft.exercices.forEachIndexed { index, exercice ->
-                    PlannedExerciseRow(
-                        exercice = exercice,
-                        onChange = { viewModel.updateDraftExercise(draft.jourSemaine, index, it) },
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { viewModel.removeDraftExercise(draft.jourSemaine, index) }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = "Retirer cet exercice importé",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-                TextButton(onClick = { viewModel.addDraftExercise(draft.jourSemaine) }) {
-                    Text("Ajouter un exercice")
-                }
-
                 if (draft.saved) {
+                    // Une fois enregistré, plus aucun bouton ne permet de
+                    // re-soumettre ce jour : le rendre éditable donnerait
+                    // l'illusion que d'autres changements seraient pris en
+                    // compte alors qu'ils seraient perdus sans le savoir.
                     Text(
-                        "Enregistré ✓",
+                        "Enregistré ✓ — ${draft.exercices.size} exercice(s)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
+                    draft.exercices.forEach { exercice ->
+                        Text(
+                            "${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 } else {
+                    val existingCount = viewModel.existingDays[draft.jourSemaine]?.exercices?.size ?: 0
+                    val hasExisting = existingCount > 0
+                    if (hasExisting) {
+                        Text(
+                            "Ce jour a déjà $existingCount exercice(s) programmé(s) :",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = draft.appendToExisting,
+                                onClick = { viewModel.setAppendMode(draft.jourSemaine, true) },
+                                label = { Text("Compléter") },
+                            )
+                            FilterChip(
+                                selected = !draft.appendToExisting,
+                                onClick = { viewModel.setAppendMode(draft.jourSemaine, false) },
+                                label = { Text("Remplacer") },
+                            )
+                        }
+                    }
+
+                    if (draft.exercices.isEmpty()) {
+                        Text(
+                            "Jour détecté mais aucun exercice reconnu en dessous — ajoute-les manuellement.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    draft.exercices.forEachIndexed { index, exercice ->
+                        PlannedExerciseRow(
+                            exercice = exercice,
+                            onChange = { viewModel.updateDraftExercise(draft.jourSemaine, index, it) },
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { viewModel.removeDraftExercise(draft.jourSemaine, index) }) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = "Retirer cet exercice importé",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                    TextButton(onClick = { viewModel.addDraftExercise(draft.jourSemaine) }) {
+                        Text("Ajouter un exercice")
+                    }
+
                     Button(
                         onClick = { viewModel.saveDay(draft.jourSemaine) {} },
                         enabled = !viewModel.isSaving,
