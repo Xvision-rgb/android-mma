@@ -428,3 +428,17 @@ Correctif réel trouvé pendant cette même passe : chips de filtre
 type de séance dans l'historique) qui pouvaient déborder hors de l'écran
 sur les appareils étroits, même patron que la barre de navigation du bas
 corrigée précédemment — ajout d'un défilement horizontal sur ces lignes.
+
+## 16. Bibliothèque d'aliments — extension
+
+`supabase/002_foods.sql` ne contenait qu'une trentaine d'aliments de base.
+Ajout de `supabase/003_foods_extended.sql` avec ~150 aliments courants
+supplémentaires (viandes/poissons/œufs/protéines végétales, féculents et
+légumineuses, oléagineux et huiles, une large variété de fruits et
+légumes, fromages et produits laitiers, snacks/boissons/condiments) pour
+que la recherche préchargée dans l'écran Repas couvre beaucoup plus de
+cas sans ressaisie manuelle des macros. Même format que le fichier
+existant (`on conflict (nom) do nothing`, donc ré-exécutable sans risque
+de doublon) — **à exécuter dans le SQL Editor Supabase, après
+`002_foods.sql`**, comme n'importe quelle nouvelle migration du dossier
+`supabase/`.
