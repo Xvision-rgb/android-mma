@@ -398,34 +398,53 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item {
             OutlinedTextField(
                 value = calories, onValueChange = { calories = it }, label = { Text("Calories") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             OutlinedTextField(
                 value = proteines, onValueChange = { proteines = it }, label = { Text("Protéines (g)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             OutlinedTextField(
                 value = glucides, onValueChange = { glucides = it }, label = { Text("Glucides (g)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             OutlinedTextField(
                 value = lipides, onValueChange = { lipides = it }, label = { Text("Lipides (g)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
                 value = description, onValueChange = { description = it }, label = { Text("Description (optionnel)") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
