@@ -23,6 +23,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.util.TrendPoint
 import kotlinx.coroutines.launch
 
@@ -96,6 +97,23 @@ class DashboardViewModel(
             }
             return streak
         }
+
+    /** Volume total d'entraînement (séries × reps × charge réelle) cumulé sur
+     *  les séances de la semaine — vue synthèse, jamais une comparaison
+     *  culpabilisante d'une semaine à l'autre. */
+    val weeklyTrainingVolume: Double
+        get() = workoutsThisWeek.sumOf { workout ->
+            workout.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+        }
+
+    /** Nombre de jours distincts avec au moins un repas loggé sur les 7
+     *  derniers jours — mesure de régularité, jamais un jugement sur le
+     *  contenu ou les quantités. */
+    val daysWithMealsLast7Days: Int get() = mealsLast7Days.map { it.date }.toSet().size
+
+    /** Tendance de poids sur la semaine — dérivée de la moyenne mobile 7j,
+     *  jamais une valeur brute (cf. WeightTrendChart). */
+    val weightTrendDirection: TrendDirection get() = MovingAverage.direction(weightTrend7Day)
 
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }

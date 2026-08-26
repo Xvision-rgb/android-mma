@@ -134,6 +134,23 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             }
         }
 
+        if (viewModel.weeklyVolumeTrend.isNotEmpty()) {
+            item {
+                ProgressCard(title = "Volume d'entraînement (par semaine)") {
+                    WeightTrendChart(
+                        points = viewModel.weeklyVolumeTrend,
+                        modifier = Modifier.fillMaxWidth().height(110.dp),
+                        lineColor = MaterialTheme.colorScheme.tertiary,
+                    )
+                    Text(
+                        "Séries × reps × charge réelle, cumulés semaine par semaine.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         item { Text("Charges — progression par exercice", style = MaterialTheme.typography.titleMedium) }
 
         val charges = viewModel.chargeProgressionByExercise
