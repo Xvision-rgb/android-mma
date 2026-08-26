@@ -20,6 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -95,10 +99,11 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
                     style = MaterialTheme.typography.titleMedium,
                 )
 
-                val hasExisting = viewModel.existingDays[draft.jourSemaine]?.exercices?.isNotEmpty() == true
+                val existingCount = viewModel.existingDays[draft.jourSemaine]?.exercices?.size ?: 0
+                val hasExisting = existingCount > 0
                 if (hasExisting) {
                     Text(
-                        "Ce jour a déjà des exercices programmés :",
+                        "Ce jour a déjà $existingCount exercice(s) programmé(s) :",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -114,6 +119,14 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
                             label = { Text("Remplacer") },
                         )
                     }
+                }
+
+                if (draft.exercices.isEmpty()) {
+                    Text(
+                        "Jour détecté mais aucun exercice reconnu en dessous — ajoute-les manuellement.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 draft.exercices.forEachIndexed { index, exercice ->
@@ -153,12 +166,36 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
 
         if (viewModel.drafts.count { !it.saved } > 1) {
             item {
-                Button(
-                    onClick = { viewModel.saveAll { _, _ -> } },
-                    enabled = !viewModel.isSaving,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(if (viewModel.isSaving) "Enregistrement…" else "Tout enregistrer")
+                var saveAllSummary by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(saveAllSummary) {
+                    if (saveAllSummary != null) {
+                        kotlinx.coroutines.delay(4000)
+                        saveAllSummary = null
+                    }
+                }
+                Column {
+                    Button(
+                        onClick = {
+                            viewModel.saveAll { successCount, total ->
+                                saveAllSummary = if (successCount == total) {
+                                    "$successCount jour(s) enregistré(s) ✓"
+                                } else {
+                                    "$successCount jour(s) sur $total enregistré(s) — vérifie l'erreur ci-dessus pour le reste"
+                                }
+                            }
+                        },
+                        enabled = !viewModel.isSaving,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (viewModel.isSaving) "Enregistrement…" else "Tout enregistrer")
+                    }
+                    saveAllSummary?.let { summary ->
+                        Text(
+                            summary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

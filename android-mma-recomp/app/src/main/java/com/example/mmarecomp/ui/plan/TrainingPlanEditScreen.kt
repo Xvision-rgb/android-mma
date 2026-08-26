@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +44,7 @@ import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.viewmodel.TrainingPlanEditViewModel
+import kotlinx.coroutines.launch
 
 /** Édite les exercices programmés d'un jour du split hebdo — brouillon local,
  *  un seul enregistrement explicite (bouton "Enregistrer"), rien n'est écrit
@@ -179,9 +181,29 @@ fun TrainingPlanEditScreen(
                 item { ErrorBanner(error, onRetry = { viewModel.load(jourSemaine, phase) }) }
             }
 
+            if (viewModel.hasUnsavedChanges) {
+                item {
+                    Text(
+                        "Modifications non enregistrées",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
             item {
+                val scope = rememberCoroutineScope()
                 Button(
-                    onClick = { viewModel.save { saved -> if (saved) onSaved() } },
+                    onClick = {
+                        viewModel.save { saved ->
+                            if (saved) {
+                                scope.launch {
+                                    kotlinx.coroutines.delay(500)
+                                    onSaved()
+                                }
+                            }
+                        }
+                    },
                     enabled = !viewModel.isSaving,
                     modifier = Modifier.fillMaxWidth(),
                 ) {

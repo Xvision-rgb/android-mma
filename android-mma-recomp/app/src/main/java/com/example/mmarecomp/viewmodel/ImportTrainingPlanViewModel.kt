@@ -11,6 +11,7 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
+import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.util.TrainingPlanParser
 import kotlinx.coroutines.launch
 
@@ -110,8 +111,14 @@ class ImportTrainingPlanViewModel(
         }
     }
 
-    private suspend fun saveDayInternal(jourSemaine: Int): Boolean {
-        val draft = drafts.firstOrNull { it.jourSemaine == jourSemaine } ?: return false
+    private enum class SaveOutcome { SUCCESS, NETWORK_ERROR, OTHER_ERROR }
+
+    private suspend fun saveDayInternal(jourSemaine: Int): SaveOutcome {
+        val draft = drafts.firstOrNull { it.jourSemaine == jourSemaine } ?: return SaveOutcome.OTHER_ERROR
+        if (draft.exercices.any { it.nom.isBlank() }) {
+            errorMessage = "${joursLabels[jourSemaine] ?: "Un jour"} a un exercice avec un nom vide — complète-le ou retire-le avant d'enregistrer."
+            return SaveOutcome.OTHER_ERROR
+        }
         val existing = existingDays[jourSemaine]
         val finalExercices = if (draft.appendToExisting) {
             (existing?.exercices ?: emptyList()) + draft.exercices
@@ -129,13 +136,13 @@ class ImportTrainingPlanViewModel(
                 ),
             )
             drafts = drafts.map { if (it.jourSemaine == jourSemaine) it.copy(saved = true) else it }
-            true
+            SaveOutcome.SUCCESS
         } catch (e: java.io.IOException) {
             errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            false
+            SaveOutcome.NETWORK_ERROR
         } catch (e: Exception) {
             errorMessage = "Impossible d'enregistrer ce jour."
-            false
+            SaveOutcome.OTHER_ERROR
         }
     }
 
@@ -143,13 +150,17 @@ class ImportTrainingPlanViewModel(
         isSaving = true
         errorMessage = null
         viewModelScope.launch {
-            val ok = saveDayInternal(jourSemaine)
+            val outcome = saveDayInternal(jourSemaine)
             isSaving = false
-            onResult(ok)
+            onResult(outcome == SaveOutcome.SUCCESS)
         }
     }
 
-    /** Enregistre tous les jours pas encore sauvegardés, l'un après l'autre. */
+    /** Enregistre tous les jours pas encore sauvegardés, l'un après l'autre.
+     *  S'arrête dès qu'une coupure réseau est détectée (pas la peine
+     *  d'insister sur les jours suivants sans connexion) ; une erreur
+     *  propre à un jour (ex. nom d'exercice vide) n'empêche pas de tenter
+     *  les autres jours. */
     fun saveAll(onResult: (successCount: Int, total: Int) -> Unit) {
         isSaving = true
         errorMessage = null
@@ -157,7 +168,9 @@ class ImportTrainingPlanViewModel(
             val pending = drafts.filter { !it.saved }.map { it.jourSemaine }
             var success = 0
             for (jour in pending) {
-                if (saveDayInternal(jour)) success++
+                val outcome = saveDayInternal(jour)
+                if (outcome == SaveOutcome.SUCCESS) success++
+                if (outcome == SaveOutcome.NETWORK_ERROR) break
             }
             isSaving = false
             onResult(success, pending.size)
