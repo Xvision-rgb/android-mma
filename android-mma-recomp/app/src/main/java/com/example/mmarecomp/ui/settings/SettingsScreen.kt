@@ -45,7 +45,13 @@ import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 
 @Composable
-fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved: (Phase) -> Unit, onSignOut: () -> Unit) {
+fun SettingsScreen(
+    viewModel: ProfileViewModel,
+    userEmail: String,
+    onPhaseSaved: (Phase) -> Unit,
+    onSignOut: () -> Unit,
+    onImportPlan: () -> Unit = {},
+) {
     LaunchedEffect(Unit) { viewModel.load() }
 
     val context = LocalContext.current
@@ -150,6 +156,22 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
                 enabled = !viewModel.isSaving,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Enregistrer") }
+        }
+
+        item { HorizontalDivider() }
+        item { Text("Programme d'entraînement", style = MaterialTheme.typography.titleMedium) }
+        item {
+            Text(
+                "Modifie les exercices d'un jour depuis le Dashboard (\"Voir le programme " +
+                    "de la semaine\"), ou importe un programme complet en une fois.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            OutlinedButton(onClick = onImportPlan, modifier = Modifier.fillMaxWidth()) {
+                Text("Importer un programme")
+            }
         }
 
         item { HorizontalDivider() }
