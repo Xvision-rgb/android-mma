@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.NorthEast
@@ -16,6 +17,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
@@ -92,7 +94,13 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, la
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = exercice.propre,
+                    role = Role.Switch,
+                    onValueChange = { onChange(exercice.copy(propre = it)) },
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
@@ -103,7 +111,7 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, la
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Switch(checked = exercice.propre, onCheckedChange = { onChange(exercice.copy(propre = it)) })
+            Switch(checked = exercice.propre, onCheckedChange = null)
         }
 
         exercice.suggestionProgression?.let { suggestion ->
