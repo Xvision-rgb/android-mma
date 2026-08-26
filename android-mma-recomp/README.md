@@ -442,3 +442,19 @@ existant (`on conflict (nom) do nothing`, donc ré-exécutable sans risque
 de doublon) — **à exécuter dans le SQL Editor Supabase, après
 `002_foods.sql`**, comme n'importe quelle nouvelle migration du dossier
 `supabase/`.
+
+Ajout de `supabase/004_foods_extended_2.sql` avec 236 aliments
+supplémentaires : charcuterie et gibier, poissons et fruits de mer
+(dorade, moules, huîtres, coquilles Saint-Jacques...), légumineuses et
+céréales moins courantes, une quarantaine de fromages réels
+supplémentaires, beaucoup plus de fruits/légumes/herbes fraîches, des
+plats préparés de cuisine du monde (couscous royal, curry, pad thaï,
+ramen, tacos, falafel...), snacks/pâtisseries/boissons, et quelques
+produits de nutrition sportive. Bibliothèque totale : ~410 aliments
+(002 + 003 + 004). Même format, à exécuter après les deux fichiers
+précédents. Note honnêteté : la demande initiale portait sur 1000
+aliments — au-delà de quelques centaines, continuer à générer des noms
+"réels" distincts sans tomber dans le doublon déguisé ou la valeur
+nutritionnelle approximative au hasard devient contre-productif ; ce lot
+vise la couverture la plus large et fiable possible en une passe, la
+suite peut se faire par lots supplémentaires si besoin.
