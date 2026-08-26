@@ -272,3 +272,15 @@ UX non négociables respectées, petits commits testables.
 - **Nettoyage visuel log séance** : suppression d'un libellé texte
   redondant avec le `contentDescription` de l'icône de suppression
   d'exercice, incohérent avec les autres boutons icône de la même ligne.
+- **Robustesse écran de connexion** : l'action clavier "Terminé" du champ
+  mot de passe pouvait déclencher une tentative de connexion avec un
+  email invalide ou un envoi déjà en cours (garde-fou aligné sur celui du
+  bouton) ; message dédié pour une erreur réseau plutôt que le message
+  générique d'échec d'authentification.
+- **Toggle "propre" accessible** : le Switch "Toutes les reps faites
+  proprement" (log séance) avait été oublié lors de l'audit précédent des
+  toggles — toute la ligne est maintenant cliquable et annoncée
+  correctement par TalkBack, comme les autres toggles de l'app.
+- **Menu rapide FAB** : le menu d'accès rapide (pesée/repas/séance) du
+  Dashboard pouvait rester déplié après un changement d'onglet, faute de
+  réinitialisation de son état à la navigation.
