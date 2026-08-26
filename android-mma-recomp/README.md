@@ -373,3 +373,10 @@ entre plusieurs éléments d'une même liste trouvé).
   programme de la semaine" (Dashboard) : ajouter/modifier/dupliquer/
   réordonner/retirer un exercice, brouillon local avec un seul
   enregistrement explicite (pas d'écriture à chaque frappe).
+- **Import d'un programme collé en texte libre** (Réglages → "Importer
+  un programme") : parseur best-effort (`TrainingPlanParser`, même
+  esprit que `WodParser`) qui détecte les jours de la semaine en titres
+  puis les exercices ("Squat 4x8 @80kg" et variantes). Jamais
+  d'enregistrement automatique : aperçu éditable par jour détecté, choix
+  explicite Compléter/Remplacer si un jour a déjà des exercices
+  programmés, validation jour par jour ou en un clic pour tous.
