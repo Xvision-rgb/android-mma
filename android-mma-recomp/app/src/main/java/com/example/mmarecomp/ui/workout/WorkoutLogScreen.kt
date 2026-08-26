@@ -62,6 +62,7 @@ import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
+import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
 
@@ -130,18 +131,13 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    val dotColors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.tertiary,
-                    )
-                    WorkoutType.entries.forEachIndexed { index, option ->
+                    WorkoutType.entries.forEach { option ->
                         DropdownMenuItem(
                             leadingIcon = {
                                 Box(
                                     modifier = Modifier
                                         .size(10.dp)
-                                        .background(dotColors[index % dotColors.size], androidx.compose.foundation.shape.CircleShape),
+                                        .background(workoutTypeColor(option), androidx.compose.foundation.shape.CircleShape),
                                 )
                             },
                             text = { Text(option.label) },
@@ -361,11 +357,18 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    "${workout.date} · ${workout.type.label}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(workoutTypeColor(workout.type), androidx.compose.foundation.shape.CircleShape),
+                                    )
+                                    Text(
+                                        "${workout.date} · ${workout.type.label}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         "${workout.exercices.size} exercice(s)" + (workout.dureeMin?.let { " · ${it}min" } ?: ""),
