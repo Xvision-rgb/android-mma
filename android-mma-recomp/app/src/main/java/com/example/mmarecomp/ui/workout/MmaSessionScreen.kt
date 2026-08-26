@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 import kotlinx.coroutines.launch
 
@@ -78,8 +79,8 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Log MMA", style = MaterialTheme.typography.titleLarge) }
 

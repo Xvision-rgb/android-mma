@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.ThemeMode
 import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -82,8 +83,8 @@ fun SettingsScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Réglages", style = MaterialTheme.typography.titleLarge) }
         if (userEmail.isNotBlank()) {

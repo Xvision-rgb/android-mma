@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.CsvExport
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
@@ -37,8 +38,8 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
 

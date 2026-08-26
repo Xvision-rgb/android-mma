@@ -189,8 +189,8 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Log repas", style = MaterialTheme.typography.titleLarge) }
 
