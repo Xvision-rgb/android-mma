@@ -290,3 +290,31 @@ UX non négociables respectées, petits commits testables.
   simple coupure réseau. Chacun distingue maintenant une erreur réseau
   d'une erreur applicative, avec un message qui invite à réessayer plutôt
   qu'à douter des données.
+
+## 11. Améliorations UX — round 5 (fonctionnalités notables)
+
+Après quatre rounds de polish et de robustesse, ce round revient à
+l'ajout de fonctionnalités visibles, à partir des données déjà chargées
+ou déjà exposées par les repositories existants — toujours aucun
+changement de schéma Supabase :
+
+- **Bilan de la semaine (Dashboard)** : nouvelle carte de synthèse —
+  volume d'entraînement cumulé (séries × reps × charge réelle),
+  régularité des repas loggés (jours sur 7), tendance de poids (moyenne
+  mobile 7j).
+- **Volume d'entraînement dans le temps (Progression)** : nouveau
+  graphique agrégeant le volume total par semaine, en complément des
+  graphiques poids/%BF/charge par exercice déjà existants.
+- **Comparatif de séance (log séance)** : repère factuel avec le volume
+  de la dernière séance du même type ("juste un repère, pas un objectif
+  à battre").
+- **Objectif de poids sur le Dashboard** : l'écart entre le poids actuel
+  (moyenne mobile 7j) et l'objectif défini dans Réglages était calculé
+  nulle part ailleurs que dans le formulaire de saisie — affiché
+  maintenant de façon neutre, sans direction imposée (prise ou perte).
+- **Filtre d'historique par type (log séance)** : chips de filtre sur
+  l'historique dépliable, même pattern que le filtre par catégorie
+  d'aliment côté repas.
+- **Répartition des types de séance (Progression)** : la carte résumé
+  affiche maintenant la fréquence de chaque type de séance sur la
+  fenêtre sélectionnée.
