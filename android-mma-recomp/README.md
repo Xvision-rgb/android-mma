@@ -535,3 +535,19 @@ Lot 5 (récap hebdomadaire, inspiré de Whoop/Noom) :
   en synthèse. Au passage, suppression d'une redondance entre 3 cartes
   qui affichaient la même info (carte "Bilan de la semaine" retirée,
   contenu absorbé).
+
+Lot 6 (micro-interactions, standards UX mobile 2026) :
+- Durée d'animation explicite (tween 200ms) sur les 4 confirmations
+  "Enregistré ✓/💪" au lieu d'un spring par défaut au timing non
+  garanti. Audit haptique : déjà conforme (destructeur/célébratoire
+  uniquement), rien à corriger.
+
+Lot 7 (états vides comme moments d'activation, standards UX 2026) :
+- Boutons d'action directs sur les états vides qui n'en avaient pas
+  (ajouter un exercice, voir tous les repas après un filtre vide) au
+  lieu de renvoyer vers "le bouton ci-dessous".
+
+Lot 8 (rappels intelligents, inspiré de Duolingo) :
+- Heure de rappel personnalisable pour la pesée et les repas (au lieu
+  de 7h30/20h fixes pour tout le monde), sans reprendre le système de
+  streak à pression de Duolingo.
