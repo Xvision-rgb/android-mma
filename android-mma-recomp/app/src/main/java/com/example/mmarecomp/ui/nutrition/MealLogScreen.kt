@@ -66,6 +66,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
+    LaunchedEffect(viewModel.date) { viewModel.loadRecentHistory() }
     LaunchedEffect(Unit) { viewModel.loadFoods() }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -278,6 +279,36 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                                 contentDescription = "Supprimer le repas ${slot.label}",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (viewModel.recentMeals.isNotEmpty()) {
+            item {
+                var showRecentHistory by remember { mutableStateOf(false) }
+                Column {
+                    TextButton(onClick = { showRecentHistory = !showRecentHistory }) {
+                        Text(if (showRecentHistory) "Masquer l'historique récent" else "Voir l'historique récent (14 derniers jours)")
+                    }
+                    if (showRecentHistory) {
+                        viewModel.recentMeals.forEach { meal ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "${meal.date} · ${meal.repasSlot?.label ?: ""}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    "${meal.calories} kcal",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
                         }
                     }
                 }
