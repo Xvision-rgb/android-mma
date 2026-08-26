@@ -200,6 +200,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                     }
                     Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                viewModel.bfGoalGapPct?.let { gap ->
+                    val label = when {
+                        gap > 0.3 -> "Encore ${Formatting.oneDecimal(gap)} points de %BF pour atteindre ton objectif (moyenne 7j)."
+                        gap < -0.3 -> "Tu es ${Formatting.oneDecimal(-gap)} points de %BF en dessous de ton objectif (moyenne 7j)."
+                        else -> "Tu es tout proche de ton objectif de %BF 🎯 (moyenne 7j)."
+                    }
+                    Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         item {

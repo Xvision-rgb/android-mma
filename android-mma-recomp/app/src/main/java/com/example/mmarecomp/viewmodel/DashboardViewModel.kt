@@ -51,6 +51,8 @@ class DashboardViewModel(
         private set
     var poidsObjectifKg by mutableStateOf<Double?>(null)
         private set
+    var bfObjectifPct by mutableStateOf<Double?>(null)
+        private set
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -68,6 +70,17 @@ class DashboardViewModel(
         get() {
             val points = morningWeighIns.mapNotNull { w ->
                 DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) }
+            }
+            return MovingAverage.sevenDay(points)
+        }
+
+    /** Tendance %BF sur 7 jours — même principe de lissage que le poids,
+     *  jamais la valeur brute d'une seule pesée. */
+    val bfTrend7Day: List<TrendPoint>
+        get() {
+            val points = morningWeighIns.mapNotNull { w ->
+                val bf = w.bfPct ?: return@mapNotNull null
+                DateUtils.date(w.date)?.let { TrendPoint(it, bf) }
             }
             return MovingAverage.sevenDay(points)
         }
@@ -127,6 +140,16 @@ class DashboardViewModel(
         get() {
             val current = weightTrend7Day.lastOrNull()?.value ?: return null
             val target = poidsObjectifKg ?: return null
+            return current - target
+        }
+
+    /** Écart entre le %BF actuel (moyenne mobile 7j, jamais brut) et
+     *  l'objectif défini dans le profil — même logique que weightGoalGapKg.
+     *  Null si l'objectif ou l'historique %BF manquent. */
+    val bfGoalGapPct: Double?
+        get() {
+            val current = bfTrend7Day.lastOrNull()?.value ?: return null
+            val target = bfObjectifPct ?: return null
             return current - target
         }
 
@@ -204,7 +227,9 @@ class DashboardViewModel(
                 todayTarget = nutritionTargetRepository.fetch(today)
                 recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
                 if (userId.isNotBlank()) {
-                    poidsObjectifKg = runCatching { profileRepository.fetch(userId).poidsObjectifKg }.getOrNull()
+                    val profile = runCatching { profileRepository.fetch(userId) }.getOrNull()
+                    poidsObjectifKg = profile?.poidsObjectifKg
+                    bfObjectifPct = profile?.bfObjectifPct
                 }
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — le dashboard s'affichera dès que le réseau revient."
