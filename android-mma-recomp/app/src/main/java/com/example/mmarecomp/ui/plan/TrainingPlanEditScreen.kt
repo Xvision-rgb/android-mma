@@ -124,7 +124,9 @@ fun TrainingPlanEditScreen(
                 item {
                     EmptyState(
                         title = "Aucun exercice programmé pour ce jour",
-                        subtitle = "Ajoute-en un avec le bouton ci-dessous, ou importe un programme complet depuis Réglages.",
+                        subtitle = "Ajoute-en un, ou importe un programme complet depuis Réglages.",
+                        actionLabel = "Ajouter un exercice",
+                        onAction = { viewModel.addExercise() },
                     )
                 }
             }

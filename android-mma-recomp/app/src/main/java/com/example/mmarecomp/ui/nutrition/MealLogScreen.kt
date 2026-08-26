@@ -314,9 +314,16 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         val visibleMeals = viewModel.mealsForDay.filter { slotFilter == null || it.repasSlot == slotFilter }
         if (visibleMeals.isEmpty()) {
             item {
+                val hasOtherSlotsWithMeals = viewModel.mealsForDay.isNotEmpty()
                 EmptyState(
                     title = if (viewModel.mealsForDay.isEmpty()) "Aucun repas loggé pour l'instant" else "Aucun repas pour ce créneau",
-                    subtitle = if (viewModel.mealsForDay.isEmpty()) "Ajoute ton premier repas ci-dessous, ça prend 10 secondes." else null,
+                    subtitle = if (viewModel.mealsForDay.isEmpty()) {
+                        "Ajoute ton premier repas ci-dessous, ça prend 10 secondes."
+                    } else {
+                        "D'autres créneaux ont des repas loggés aujourd'hui."
+                    },
+                    actionLabel = if (hasOtherSlotsWithMeals) "Voir tous les repas" else null,
+                    onAction = { slotFilter = null }.takeIf { hasOtherSlotsWithMeals },
                 )
             }
         }
