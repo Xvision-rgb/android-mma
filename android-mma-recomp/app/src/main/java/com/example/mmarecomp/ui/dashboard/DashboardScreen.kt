@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,7 +44,7 @@ import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
+fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: (Int) -> Unit = {}) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
@@ -162,7 +163,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                    Text(day.type.label, style = MaterialTheme.typography.bodySmall)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(day.type.label, style = MaterialTheme.typography.bodySmall)
+                                        IconButton(onClick = { onEditPlanDay(day.jourSemaine) }) {
+                                            Icon(
+                                                Icons.Filled.Edit,
+                                                contentDescription = "Modifier les exercices du ${com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "jour"}",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
                                 }
                                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                     com.example.mmarecomp.model.PlanDayType.entries.forEach { option ->

@@ -34,14 +34,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.dashboard.DashboardScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
+import com.example.mmarecomp.ui.plan.TrainingPlanEditScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
 import com.example.mmarecomp.ui.settings.SettingsScreen
 import com.example.mmarecomp.ui.weighin.WeighInScreen
@@ -52,6 +55,7 @@ import com.example.mmarecomp.viewmodel.MealLogViewModel
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 import com.example.mmarecomp.viewmodel.ProgressViewModel
+import com.example.mmarecomp.viewmodel.TrainingPlanEditViewModel
 import com.example.mmarecomp.viewmodel.WeighInViewModel
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
@@ -137,7 +141,24 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
         ) {
             composable("dashboard") {
                 val vm = remember(userId) { DashboardViewModel(userId = userId) }
-                DashboardScreen(vm, currentPhase)
+                DashboardScreen(
+                    vm,
+                    currentPhase,
+                    onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                )
+            }
+            composable(
+                "plan_edit/{jourSemaine}",
+                arguments = listOf(navArgument("jourSemaine") { type = NavType.IntType }),
+            ) { backStackEntry ->
+                val jourSemaine = backStackEntry.arguments?.getInt("jourSemaine") ?: 1
+                val vm = remember(jourSemaine) { TrainingPlanEditViewModel() }
+                TrainingPlanEditScreen(
+                    vm,
+                    jourSemaine = jourSemaine,
+                    phase = currentPhase,
+                    onSaved = { navController.popBackStack() },
+                )
             }
             composable("workout") {
                 val vm = remember { WorkoutLogViewModel() }
