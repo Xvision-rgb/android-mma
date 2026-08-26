@@ -26,6 +26,7 @@ import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.SoftAlertTone
+import com.example.mmarecomp.ui.components.StatusBadge
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.CalorieGoal
 import com.example.mmarecomp.viewmodel.CalorieGoalViewModel
@@ -224,7 +225,7 @@ private fun CalorieModeCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(mode.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 if (isRecommended) {
-                    Text("Recommandé", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                    StatusBadge("Recommandé")
                 }
             }
             if (goal != null) {
