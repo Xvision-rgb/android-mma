@@ -116,6 +116,18 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         if (description.isBlank()) description = food.nom
     }
 
+    /** Pré-remplit le formulaire avec un repas de l'historique récent —
+     *  pratique pour reloguer un repas habituel sans tout ressaisir. */
+    fun applyMeal(meal: Meal) {
+        selectedSlot = meal.repasSlot ?: selectedSlot
+        calories = meal.calories.toString()
+        proteines = Formatting.oneDecimal(meal.proteinesG)
+        glucides = Formatting.oneDecimal(meal.glucidesG)
+        lipides = Formatting.oneDecimal(meal.lipidesG)
+        description = meal.description.orEmpty()
+        scope.launch { listState.animateScrollToItem(0) }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         state = listState,
@@ -304,10 +316,13 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                Text(
-                                    "${meal.calories} kcal",
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "${meal.calories} kcal",
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    TextButton(onClick = { applyMeal(meal) }) { Text("Reprendre") }
+                                }
                             }
                         }
                     }
