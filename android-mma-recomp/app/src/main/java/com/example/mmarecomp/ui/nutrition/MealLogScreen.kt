@@ -300,6 +300,12 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
         item {
             var duplicateFeedback by remember(selectedSlot) { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(duplicateFeedback) {
+                if (duplicateFeedback != null) {
+                    kotlinx.coroutines.delay(4000)
+                    duplicateFeedback = null
+                }
+            }
             TextButton(onClick = {
                 viewModel.duplicateFromYesterday(selectedSlot) { found -> duplicateFeedback = found }
             }) { Text("Reprendre le repas d'hier sur ce créneau") }

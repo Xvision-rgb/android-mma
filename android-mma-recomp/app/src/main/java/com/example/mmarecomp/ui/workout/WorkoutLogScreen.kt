@@ -141,6 +141,12 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         item {
             var duplicateFeedback by remember { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(duplicateFeedback) {
+                if (duplicateFeedback != null) {
+                    kotlinx.coroutines.delay(4000)
+                    duplicateFeedback = null
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { viewModel.duplicateFromYesterday { found -> duplicateFeedback = found } }) {
                     Text("Reprendre la séance d'hier")
