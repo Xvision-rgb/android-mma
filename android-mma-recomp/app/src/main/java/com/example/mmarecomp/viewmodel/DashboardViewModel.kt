@@ -1,5 +1,6 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -25,6 +26,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.PlateauStatus
+import com.example.mmarecomp.util.StreakManager
 import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.util.TrendPoint
 import kotlinx.coroutines.launch
@@ -37,7 +39,9 @@ class DashboardViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val nutritionTargetRepository: NutritionTargetRepository = NutritionTargetRepository(),
     private val profileRepository: ProfileRepository = ProfileRepository(),
+    private val context: Context? = null,
 ) : ViewModel() {
+    private val streakManager = context?.let { StreakManager(it) }
     var planThisWeek by mutableStateOf<List<TrainingPlanDay>>(emptyList())
         private set
     var workoutsThisWeek by mutableStateOf<List<Workout>>(emptyList())
@@ -154,6 +158,9 @@ class DashboardViewModel(
             return current - target
         }
 
+    val currentStreak: Int get() = streakManager?.getCurrentStreak() ?: 0
+    val bestStreak: Int get() = streakManager?.getBestStreak() ?: 0
+
     /** Cible calorique moyenne sur les jours où une cible a été définie
      *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans
      *  le récap hebdomadaire, jamais recalculé différemment. */
@@ -228,6 +235,7 @@ class DashboardViewModel(
     }
 
     fun load(phase: Phase) {
+        streakManager?.updateStreak()
         isLoading = true
         errorMessage = null
         viewModelScope.launch {

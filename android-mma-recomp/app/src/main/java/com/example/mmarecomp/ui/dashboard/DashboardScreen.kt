@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.components.StreakBadge
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -90,6 +91,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                     }
                 }
             }
+        }
+        item {
+            StreakBadge(
+                currentStreak = viewModel.currentStreak,
+                bestStreak = viewModel.bestStreak,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
