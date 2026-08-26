@@ -84,6 +84,25 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                 }
             }
         }
+        if (viewModel.meals.isNotEmpty()) {
+            item {
+                OutlinedButton(
+                    onClick = {
+                        val csv = CsvExport.meals(viewModel.meals)
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_SUBJECT, "Historique repas")
+                            putExtra(Intent.EXTRA_TEXT, csv)
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des repas"))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                    Text("  Exporter l'historique des repas (CSV)")
+                }
+            }
+        }
 
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {

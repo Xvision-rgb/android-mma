@@ -157,6 +157,13 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
             item {
                 var showHistory by remember { mutableStateOf(false) }
                 Column {
+                    viewModel.averageRessenti?.let { avg ->
+                        Text(
+                            "Ressenti moyen sur les dernières séances : ${com.example.mmarecomp.util.Formatting.oneDecimal(avg)}/5",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     TextButton(onClick = { showHistory = !showHistory }) {
                         Text(if (showHistory) "Masquer l'historique MMA" else "Voir l'historique des séances MMA")
                     }

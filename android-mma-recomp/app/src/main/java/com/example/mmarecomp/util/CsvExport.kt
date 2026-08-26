@@ -1,5 +1,6 @@
 package com.example.mmarecomp.util
 
+import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.Workout
 
@@ -26,6 +27,20 @@ object CsvExport {
             append(w.exercices.size).append(',')
             append(w.dureeMin?.toString() ?: "").append(',')
             append((w.notes ?: "").replace(",", ";").replace("\n", " "))
+            appendLine()
+        }
+    }
+
+    fun meals(history: List<Meal>): String = buildString {
+        appendLine("date,repas,description,calories,proteines_g,glucides_g,lipides_g")
+        history.sortedWith(compareBy({ it.date }, { it.repas })).forEach { m ->
+            append(m.date).append(',')
+            append(m.repasSlot?.label ?: m.repas.toString()).append(',')
+            append((m.description ?: "").replace(",", ";").replace("\n", " ")).append(',')
+            append(m.calories).append(',')
+            append(Formatting.oneDecimal(m.proteinesG)).append(',')
+            append(Formatting.oneDecimal(m.glucidesG)).append(',')
+            append(Formatting.oneDecimal(m.lipidesG))
             appendLine()
         }
     }
