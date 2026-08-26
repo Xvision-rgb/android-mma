@@ -17,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,9 +85,19 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel) {
         if (goalRecomposition != null) {
             item {
                 Text(
-                    "Maintenance estimée : ${goalRecomposition.maintenanceCalories} kcal/jour",
-                    style = MaterialTheme.typography.titleMedium,
+                    "Maintenance estimée",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("${goalRecomposition.maintenanceCalories}", style = MaterialTheme.typography.displayLarge)
+                    Text(
+                        "kcal/jour",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                }
             }
             item {
                 SoftAlertBanner(

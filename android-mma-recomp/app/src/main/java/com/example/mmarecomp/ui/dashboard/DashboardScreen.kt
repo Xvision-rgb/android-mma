@@ -97,9 +97,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                             contentDescription = "Série d'activité",
                             tint = MaterialTheme.colorScheme.secondary,
                         )
+                        Text("$activityStreakDays", style = MaterialTheme.typography.displayLarge)
                         Text(
-                            "$activityStreakDays jours d'affilée avec au moins une activité loggée",
+                            "jours d'affilée avec au moins une activité loggée",
                             style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                     }
                 }
@@ -108,10 +110,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         item {
             DashCard {
                 Text("Cette semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    "${viewModel.seancesFaitesCount} séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("${viewModel.seancesFaitesCount}", style = MaterialTheme.typography.displayLarge)
+                    Text(
+                        "séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
                 val avgTarget = viewModel.avgTargetCaloriesLast7Days
                 Text(
                     if (avgTarget != null) {
