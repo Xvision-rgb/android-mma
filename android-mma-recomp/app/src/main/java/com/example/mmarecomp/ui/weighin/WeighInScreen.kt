@@ -268,7 +268,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 Button(
                     onClick = {
                         val savedType = viewModel.type

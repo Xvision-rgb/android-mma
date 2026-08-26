@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
 
 @Composable
@@ -47,7 +48,7 @@ fun ExerciseRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = Dimens.spaceSm),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         OutlinedTextField(
@@ -65,7 +66,7 @@ fun ExerciseRow(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
             // value lié directement à exercice.series.toString() empêchait de vider le
             // champ pour retaper un nombre : toIntOrNull() sur "" retombait sur l'ancienne
             // valeur, donc le texte affiché ne changeait jamais visuellement à l'effacement.
@@ -95,7 +96,7 @@ fun ExerciseRow(
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
             OutlinedTextField(
                 value = exercice.chargeCibleKg?.toString() ?: "",
                 onValueChange = {

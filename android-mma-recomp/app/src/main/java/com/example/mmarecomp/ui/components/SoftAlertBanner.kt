@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.theme.Dimens
 
 enum class SoftAlertTone { POSITIVE, NEUTRAL }
 
@@ -32,7 +33,7 @@ fun SoftAlertBanner(
         modifier = modifier
             .background(color.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
             .padding(10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
     ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
         Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
