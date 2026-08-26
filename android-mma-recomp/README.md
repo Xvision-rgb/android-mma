@@ -597,3 +597,12 @@ dropdown, l'historique des séances et la répartition hebdo du Dashboard.
 Lot 7 (icônes d'état vide) : EmptyState utilisait l'icône Inbox par
 défaut partout — icônes contextuelles ajoutées sur les 4 usages,
 réutilisant celles déjà présentes dans la barre de navigation.
+
+Lot 8 (espacements codés en dur) : Arrangement.spacedBy(8.dp/4.dp) et
+.padding(vertical = 8.dp/4.dp) remplacés par Dimens.spaceSm/spaceXs
+partout où la valeur matchait exactement un token existant (~10
+fichiers) — refactor pur, aucun changement de rendu.
+
+Lot 9 (graphique de tendance de poids) : couleur déjà conforme au
+thème. Remplissage sous la courbe passé d'une teinte plate à un
+dégradé vertical léger. Moyenne mobile 7j strictement inchangée.
