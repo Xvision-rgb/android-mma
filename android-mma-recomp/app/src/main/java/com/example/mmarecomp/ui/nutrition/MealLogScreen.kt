@@ -155,14 +155,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         recomputeFromItems()
     }
 
-    /** Pré-remplit le formulaire avec un repas de l'historique récent —
-     *  pratique pour reloguer un repas habituel sans tout ressaisir. Le
-     *  repas repris devient lui-même une "ligne" du repas en cours, pour
-     *  qu'ajouter un aliment ensuite s'additionne correctement au lieu de
-     *  l'effacer. */
-    fun applyMeal(meal: Meal) {
-        selectedSlot = meal.repasSlot ?: selectedSlot
-        mealItems.clear()
+    /** Ajoute un repas déjà loggé (hier, ou depuis l'historique récent)
+     *  comme une "ligne" de plus au repas en cours — jamais en écrasant ce
+     *  qui a déjà été ajouté/saisi (même patron que addFoodItem). */
+    fun addMealAsItem(meal: Meal) {
         mealItems.add(
             MealFoodItem(
                 label = meal.description?.takeIf { it.isNotBlank() } ?: "Repas repris",
@@ -172,9 +168,14 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 lipidesG = meal.lipidesG,
             ),
         )
-        descriptionIsAuto = meal.description.isNullOrBlank()
         recomputeFromItems()
-        if (!descriptionIsAuto) description = meal.description.orEmpty()
+    }
+
+    /** Pré-remplit le formulaire avec un repas de l'historique récent —
+     *  pratique pour reloguer un repas habituel sans tout ressaisir. */
+    fun applyMeal(meal: Meal) {
+        selectedSlot = meal.repasSlot ?: selectedSlot
+        addMealAsItem(meal)
         scope.launch { listState.animateScrollToItem(0) }
     }
 
@@ -410,11 +411,14 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 }
             }
             TextButton(onClick = {
-                viewModel.duplicateFromYesterday(selectedSlot) { found -> duplicateFeedback = found }
+                viewModel.findYesterdayMeal(selectedSlot) { match ->
+                    if (match != null) addMealAsItem(match)
+                    duplicateFeedback = match != null
+                }
             }) { Text("Reprendre le repas d'hier sur ce créneau") }
             duplicateFeedback?.let { found ->
                 Text(
-                    if (found) "Repas d'hier repris ✓" else "Rien à reprendre — pas de repas loggé hier sur ce créneau",
+                    if (found) "Repas d'hier ajouté à ce repas ✓" else "Rien à reprendre — pas de repas loggé hier sur ce créneau",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

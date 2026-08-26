@@ -170,33 +170,20 @@ class MealLogViewModel(
         }
     }
 
-    /** Reprend le repas loggé hier sur ce créneau, pour aujourd'hui — évite
-     *  de re-saisir un repas répétitif. Ne fait rien si rien n'a été loggé
-     *  hier sur ce créneau. */
-    fun duplicateFromYesterday(slot: RepasSlot, onResult: (Boolean) -> Unit) {
+    /** Cherche le repas loggé hier sur ce créneau — pour proposer de le
+     *  reprendre dans le formulaire en cours (pas d'enregistrement direct
+     *  ici : c'est l'écran qui l'ajoute au repas en cours de composition,
+     *  pour ne jamais écraser silencieusement un repas déjà loggé aujourd'hui
+     *  sur ce créneau, ni ce que l'utilisateur a déjà commencé à saisir). */
+    fun findYesterdayMeal(slot: RepasSlot, onResult: (Meal?) -> Unit) {
         viewModelScope.launch {
             try {
                 val yesterday = DateUtils.string(date.minusDays(1))
                 val match = mealRepository.fetchForDate(yesterday).firstOrNull { it.repas == slot.value }
-                if (match == null) {
-                    onResult(false)
-                    return@launch
-                }
-                val newMeal = NewMeal(
-                    date = DateUtils.string(date),
-                    repas = slot.value,
-                    calories = match.calories,
-                    proteinesG = match.proteinesG,
-                    glucidesG = match.glucidesG,
-                    lipidesG = match.lipidesG,
-                    description = match.description,
-                )
-                val saved = mealRepository.log(newMeal)
-                mealsForDay = (mealsForDay.filterNot { it.repas == slot.value } + saved).sortedBy { it.repas }
-                onResult(true)
+                onResult(match)
             } catch (e: Exception) {
-                errorMessage = "Impossible de dupliquer le repas d'hier."
-                onResult(false)
+                errorMessage = "Impossible de reprendre le repas d'hier."
+                onResult(null)
             }
         }
     }

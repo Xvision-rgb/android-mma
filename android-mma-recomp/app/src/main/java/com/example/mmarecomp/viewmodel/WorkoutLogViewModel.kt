@@ -98,7 +98,10 @@ class WorkoutLogViewModel(
     }
 
     /** Reprend le type/exercices/durée de la séance loguée hier, si elle
-     *  existe. Ne fait rien sinon. */
+     *  existe. Ne fait rien sinon. Les exercices d'hier sont ajoutés à ceux
+     *  déjà présents dans le formulaire (jamais remplacés) pour ne pas
+     *  perdre des exercices déjà saisis manuellement avant l'appui sur ce
+     *  bouton. */
     fun duplicateFromYesterday(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
@@ -109,8 +112,8 @@ class WorkoutLogViewModel(
                     return@launch
                 }
                 type = match.type
-                exercices = match.exercices
-                dureeMin = match.dureeMin?.toString() ?: ""
+                exercices = exercices + match.exercices
+                if (dureeMin.isBlank()) dureeMin = match.dureeMin?.toString() ?: ""
                 prefilledFromPlan = false
                 onResult(true)
             } catch (e: Exception) {
