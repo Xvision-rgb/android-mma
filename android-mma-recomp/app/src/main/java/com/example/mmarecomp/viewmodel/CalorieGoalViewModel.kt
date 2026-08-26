@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.WeighInRepository
@@ -12,9 +13,15 @@ import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.NewNutritionTarget
 import com.example.mmarecomp.model.ProfileUpdate
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.model.WeighIn
+import com.example.mmarecomp.model.WeighInType
+import com.example.mmarecomp.util.AdaptiveRecalibration
 import com.example.mmarecomp.util.CalorieCalculator
 import com.example.mmarecomp.util.CalorieGoal
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.MovingAverage
+import com.example.mmarecomp.util.TrendPoint
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.launch
 
 class CalorieGoalViewModel(
@@ -22,6 +29,7 @@ class CalorieGoalViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val profileRepository: ProfileRepository = ProfileRepository(),
     private val targetRepository: NutritionTargetRepository = NutritionTargetRepository(),
+    private val mealRepository: MealRepository = MealRepository(),
 ) : ViewModel() {
     var poidsKg by mutableStateOf<Double?>(null)
         private set
@@ -36,6 +44,12 @@ class CalorieGoalViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var savedConfirmation by mutableStateOf(false)
+        private set
+
+    /** Recalibrage adaptatif façon MacroFactor — null tant qu'il n'y a pas
+     *  assez de données (14j+) ou que l'écart avec la maintenance formulée
+     *  n'est pas assez significatif pour valoir la peine d'être proposé. */
+    var recalibration by mutableStateOf<AdaptiveRecalibration?>(null)
         private set
 
     /** Champs éditables : pré-remplis depuis la dernière pesée si dispo, mais
@@ -68,12 +82,80 @@ class CalorieGoalViewModel(
                 if (userId.isNotBlank()) {
                     appliedMode = runCatching { profileRepository.fetch(userId) }.getOrNull()?.objectifCalorieMode
                 }
+                latest?.poidsKg?.let { poids -> loadRecalibration(poids, recent) }
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger tes dernières mesures."
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    /** Recalibrage adaptatif façon MacroFactor : compare la tendance de
+     *  poids réelle (moyenne mobile 7j, jamais brute) aux calories
+     *  réellement loguées sur la même période, plutôt que de se fier
+     *  uniquement à la formule poids × 30 × multiplicateur.
+     *  N'affiche rien tant que la fenêtre disponible est sous 14 jours. */
+    private suspend fun loadRecalibration(currentPoidsKg: Double, recentWeighIns: List<WeighIn>) {
+        recalibration = null
+        val points = recentWeighIns
+            .filter { it.type == WeighInType.MatinJeun }
+            .mapNotNull { w -> DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) } }
+        if (points.isEmpty()) return
+        val trend = MovingAverage.sevenDay(points)
+        if (trend.size < 2) return
+        val first = trend.first()
+        val last = trend.last()
+        val periodDays = ChronoUnit.DAYS.between(first.date, last.date).toInt()
+        if (periodDays < 14) return
+
+        val meals = runCatching { mealRepository.fetchSince(DateUtils.string(first.date)) }.getOrDefault(emptyList())
+        val caloriesByDate = meals.groupBy { it.date }.mapValues { (_, dayMeals) -> dayMeals.sumOf { it.calories } }
+        if (caloriesByDate.isEmpty()) return
+        val avgLoggedCalories = caloriesByDate.values.average()
+
+        val staticMaintenance = CalorieCalculator.maintenanceCalories(currentPoidsKg)
+        val result = CalorieCalculator.adaptiveRecalibration(
+            weightChangeKg = last.value - first.value,
+            periodDays = periodDays,
+            avgLoggedCalories = avgLoggedCalories,
+            staticMaintenanceCalories = staticMaintenance,
+        ) ?: return
+        if (CalorieCalculator.isRecalibrationSignificant(result)) {
+            recalibration = result
+        }
+    }
+
+    /** Applique la dépense réelle estimée par le recalibrage comme nouvelle
+     *  base de maintenance pour le mode actuel, au lieu de la formule
+     *  statique — mêmes offsets/macros/plancher que applyMode(). */
+    fun applyRecalibration() {
+        val poids = poidsInputKg.replace(",", ".").toDoubleOrNull() ?: return
+        val bf = bfInputPct.replace(",", ".").toDoubleOrNull()
+        val estimated = recalibration?.estimatedExpenditureCalories ?: return
+        val mode = appliedMode ?: recommendedMode
+        isSaving = true
+        savedConfirmation = false
+        errorMessage = null
+        viewModelScope.launch {
+            try {
+                val goal = CalorieCalculator.goalFromMaintenance(estimated, poids, bf, mode)
+                targetRepository.set(
+                    NewNutritionTarget(
+                        date = DateUtils.today(),
+                        typeJour = TypeJour.Training,
+                        caloriesCible = goal.targetCalories,
+                        proteinesCibleG = goal.proteinesG.toDouble(),
+                    ),
+                )
+                recalibration = null
+                savedConfirmation = true
+            } catch (e: Exception) {
+                errorMessage = "Impossible d'appliquer le recalibrage — réessaie."
+            } finally {
+                isSaving = false
             }
         }
     }
