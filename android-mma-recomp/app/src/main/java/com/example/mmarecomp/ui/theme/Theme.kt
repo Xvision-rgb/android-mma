@@ -5,6 +5,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.compositeOver
+
+// primaryContainer/secondaryContainer (et leurs "on") ne sont fournis nulle
+// part ci-dessous historiquement : Material 3 retombe alors sur ses teintes
+// violettes par défaut, hors palette — et ce sont justement les couleurs que
+// prend l'indicateur d'onglet sélectionné de la NavigationBar et le FAB par
+// défaut. Dérivées ici de la palette existante (Steel/Clay) par composition
+// alpha sur la surface plutôt que de nouvelles teintes choisies à l'œil.
+private val PrimaryContainerLight = Steel.copy(alpha = 0.16f).compositeOver(SurfaceLight)
+private val OnPrimaryContainerLight = Steel
+private val SecondaryContainerLight = Clay.copy(alpha = 0.16f).compositeOver(SurfaceLight)
+private val OnSecondaryContainerLight = Clay
+
+private val PrimaryContainerDark = SteelDark.copy(alpha = 0.20f).compositeOver(SurfaceDark)
+private val OnPrimaryContainerDark = SteelDark
+private val SecondaryContainerDark = ClayDark.copy(alpha = 0.20f).compositeOver(SurfaceDark)
+private val OnSecondaryContainerDark = ClayDark
 
 private val LightColors = lightColorScheme(
     primary = Steel,
@@ -28,6 +45,10 @@ private val LightColors = lightColorScheme(
     // déjà utilisé par DashCard) offre un contraste carte/fond nettement
     // meilleur et reste donc le bon choix, inchangé.
     surfaceContainerHigh = PaperLightAlt,
+    primaryContainer = PrimaryContainerLight,
+    onPrimaryContainer = OnPrimaryContainerLight,
+    secondaryContainer = SecondaryContainerLight,
+    onSecondaryContainer = OnSecondaryContainerLight,
 )
 
 private val DarkColors = darkColorScheme(
@@ -41,6 +62,10 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = TrackDark,
     onSurfaceVariant = TextSecondaryDark,
     surfaceContainerHigh = PaperDarkAlt,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = OnPrimaryContainerDark,
+    secondaryContainer = SecondaryContainerDark,
+    onSecondaryContainer = OnSecondaryContainerDark,
 )
 
 @Composable
