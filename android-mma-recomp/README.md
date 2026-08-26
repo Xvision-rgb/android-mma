@@ -496,3 +496,22 @@ scope) : suivi de circonférences, comparaison photos, section "sources
 scientifiques" affichée dans l'app — plusieurs références proposées
 n'étaient pas des citations vérifiables, donc non intégrées pour éviter
 une fausse caution scientifique dans le produit.
+
+## 19. Passe UX longue — inspirée d'apps de référence (Strong, Hevy, MyFitnessPal…)
+
+Lot 1 (musculation, inspiré de Strong/Hevy) :
+- Minuteur de repos manuel (60/90/120/150s) sur l'écran Séance, avec
+  vibration en fin de décompte — déclenchement manuel car notre modèle
+  logue un exercice global, pas set par set comme Strong/Hevy.
+- Détection de record personnel : la charge saisie est comparée au MAX
+  historique (pas seulement la dernière séance) — bandeau positif +
+  vibration uniquement en cas de vrai record, jamais de faux positif au
+  premier log d'un exercice.
+- Pré-remplissage de la charge cible avec la dernière charge connue quand
+  le nom d'un exercice est renseigné, sans jamais écraser une saisie
+  manuelle existante.
+
+Lot 2 (nutrition, inspiré de MyFitnessPal) :
+- Jusqu'à 5 aliments récents en accès rapide au-dessus de la recherche
+  sur l'écran Repas, déduits de l'historique déjà chargé (pas de requête
+  serveur supplémentaire).
