@@ -515,3 +515,23 @@ Lot 2 (nutrition, inspiré de MyFitnessPal) :
 - Jusqu'à 5 aliments récents en accès rapide au-dessus de la recherche
   sur l'écran Repas, déduits de l'historique déjà chargé (pas de requête
   serveur supplémentaire).
+
+Lot 3 (recalibrage calorique adaptatif, inspiré de MacroFactor) :
+- Plutôt que la seule formule statique, compare la dépense réelle
+  déduite de la tendance de poids (moyenne mobile 7j) aux calories
+  réellement loguées sur au moins 14 jours, et propose d'ajuster la
+  cible si l'écart est significatif (≥350 kcal). Nouvelle section sur
+  l'écran "Objectif calorique".
+
+Lot 4 (variété d'entraînement, inspiré de Fitbod — version légère) :
+- Répartition des séances de la semaine par type, affichée sur le
+  Dashboard. Fitbod fait ça par groupe musculaire (donnée qu'on n'a
+  pas) — adapté à nos 6 catégories WorkoutType existantes.
+
+Lot 5 (récap hebdomadaire, inspiré de Whoop/Noom) :
+- Nouvelle carte "Cette semaine" sur le Dashboard qui consolide séances
+  faites/prévues, calories vs cible, jours avec repas loggés, tendance
+  de poids — uniquement des données déjà calculées ailleurs, assemblées
+  en synthèse. Au passage, suppression d'une redondance entre 3 cartes
+  qui affichaient la même info (carte "Bilan de la semaine" retirée,
+  contenu absorbé).
