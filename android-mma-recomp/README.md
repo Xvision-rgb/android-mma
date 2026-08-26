@@ -318,3 +318,12 @@ changement de schéma Supabase :
 - **Répartition des types de séance (Progression)** : la carte résumé
   affiche maintenant la fréquence de chaque type de séance sur la
   fenêtre sélectionnée.
+- **Tendance calorique (Progression)** : nouveau graphique "Calories
+  (moyenne 7j)", même principe de lissage que le poids.
+- **Rappels intelligents** : les rappels locaux pesée du matin et repas
+  du soir ne se déclenchent plus si l'action correspondante a déjà été
+  faite aujourd'hui.
+- **Export CSV des repas (Progression)** : dernier historique sans
+  export disponible, comblé pour cohérence avec pesées/séances.
+- **Ressenti moyen MMA** : moyenne du ressenti sur les dernières séances
+  affichée dans le log MMA — donnée déjà loguée mais jamais agrégée.
