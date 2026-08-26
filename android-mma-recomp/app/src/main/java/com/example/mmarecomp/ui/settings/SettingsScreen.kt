@@ -1,6 +1,7 @@
 package com.example.mmarecomp.ui.settings
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,7 +58,11 @@ fun SettingsScreen(
 
     val context = LocalContext.current
     var reminderEnabled by remember { mutableStateOf(WeighInReminder.isEnabled(context)) }
+    var reminderHour by remember { mutableStateOf(WeighInReminder.hour(context)) }
+    var reminderMinute by remember { mutableStateOf(WeighInReminder.minute(context)) }
     var mealReminderEnabled by remember { mutableStateOf(com.example.mmarecomp.notification.MealReminder.isEnabled(context)) }
+    var mealReminderHour by remember { mutableStateOf(com.example.mmarecomp.notification.MealReminder.hour(context)) }
+    var mealReminderMinute by remember { mutableStateOf(com.example.mmarecomp.notification.MealReminder.minute(context)) }
     var pendingReminder by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -222,8 +227,28 @@ fun SettingsScreen(
                 ),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Rappel doux pesée du matin (7h30)", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Rappel doux pesée du matin (%02d:%02d)".format(reminderHour, reminderMinute),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Switch(checked = reminderEnabled, onCheckedChange = null)
+            }
+        }
+        if (reminderEnabled) {
+            item {
+                TextButton(onClick = {
+                    TimePickerDialog(
+                        context,
+                        { _, h, m ->
+                            reminderHour = h
+                            reminderMinute = m
+                            WeighInReminder.setTime(context, h, m)
+                        },
+                        reminderHour,
+                        reminderMinute,
+                        true,
+                    ).show()
+                }) { Text("Changer l'heure du rappel pesée") }
             }
         }
         item {
@@ -243,8 +268,28 @@ fun SettingsScreen(
                 ),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Rappel doux repas du soir (20h)", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Rappel doux repas du soir (%02d:%02d)".format(mealReminderHour, mealReminderMinute),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Switch(checked = mealReminderEnabled, onCheckedChange = null)
+            }
+        }
+        if (mealReminderEnabled) {
+            item {
+                TextButton(onClick = {
+                    TimePickerDialog(
+                        context,
+                        { _, h, m ->
+                            mealReminderHour = h
+                            mealReminderMinute = m
+                            com.example.mmarecomp.notification.MealReminder.setTime(context, h, m)
+                        },
+                        mealReminderHour,
+                        mealReminderMinute,
+                        true,
+                    ).show()
+                }) { Text("Changer l'heure du rappel repas") }
             }
         }
 
