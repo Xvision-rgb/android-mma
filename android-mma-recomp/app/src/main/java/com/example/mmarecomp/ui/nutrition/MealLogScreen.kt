@@ -335,10 +335,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (viewModel.foodCategories.isNotEmpty()) {
+        val foodCategories = viewModel.foodCategories
+        if (foodCategories.isNotEmpty()) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    viewModel.foodCategories.forEach { category ->
+                    foodCategories.forEach { category ->
                         FilterChip(
                             selected = viewModel.foodCategoryFilter == category,
                             onClick = {
@@ -350,7 +351,8 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 }
             }
         }
-        if ((viewModel.foodQuery.isNotBlank() || viewModel.foodCategoryFilter != null) && viewModel.filteredFoods.isEmpty()) {
+        val filteredFoods = viewModel.filteredFoods
+        if ((viewModel.foodQuery.isNotBlank() || viewModel.foodCategoryFilter != null) && filteredFoods.isEmpty()) {
             item {
                 Text(
                     "Aucun aliment ne correspond — tu peux saisir les valeurs manuellement ci-dessous.",
@@ -359,7 +361,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 )
             }
         }
-        items(viewModel.filteredFoods, key = { it.id }) { food ->
+        items(filteredFoods, key = { it.id }) { food ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

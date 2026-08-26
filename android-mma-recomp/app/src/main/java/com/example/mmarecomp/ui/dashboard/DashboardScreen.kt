@@ -84,7 +84,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
         }
-        if (viewModel.activityStreakDays >= 2) {
+        val activityStreakDays = viewModel.activityStreakDays
+        if (activityStreakDays >= 2) {
             item {
                 DashCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -94,7 +95,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                             tint = MaterialTheme.colorScheme.secondary,
                         )
                         Text(
-                            "${viewModel.activityStreakDays} jours d'affilée avec au moins une activité loggée",
+                            "$activityStreakDays jours d'affilée avec au moins une activité loggée",
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
