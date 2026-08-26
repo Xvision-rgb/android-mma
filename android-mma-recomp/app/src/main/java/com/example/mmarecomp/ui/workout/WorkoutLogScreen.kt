@@ -222,6 +222,13 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                viewModel.previousSessionVolume?.let { previous ->
+                    Text(
+                        "Dernière séance ${viewModel.type.label} : ${previous.toInt()}kg — juste un repère, pas un objectif à battre.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
 

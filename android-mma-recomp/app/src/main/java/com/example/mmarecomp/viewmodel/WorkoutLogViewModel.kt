@@ -183,6 +183,17 @@ class WorkoutLogViewModel(
 
     /** Dernière charge réelle loguée pour un exercice du même nom, dans
      *  l'historique déjà chargé — simple repère, jamais imposé. */
+    /** Volume total (séries × reps × charge réelle) de la dernière séance du
+     *  même type que celle en cours (hors séance du jour) — repère de
+     *  comparaison factuel, jamais un jugement sur la progression. */
+    val previousSessionVolume: Double?
+        get() {
+            val previous = recentWorkouts
+                .filter { it.type == type && it.date != DateUtils.string(date) }
+                .maxByOrNull { it.date } ?: return null
+            return previous.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+        }
+
     fun lastKnownCharge(exerciseName: String): Double? {
         if (exerciseName.isBlank()) return null
         return recentWorkouts

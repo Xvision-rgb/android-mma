@@ -66,6 +66,24 @@ class ProgressViewModel(
             return result.mapValues { (_, points) -> points.sortedBy { it.date } }
         }
 
+    /** Volume total d'entraînement (séries × reps × charge réelle) agrégé par
+     *  semaine (lundi au dimanche) sur la fenêtre sélectionnée — vue
+     *  d'ensemble de la progression du volume global, pas seulement de la
+     *  charge par exercice. */
+    val weeklyVolumeTrend: List<TrendPoint>
+        get() {
+            val byWeek = mutableMapOf<LocalDate, Double>()
+            for (workout in workouts) {
+                val date = DateUtils.date(workout.date) ?: continue
+                val weekStart = date.with(
+                    java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY),
+                )
+                val volume = workout.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+                byWeek[weekStart] = (byWeek[weekStart] ?: 0.0) + volume
+            }
+            return byWeek.entries.sortedBy { it.key }.map { (date, vol) -> TrendPoint(date, vol) }
+        }
+
     val performanceTrendUp: Boolean
         get() = chargeProgressionByExercise.values.any { series ->
             val first = series.firstOrNull()?.chargeKg
