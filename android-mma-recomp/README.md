@@ -409,3 +409,22 @@ mise en place initiale :
 - Suppression d'un petit code mort introduit lors de l'ajout initial
   (deux fonctions jamais appelées, l'import ayant fini par utiliser son
   propre mécanisme).
+
+## 15. Ajout de plusieurs aliments à un même repas — re-vérification
+
+Suite à un retour utilisateur signalant que l'ajout de plusieurs aliments
+sur le même créneau ne fonctionnait toujours pas, relecture complète de
+`MealLogScreen.kt` et `MealLogViewModel.kt` : le flux d'accumulation
+(`mealItems`, bouton "Ajouter X à ce repas", totaux recalculés à chaque
+ajout) est intact et fonctionne correctement de bout en bout. **Aucune
+régression trouvée dans le code.** Si le problème persiste sur l'appareil
+de l'utilisateur, c'est très probablement dû au fait que l'app installée
+n'est pas synchronisée avec le dépôt (les fichiers sont copiés à la main
+plutôt que via `git pull`) — `MealLogScreen.kt` et `MealLogViewModel.kt`
+sont les deux fichiers à resynchroniser en priorité.
+
+Correctif réel trouvé pendant cette même passe : chips de filtre
+(créneau de repas, catégories d'aliments, durée de séance présélectionnée,
+type de séance dans l'historique) qui pouvaient déborder hors de l'écran
+sur les appareils étroits, même patron que la barre de navigation du bas
+corrigée précédemment — ajout d'un défilement horizontal sur ces lignes.
