@@ -606,3 +606,16 @@ fichiers) — refactor pur, aucun changement de rendu.
 Lot 9 (graphique de tendance de poids) : couleur déjà conforme au
 thème. Remplissage sous la courbe passé d'une teinte plate à un
 dégradé vertical léger. Moyenne mobile 7j strictement inchangée.
+
+Lot 10 (hiérarchie des boutons, audit) : déjà globalement respectée.
+Vrai défaut trouvé : le bouton "Analyser le texte" (action principale
+de l'écran d'import) n'était pas plein largeur comme tous les autres
+boutons primaires — corrigé.
+
+Lot 11 (chargement, audit) : seuls 2 écrans affichent un indicateur de
+chargement, déjà avec le même patron. Rien à corriger.
+
+Lot 12 (badges d'état) : "Recommandé" et "✓ atteint" étaient un texte
+coloré simple à deux endroits différents. Nouveau StatusBadge
+réutilisable, appliqué aux deux — les messages complets restent des
+SoftAlertBanner.
