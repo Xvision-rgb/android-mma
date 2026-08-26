@@ -54,6 +54,7 @@ import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.viewmodel.WeighInViewModel
@@ -92,8 +93,8 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Log pesée", style = MaterialTheme.typography.titleLarge) }
 

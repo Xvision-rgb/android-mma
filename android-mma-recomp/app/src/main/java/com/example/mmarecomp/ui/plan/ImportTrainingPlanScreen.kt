@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
 
 /** Import d'un programme collé en texte libre (ex. généré par Claude).
@@ -46,8 +47,8 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { Text("Importer un programme", style = MaterialTheme.typography.titleLarge) }
         item {

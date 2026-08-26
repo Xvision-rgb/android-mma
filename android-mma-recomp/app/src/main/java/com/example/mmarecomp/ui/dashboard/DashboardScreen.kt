@@ -61,8 +61,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = 96.dp,
+        ),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item {
             Row(

@@ -43,6 +43,7 @@ import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.TrainingPlanEditViewModel
 import kotlinx.coroutines.launch
 
@@ -80,8 +81,8 @@ fun TrainingPlanEditScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(Dimens.spaceMd),
+            verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
         ) {
             item {
                 Text(
