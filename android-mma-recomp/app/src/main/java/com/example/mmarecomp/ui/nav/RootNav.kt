@@ -136,7 +136,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             exitTransition = { fadeOut(animationSpec = tween(150)) },
         ) {
             composable("dashboard") {
-                val vm = remember { DashboardViewModel() }
+                val vm = remember(userId) { DashboardViewModel(userId = userId) }
                 DashboardScreen(vm, currentPhase)
             }
             composable("workout") {

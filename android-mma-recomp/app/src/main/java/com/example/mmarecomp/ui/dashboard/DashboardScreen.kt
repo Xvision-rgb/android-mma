@@ -37,6 +37,7 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
@@ -190,6 +191,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase) {
                 WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
                 if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
                     SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
+                }
+                viewModel.weightGoalGapKg?.let { gap ->
+                    val label = when {
+                        gap > 0.5 -> "Encore ${Formatting.oneDecimal(gap)}kg pour atteindre ton objectif (moyenne 7j)."
+                        gap < -0.5 -> "Tu es ${Formatting.oneDecimal(-gap)}kg en dessous de ton objectif (moyenne 7j)."
+                        else -> "Tu es tout proche de ton objectif de poids 🎯 (moyenne 7j)."
+                    }
+                    Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

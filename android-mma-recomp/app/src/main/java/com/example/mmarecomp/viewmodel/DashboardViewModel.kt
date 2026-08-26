@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
+import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
@@ -28,11 +29,13 @@ import com.example.mmarecomp.util.TrendPoint
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(
+    private val userId: String = "",
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val mealRepository: MealRepository = MealRepository(),
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val nutritionTargetRepository: NutritionTargetRepository = NutritionTargetRepository(),
+    private val profileRepository: ProfileRepository = ProfileRepository(),
 ) : ViewModel() {
     var planThisWeek by mutableStateOf<List<TrainingPlanDay>>(emptyList())
         private set
@@ -45,6 +48,8 @@ class DashboardViewModel(
     var todayTarget by mutableStateOf<NutritionTarget?>(null)
         private set
     var recentTargets by mutableStateOf<List<NutritionTarget>>(emptyList())
+        private set
+    var poidsObjectifKg by mutableStateOf<Double?>(null)
         private set
     var isLoading by mutableStateOf(false)
         private set
@@ -114,6 +119,16 @@ class DashboardViewModel(
     /** Tendance de poids sur la semaine — dérivée de la moyenne mobile 7j,
      *  jamais une valeur brute (cf. WeightTrendChart). */
     val weightTrendDirection: TrendDirection get() = MovingAverage.direction(weightTrend7Day)
+
+    /** Écart entre le poids actuel (moyenne mobile 7j, jamais brut) et
+     *  l'objectif défini dans le profil — positif si au-dessus de l'objectif,
+     *  négatif si en dessous. Null si l'objectif ou l'historique manquent. */
+    val weightGoalGapKg: Double?
+        get() {
+            val current = weightTrend7Day.lastOrNull()?.value ?: return null
+            val target = poidsObjectifKg ?: return null
+            return current - target
+        }
 
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
@@ -188,6 +203,9 @@ class DashboardViewModel(
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
                 recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
+                if (userId.isNotBlank()) {
+                    poidsObjectifKg = runCatching { profileRepository.fetch(userId).poidsObjectifKg }.getOrNull()
+                }
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — le dashboard s'affichera dès que le réseau revient."
             } catch (e: Exception) {
