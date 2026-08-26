@@ -380,3 +380,32 @@ entre plusieurs éléments d'une même liste trouvé).
   d'enregistrement automatique : aperçu éditable par jour détecté, choix
   explicite Compléter/Remplacer si un jour a déjà des exercices
   programmés, validation jour par jour ou en un clic pour tous.
+
+## 14. Programme d'entraînement — fiabilisation (2 lots)
+
+Audit dédié de la fonctionnalité programme (import + éditeur) après sa
+mise en place initiale :
+
+- **Parseur enrichi** : jours abrégés (Lun, Mar...), préfixes de liste
+  numérotée ("1. Squat..."), reps en plage ("8-12"), poids en livres
+  convertis en kg, plusieurs exercices détectés sur une même ligne.
+- **Validation** : un exercice avec un nom vide ne peut plus être
+  enregistré silencieusement (bloqué avec message explicite, éditeur et
+  import).
+- **Deux bugs "écrase au lieu de préserver"** trouvés et corrigés (même
+  patron que le fix MealLogScreen de cette session) : ré-analyser un
+  texte importé effaçait le statut des jours déjà enregistrés ;
+  "Réessayer" après un enregistrement raté rechargeait depuis le serveur
+  et effaçait les modifications en cours au lieu de retenter
+  l'enregistrement.
+- **Robustesse réseau** : l'enregistrement groupé de l'import s'arrête
+  proprement dès qu'une coupure réseau est détectée au lieu d'insister
+  sur chaque jour restant.
+- **UX** : indicateur "Modifications non enregistrées", confirmation
+  animée avant retour, résumé après "Tout enregistrer", jour importé
+  déjà enregistré passant en lecture seule plutôt que de rester dans un
+  état éditable sans issue, navigation clavier cohérente avec le reste
+  de l'app.
+- Suppression d'un petit code mort introduit lors de l'ajout initial
+  (deux fonctions jamais appelées, l'import ayant fini par utiliser son
+  propre mécanisme).
