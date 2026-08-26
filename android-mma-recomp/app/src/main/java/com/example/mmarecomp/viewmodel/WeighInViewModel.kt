@@ -64,6 +64,8 @@ class WeighInViewModel(
         viewModelScope.launch {
             try {
                 history = repository.fetch(DateUtils.daysAgo(days))
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger l'historique des pesées."
             }

@@ -170,6 +170,8 @@ class DashboardViewModel(
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
                 recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — le dashboard s'affichera dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger le dashboard pour le moment."
             } finally {
