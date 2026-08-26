@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -290,7 +292,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
         if (viewModel.mealsForDay.isNotEmpty()) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
                     FilterChip(selected = slotFilter == null, onClick = { slotFilter = null }, label = { Text("Tous") })
                     RepasSlot.entries.forEach { slot ->
                         FilterChip(
@@ -445,7 +450,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         val foodCategories = viewModel.foodCategories
         if (foodCategories.isNotEmpty()) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
                     foodCategories.forEach { category ->
                         FilterChip(
                             selected = viewModel.foodCategoryFilter == category,
