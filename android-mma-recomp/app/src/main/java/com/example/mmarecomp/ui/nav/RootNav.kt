@@ -44,6 +44,7 @@ import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.dashboard.DashboardScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
+import com.example.mmarecomp.ui.plan.ImportTrainingPlanScreen
 import com.example.mmarecomp.ui.plan.TrainingPlanEditScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
 import com.example.mmarecomp.ui.settings.SettingsScreen
@@ -51,6 +52,7 @@ import com.example.mmarecomp.ui.weighin.WeighInScreen
 import com.example.mmarecomp.ui.workout.MmaSessionScreen
 import com.example.mmarecomp.ui.workout.WorkoutLogScreen
 import com.example.mmarecomp.viewmodel.DashboardViewModel
+import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 import com.example.mmarecomp.viewmodel.ProfileViewModel
@@ -190,7 +192,12 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     userEmail = userEmail,
                     onPhaseSaved = onPhaseChange,
                     onSignOut = { scope.launch { authRepository.signOut() } },
+                    onImportPlan = { navController.navigate("plan_import") },
                 )
+            }
+            composable("plan_import") {
+                val vm = remember { ImportTrainingPlanViewModel() }
+                ImportTrainingPlanScreen(vm, currentPhase)
             }
         }
     }
