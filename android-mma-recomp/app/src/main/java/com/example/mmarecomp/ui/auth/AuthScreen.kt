@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.AuthViewModel
 
 @Composable
@@ -42,18 +43,18 @@ fun AuthScreen(viewModel: AuthViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(Dimens.spaceLg),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text("Recomp & MMA", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Dimens.spaceSm))
         Text(
             "Suivi entraînement, nutrition et poids — sans stress.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(Dimens.spaceLg))
 
         val emailTouched = viewModel.email.isNotBlank()
         val emailValide = android.util.Patterns.EMAIL_ADDRESS.matcher(viewModel.email).matches()
@@ -102,11 +103,11 @@ fun AuthScreen(viewModel: AuthViewModel) {
         )
 
         viewModel.errorMessage?.let {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.spaceSm))
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
         viewModel.signUpSuccessMessage?.let {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.spaceSm))
             Text(it, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodySmall)
         }
 
@@ -122,7 +123,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 Text("Se connecter")
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(Dimens.spaceSm))
         OutlinedButton(
             onClick = { viewModel.signUp() },
             modifier = Modifier.fillMaxWidth(),

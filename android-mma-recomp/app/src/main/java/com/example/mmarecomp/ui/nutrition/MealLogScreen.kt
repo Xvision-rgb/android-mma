@@ -219,18 +219,28 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     if (showCustom) {
                         var customCalories by remember { mutableStateOf(target.caloriesCible.toString()) }
                         var customProteines by remember { mutableStateOf(target.proteinesCibleG.toInt().toString()) }
+                        val customTargetFocusManager = androidx.compose.ui.platform.LocalFocusManager.current
                         OutlinedTextField(
                             value = customCalories,
                             onValueChange = { customCalories = it },
                             label = { Text("Calories cible") },
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                         )
                         OutlinedTextField(
                             value = customProteines,
                             onValueChange = { customProteines = it },
                             label = { Text("Protéines cible (g)") },
-                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                            ),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                onDone = { customTargetFocusManager.clearFocus() },
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Button(onClick = {

@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.ui.theme.Dimens
 
@@ -29,7 +28,7 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Dimens.spaceSm),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
     ) {
         OutlinedTextField(
             value = exercice.nom,
