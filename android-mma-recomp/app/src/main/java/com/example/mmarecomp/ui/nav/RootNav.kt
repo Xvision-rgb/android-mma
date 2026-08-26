@@ -114,6 +114,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     NavigationBarItem(
                         selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true,
                         onClick = {
+                            fabExpanded = false
                             navController.navigate(tab.route) {
                                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
