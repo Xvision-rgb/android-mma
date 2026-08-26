@@ -35,6 +35,23 @@ class MealLogViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var recentMeals by mutableStateOf<List<Meal>>(emptyList())
+        private set
+
+    /** Repas des deux dernières semaines, hors jour actuellement affiché —
+     *  pour l'historique dépliable (lecture seule pour l'instant, la
+     *  suppression du jour courant reste gérée par mealsForDay/deleteMeal). */
+    fun loadRecentHistory() {
+        viewModelScope.launch {
+            try {
+                recentMeals = mealRepository.fetchSince(DateUtils.daysAgo(13))
+                    .filter { it.date != DateUtils.string(date) }
+                    .sortedWith(compareByDescending<Meal> { it.date }.thenBy { it.repas })
+            } catch (e: Exception) {
+                // Historique secondaire : un échec ici n'empêche pas d'utiliser l'écran.
+            }
+        }
+    }
 
     // Bibliothèque d'aliments préchargée (recherche par nom + calcul des
     // macros au grammage saisi, pour pré-remplir le formulaire de repas).
