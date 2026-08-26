@@ -125,6 +125,36 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel) {
         }
 
         item { HorizontalDivider() }
+        item { Text("Recalibrage adaptatif", style = MaterialTheme.typography.titleMedium) }
+        val recalibration = viewModel.recalibration
+        if (recalibration != null) {
+            item {
+                Text(
+                    "Sur les ${recalibration.periodDays} derniers jours, ta tendance de poids suggère une " +
+                        "dépense réelle plus proche de ${recalibration.estimatedExpenditureCalories} kcal " +
+                        "que l'estimation initiale (${recalibration.staticMaintenanceCalories} kcal).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                Button(onClick = { viewModel.applyRecalibration() }, enabled = !viewModel.isSaving, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ajuster la cible sur cette estimation")
+                }
+            }
+        } else {
+            item {
+                Text(
+                    "Recalibrage disponible dès 14 jours de suivi régulier (pesées + repas loggés) — " +
+                        "il compare ta tendance de poids réelle aux calories réellement loguées pour affiner " +
+                        "l'estimation au-delà de la formule de départ.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        item { HorizontalDivider() }
         item { Text("Repères pour un lutteur", style = MaterialTheme.typography.titleMedium) }
         item {
             Text(
