@@ -19,6 +19,7 @@ import com.example.mmarecomp.model.PlannedExercise
  *  moment du log, pas dans le plan prévisionnel. */
 @Composable
 fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) -> Unit) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -29,7 +30,16 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
             value = exercice.nom,
             onValueChange = { onChange(exercice.copy(nom = it)) },
             label = { Text("Nom de l'exercice") },
+            isError = exercice.nom.isBlank(),
+            supportingText = if (exercice.nom.isBlank()) {
+                { Text("Le nom ne peut pas être vide") }
+            } else {
+                null
+            },
             singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+            ),
             modifier = Modifier.fillMaxWidth(),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -37,14 +47,20 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
                 value = exercice.series.toString(),
                 onValueChange = { onChange(exercice.copy(series = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.series)) },
                 label = { Text("Séries") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.weight(1f),
             )
             OutlinedTextField(
                 value = exercice.reps.toString(),
                 onValueChange = { onChange(exercice.copy(reps = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.reps)) },
                 label = { Text("Reps") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -54,7 +70,13 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
                 onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
             },
             label = { Text("Charge cible (kg, optionnel)") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onDone = { focusManager.clearFocus() },
+            ),
             modifier = Modifier.fillMaxWidth(),
         )
     }

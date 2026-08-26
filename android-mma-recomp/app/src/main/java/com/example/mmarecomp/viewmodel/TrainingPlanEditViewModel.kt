@@ -35,6 +35,14 @@ class TrainingPlanEditViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    // Instantané du dernier état chargé/enregistré, pour savoir si le
+    // brouillon en cours contient des modifications non enregistrées.
+    private var loadedSnapshot: Triple<PlanDayType, List<PlannedExercise>, String> =
+        Triple(PlanDayType.Repos, emptyList(), "")
+
+    val hasUnsavedChanges: Boolean
+        get() = loadedSnapshot != Triple(type, exercices, notes)
+
     fun load(jourSemaine: Int, phase: Phase) {
         this.jourSemaine = jourSemaine
         this.phase = phase
@@ -46,6 +54,7 @@ class TrainingPlanEditViewModel(
                 type = day?.type ?: PlanDayType.Repos
                 exercices = day?.exercices ?: emptyList()
                 notes = day?.notes ?: ""
+                loadedSnapshot = Triple(type, exercices, notes)
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
@@ -58,16 +67,6 @@ class TrainingPlanEditViewModel(
 
     fun addExercise() {
         exercices = exercices + PlannedExercise(nom = "", series = 3, reps = 10)
-    }
-
-    /** Ajoute plusieurs exercices d'un coup (import) à la suite de ceux déjà
-     *  présents — jamais en remplaçant, même logique que le reste de l'app. */
-    fun addExercises(new: List<PlannedExercise>) {
-        exercices = exercices + new
-    }
-
-    fun replaceAllExercises(new: List<PlannedExercise>) {
-        exercices = new
     }
 
     fun updateExercise(index: Int, updated: PlannedExercise) {
@@ -97,7 +96,17 @@ class TrainingPlanEditViewModel(
         }
     }
 
+    /** Un exercice avec un nom vide ne peut pas être enregistré — jamais
+     *  silencieusement ignoré (l'utilisateur perdrait ses séries/reps/charge
+     *  déjà saisies sans le savoir) : on bloque avec un message explicite. */
+    val hasBlankExerciseName: Boolean get() = exercices.any { it.nom.isBlank() }
+
     fun save(onResult: (Boolean) -> Unit) {
+        if (hasBlankExerciseName) {
+            errorMessage = "Un exercice a un nom vide — complète-le ou retire-le avant d'enregistrer."
+            onResult(false)
+            return
+        }
         isSaving = true
         errorMessage = null
         viewModelScope.launch {
@@ -110,6 +119,7 @@ class TrainingPlanEditViewModel(
             )
             try {
                 trainingPlanRepository.upsert(newDay)
+                loadedSnapshot = Triple(type, exercices, notes)
                 onResult(true)
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
