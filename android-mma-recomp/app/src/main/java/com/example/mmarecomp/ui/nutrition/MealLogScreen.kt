@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -41,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,6 +63,16 @@ import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
+
+/** Un aliment ajouté au repas en cours de composition, avant enregistrement
+ *  — plusieurs peuvent s'accumuler pour un même créneau. */
+private data class MealFoodItem(
+    val label: String,
+    val calories: Int,
+    val proteinesG: Double,
+    val glucidesG: Double,
+    val lipidesG: Double,
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -94,6 +106,8 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var glucides by remember { mutableStateOf("") }
     var lipides by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var descriptionIsAuto by remember { mutableStateOf(true) }
+    val mealItems = remember { mutableStateListOf<MealFoodItem>() }
 
     var slotFilter by remember { mutableStateOf<RepasSlot?>(null) }
     var selectedFood by remember { mutableStateOf<Food?>(null) }
@@ -107,24 +121,60 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     }
     var showChangeTarget by remember { mutableStateOf(false) }
 
-    fun applyFood(food: Food, grams: String) {
+    fun recomputeFromItems() {
+        calories = mealItems.sumOf { it.calories }.toString()
+        proteines = Formatting.oneDecimal(mealItems.sumOf { it.proteinesG })
+        glucides = Formatting.oneDecimal(mealItems.sumOf { it.glucidesG })
+        lipides = Formatting.oneDecimal(mealItems.sumOf { it.lipidesG })
+        if (descriptionIsAuto) description = mealItems.joinToString(", ") { it.label }
+    }
+
+    /** Ajoute un aliment de plus à ce repas (au lieu de remplacer le
+     *  précédent) — permet de composer un repas de plusieurs aliments avant
+     *  un seul enregistrement, cohérent avec le stockage "un repas = une
+     *  ligne par créneau et par jour". */
+    fun addFoodItem(food: Food, grams: String) {
         val g = grams.replace(",", ".").toDoubleOrNull() ?: return
-        calories = food.caloriesFor(g).toString()
-        proteines = Formatting.oneDecimal(food.proteinesFor(g))
-        glucides = Formatting.oneDecimal(food.glucidesFor(g))
-        lipides = Formatting.oneDecimal(food.lipidesFor(g))
-        if (description.isBlank()) description = food.nom
+        mealItems.add(
+            MealFoodItem(
+                label = food.nom,
+                calories = food.caloriesFor(g),
+                proteinesG = food.proteinesFor(g),
+                glucidesG = food.glucidesFor(g),
+                lipidesG = food.lipidesFor(g),
+            ),
+        )
+        recomputeFromItems()
+        selectedFood = null
+        quantiteG = "100"
+        viewModel.foodQuery = ""
+    }
+
+    fun removeFoodItem(index: Int) {
+        mealItems.removeAt(index)
+        recomputeFromItems()
     }
 
     /** Pré-remplit le formulaire avec un repas de l'historique récent —
-     *  pratique pour reloguer un repas habituel sans tout ressaisir. */
+     *  pratique pour reloguer un repas habituel sans tout ressaisir. Le
+     *  repas repris devient lui-même une "ligne" du repas en cours, pour
+     *  qu'ajouter un aliment ensuite s'additionne correctement au lieu de
+     *  l'effacer. */
     fun applyMeal(meal: Meal) {
         selectedSlot = meal.repasSlot ?: selectedSlot
-        calories = meal.calories.toString()
-        proteines = Formatting.oneDecimal(meal.proteinesG)
-        glucides = Formatting.oneDecimal(meal.glucidesG)
-        lipides = Formatting.oneDecimal(meal.lipidesG)
-        description = meal.description.orEmpty()
+        mealItems.clear()
+        mealItems.add(
+            MealFoodItem(
+                label = meal.description?.takeIf { it.isNotBlank() } ?: "Repas repris",
+                calories = meal.calories,
+                proteinesG = meal.proteinesG,
+                glucidesG = meal.glucidesG,
+                lipidesG = meal.lipidesG,
+            ),
+        )
+        descriptionIsAuto = meal.description.isNullOrBlank()
+        recomputeFromItems()
+        if (!descriptionIsAuto) description = meal.description.orEmpty()
         scope.launch { listState.animateScrollToItem(0) }
     }
 
@@ -422,7 +472,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     .clickable {
                         selectedFood = food
                         viewModel.foodQuery = food.nom
-                        applyFood(food, quantiteG)
+                        quantiteG = "100"
                     },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -440,13 +490,46 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 val quantiteInvalide = quantiteG.isNotBlank() && (quantiteG.toDoubleOrNull() ?: 0.0) <= 0.0
                 OutlinedTextField(
                     value = quantiteG,
-                    onValueChange = { quantiteG = it; applyFood(food, it) },
+                    onValueChange = { quantiteG = it },
                     label = { Text("Quantité (g)") },
                     isError = quantiteInvalide,
                     supportingText = if (quantiteInvalide) { { Text("La quantité doit être supérieure à 0") } } else null,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+            item {
+                val g = quantiteG.replace(",", ".").toDoubleOrNull()
+                Button(
+                    onClick = { addFoodItem(food, quantiteG) },
+                    enabled = g != null && g > 0.0,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Ajouter \"${food.nom}\" à ce repas") }
+            }
+        }
+        if (mealItems.isNotEmpty()) {
+            item {
+                Text(
+                    "Aliments ajoutés à ce repas",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            itemsIndexed(mealItems) { index, mealItem ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("${mealItem.label} · ${mealItem.calories} kcal", style = MaterialTheme.typography.bodySmall)
+                    IconButton(onClick = { removeFoodItem(index) }) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Retirer ${mealItem.label} de ce repas",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
 
@@ -493,7 +576,9 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         item {
             val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
-                value = description, onValueChange = { description = it }, label = { Text("Description (optionnel)") },
+                value = description,
+                onValueChange = { description = it; descriptionIsAuto = false },
+                label = { Text("Description (optionnel)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                 ),
@@ -524,6 +609,8 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                             showSaved = saved
                             if (saved) {
                                 calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
+                                mealItems.clear()
+                                descriptionIsAuto = true
                                 scope.launch { listState.animateScrollToItem(0) }
                                 if (savedDate == java.time.LocalDate.now()) {
                                     com.example.mmarecomp.notification.MealReminder.markLoggedToday(
@@ -539,6 +626,8 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 TextButton(onClick = {
                     calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
                     selectedFood = null; viewModel.foodQuery = ""
+                    mealItems.clear()
+                    descriptionIsAuto = true
                 }) { Text("Vider") }
             }
         }
