@@ -25,6 +25,8 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
         viewModelScope.launch {
             try {
                 authRepository.signIn(email, password)
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — vérifie ton réseau et réessaie."
             } catch (e: Exception) {
                 errorMessage = "Connexion impossible. Vérifie ton email et mot de passe."
             } finally {
@@ -41,6 +43,8 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
             try {
                 authRepository.signUp(email, password)
                 signUpSuccessMessage = "Compte créé — vérifie tes emails si une confirmation est demandée, sinon connecte-toi directement."
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — vérifie ton réseau et réessaie."
             } catch (e: Exception) {
                 errorMessage = "Inscription impossible. Réessaie."
             } finally {

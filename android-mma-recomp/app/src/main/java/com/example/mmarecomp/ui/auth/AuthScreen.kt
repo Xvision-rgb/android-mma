@@ -74,6 +74,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
         Spacer(Modifier.height(12.dp))
         var passwordVisible by remember { mutableStateOf(false) }
         val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+        val formValide = emailValide && viewModel.password.isNotBlank()
         OutlinedTextField(
             value = viewModel.password,
             onValueChange = { viewModel.password = it },
@@ -92,7 +93,10 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 imeAction = androidx.compose.ui.text.input.ImeAction.Done,
             ),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                onDone = { focusManager.clearFocus(); viewModel.signIn() },
+                onDone = {
+                    focusManager.clearFocus()
+                    if (formValide && !viewModel.isSubmitting) viewModel.signIn()
+                },
             ),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -105,8 +109,6 @@ fun AuthScreen(viewModel: AuthViewModel) {
             Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodySmall)
         }
-
-        val formValide = emailValide && viewModel.password.isNotBlank()
 
         Spacer(Modifier.height(20.dp))
         Button(
