@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -126,6 +127,7 @@ fun TrainingPlanEditScreen(
                     EmptyState(
                         title = "Aucun exercice programmé pour ce jour",
                         subtitle = "Ajoute-en un, ou importe un programme complet depuis Réglages.",
+                        icon = Icons.Filled.FitnessCenter,
                         actionLabel = "Ajouter un exercice",
                         onAction = { viewModel.addExercise() },
                     )
