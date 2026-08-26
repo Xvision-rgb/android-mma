@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -96,6 +97,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                 val result = snackbarHostState.showSnackbar(
                     message = "Repas supprimé",
                     actionLabel = "Annuler",
+                    duration = SnackbarDuration.Long,
                 )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreMeal(meal)
             }
