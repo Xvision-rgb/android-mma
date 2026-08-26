@@ -458,3 +458,41 @@ aliments — au-delà de quelques centaines, continuer à générer des noms
 nutritionnelle approximative au hasard devient contre-productif ; ce lot
 vise la couverture la plus large et fiable possible en une passe, la
 suite peut se faire par lots supplémentaires si besoin.
+
+## 17. Bandeau "supprimé / Annuler" qui ne disparaissait jamais tout seul
+
+En Compose Material3, `SnackbarHostState.showSnackbar()` bascule sa durée
+par défaut sur `Indefinite` dès qu'un `actionLabel` est fourni (au lieu
+de `Short`) — les 5 snackbars "X supprimé(e) / Annuler" de l'app (repas,
+exercice de séance, séance training, séance MMA, pesée) restaient donc
+affichées indéfiniment jusqu'à balayage manuel. Ajout explicite de
+`duration = SnackbarDuration.Long` sur ces 5 snackbars.
+
+## 18. Objectif calorique personnalisé (Bulk / Recomposition / Coupe)
+
+L'app calculait une cible calorique générique et figée (~2000 cal), bien
+trop agressive pour un pratiquant de sport de combat qui s'entraîne
+6-7x/semaine (déficit réel de l'ordre de -600 cal, avec risque de perte
+musculaire). Ajout de `CalorieCalculator` :
+- Maintenance = poids × 30 × 1.4-1.6 (multiplicateur sport de combat),
+  au lieu d'une formule type Mifflin-St Jeor pensée population sédentaire.
+- Trois modes avec offsets bornés à des plages sûres : Bulk +300 à +500,
+  Recomposition +0 (recommandé par défaut pour rester sec), Coupe -200 à
+  -300 (jamais -600).
+- Avertissements doux si déficit/surplus dépasse un seuil, plancher
+  absolu (jamais sous poids × 25 cal/j) quel que soit le mode.
+- Macros dérivées de la masse maigre estimée (protéines 2g/kg, lipides
+  ~27.5% des calories, glucides le reste).
+- `MealLogViewModel.setTarget()` utilise maintenant cette formule
+  personnalisée (poids réel de la dernière pesée + mode choisi) au lieu
+  des valeurs figées 2050/1800 — c'était la source directe du problème.
+- Nouvel écran **Réglages → Objectif calorique** : maintenance estimée,
+  une carte par mode, badge "Recommandé", application en un clic.
+- Nouveau champ profil `objectif_calorie_mode`, migration
+  `supabase/005_calorie_mode.sql` à exécuter après les précédentes.
+
+Volontairement pas inclus dans ce lot (features à part entière, hors
+scope) : suivi de circonférences, comparaison photos, section "sources
+scientifiques" affichée dans l'app — plusieurs références proposées
+n'étaient pas des citations vérifiables, donc non intégrées pour éviter
+une fausse caution scientifique dans le produit.
