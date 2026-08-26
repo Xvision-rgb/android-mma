@@ -584,3 +584,16 @@ Lot 4 (cibles tactiles) : IconButton a déjà un minimum 48dp intégré
 par Material3. Vrai défaut trouvé : la ligne de jour du programme sur
 le Dashboard (deux Text sur une ligne, sans hauteur minimale) —
 corrigée avec le token Dimens.minTouchTarget déjà existant.
+
+Lot 5 (cohérence inter-écrans) : verticalArrangement.spacedBy divergeait
+entre 14.dp et 16.dp selon l'écran sans raison — harmonisé sur
+Dimens.spaceMd sur les 10 écrans principaux.
+
+Lot 6 (couleurs par type de séance) : le dropdown cyclait sur 3 couleurs
+pour 6 WorkoutType (deux types partageaient la même couleur). Nouveau
+workoutTypeColor() avec mapping stable et distinct, réutilisé sur le
+dropdown, l'historique des séances et la répartition hebdo du Dashboard.
+
+Lot 7 (icônes d'état vide) : EmptyState utilisait l'icône Inbox par
+défaut partout — icônes contextuelles ajoutées sur les 4 usages,
+réutilisant celles déjà présentes dans la barre de navigation.
