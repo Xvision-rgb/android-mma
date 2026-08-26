@@ -581,7 +581,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            itemsIndexed(mealItems) { index, mealItem ->
+            itemsIndexed(mealItems, key = { index, _ -> index }) { index, mealItem ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
