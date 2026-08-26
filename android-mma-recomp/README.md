@@ -332,3 +332,30 @@ changement de schéma Supabase :
   derniers jours)" ajouté, avec une action "Reprendre" par ligne pour
   reloguer un repas habituel sans tout ressaisir (même pattern que les
   autres écrans).
+
+## 12. Corrections — patron "écrase au lieu d'accumuler/préserver"
+
+Bug rapporté par l'utilisateur : dans le log repas, sélectionner un
+deuxième aliment préchargé écrasait les calories/macros du premier au
+lieu de s'y ajouter. Corrigé en rendant l'ajout d'aliment explicite et
+additif (liste "Aliments ajoutés à ce repas", un bouton "Ajouter" par
+aliment, total recalculé comme la somme). Un audit du reste de l'app à
+la recherche du même patron a trouvé et corrigé deux autres cas :
+
+- **"Reprendre le repas d'hier sur ce créneau"** enregistrait
+  directement en base, écrasant silencieusement un repas déjà loggé
+  aujourd'hui sur ce créneau, et court-circuitait le nouveau système
+  d'accumulation. Devient une simple lecture qui ajoute le repas d'hier
+  comme ligne de plus au repas en cours (comme "Reprendre" depuis
+  l'historique récent, qui avait le même souci — il vidait la liste
+  d'aliments déjà ajoutés au lieu d'y ajouter).
+- **"Reprendre la séance d'hier"** remplaçait entièrement la liste
+  d'exercices déjà saisis par ceux d'hier. Les exercices d'hier sont
+  désormais ajoutés à la suite de ceux déjà présents ; la durée n'est
+  reprise que si le champ était encore vide.
+
+Vérifié mais volontairement non touché (pas ce patron) : le pré-remplissage
+poids/%BF depuis la dernière pesée (champs scalaires uniques, remplacer
+est le comportement voulu) ; les cibles nutritionnelles (une seule par
+jour par design) ; tous les `remember` locaux (aucun non-clé partagé
+entre plusieurs éléments d'une même liste trouvé).
