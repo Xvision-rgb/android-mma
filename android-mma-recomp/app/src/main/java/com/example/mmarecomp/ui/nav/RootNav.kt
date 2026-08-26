@@ -50,10 +50,12 @@ import com.example.mmarecomp.ui.nutrition.MealLogScreen
 import com.example.mmarecomp.ui.plan.ImportTrainingPlanScreen
 import com.example.mmarecomp.ui.plan.TrainingPlanEditScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
+import com.example.mmarecomp.ui.settings.CalorieGoalScreen
 import com.example.mmarecomp.ui.settings.SettingsScreen
 import com.example.mmarecomp.ui.weighin.WeighInScreen
 import com.example.mmarecomp.ui.workout.MmaSessionScreen
 import com.example.mmarecomp.ui.workout.WorkoutLogScreen
+import com.example.mmarecomp.viewmodel.CalorieGoalViewModel
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
 import com.example.mmarecomp.viewmodel.MealLogViewModel
@@ -182,7 +184,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 MmaSessionScreen(vm, onSaved = { navController.popBackStack() })
             }
             composable("meals") {
-                val vm = remember { MealLogViewModel() }
+                val vm = remember(userId) { MealLogViewModel(userId = userId) }
                 MealLogScreen(vm)
             }
             composable("weighin") {
@@ -204,11 +206,16 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     onPhaseSaved = onPhaseChange,
                     onSignOut = { scope.launch { authRepository.signOut() } },
                     onImportPlan = { navController.navigate("plan_import") },
+                    onOpenCalorieGoal = { navController.navigate("calorie_goal") },
                 )
             }
             composable("plan_import") {
                 val vm = remember { ImportTrainingPlanViewModel() }
                 ImportTrainingPlanScreen(vm, currentPhase)
+            }
+            composable("calorie_goal") {
+                val vm = remember(userId) { CalorieGoalViewModel(userId = userId) }
+                CalorieGoalScreen(vm)
             }
         }
     }

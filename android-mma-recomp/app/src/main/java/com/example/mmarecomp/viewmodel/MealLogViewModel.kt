@@ -8,6 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.FoodRepository
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
+import com.example.mmarecomp.data.ProfileRepository
+import com.example.mmarecomp.data.WeighInRepository
+import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.NewMeal
@@ -15,6 +18,8 @@ import com.example.mmarecomp.model.NewNutritionTarget
 import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.util.CalorieCalculator
+import com.example.mmarecomp.util.DailyTarget
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
@@ -22,9 +27,12 @@ import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 class MealLogViewModel(
+    private val userId: String = "",
     private val mealRepository: MealRepository = MealRepository(),
     private val targetRepository: NutritionTargetRepository = NutritionTargetRepository(),
     private val foodRepository: FoodRepository = FoodRepository(),
+    private val weighInRepository: WeighInRepository = WeighInRepository(),
+    private val profileRepository: ProfileRepository = ProfileRepository(),
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var mealsForDay by mutableStateOf<List<Meal>>(emptyList())
@@ -107,7 +115,7 @@ class MealLogViewModel(
     fun setTarget(typeJour: TypeJour) {
         viewModelScope.launch {
             val dateString = DateUtils.string(date)
-            val computed = NutritionTargetCalculator.target(typeJour)
+            val computed = personalizedTarget(typeJour)
             val newTarget = NewNutritionTarget(
                 date = dateString,
                 typeJour = typeJour,
@@ -116,6 +124,28 @@ class MealLogViewModel(
             )
             target = runCatching { targetRepository.set(newTarget) }.getOrNull()
         }
+    }
+
+    /** Cible personnalisée à partir du poids réel (dernière pesée) et du mode
+     *  choisi dans le profil, plutôt que les valeurs génériques figées qui
+     *  sous-estimaient largement la dépense d'un pratiquant de sport de
+     *  combat (ex. ~2000 cal au lieu de ~3900 pour 87kg à intensité
+     *  training/hypertrophie 6j/semaine). Retombe sur les anciennes valeurs
+     *  figées si aucune pesée n'est encore enregistrée — jamais d'erreur
+     *  bloquante faute de données. */
+    private suspend fun personalizedTarget(typeJour: TypeJour): DailyTarget {
+        val latestWeighIn = runCatching { weighInRepository.fetch(DateUtils.daysAgo(30)) }
+            .getOrDefault(emptyList())
+            .lastOrNull { it.poidsKg > 0 }
+            ?: return NutritionTargetCalculator.target(typeJour)
+        val mode = if (userId.isNotBlank()) {
+            runCatching { profileRepository.fetch(userId) }.getOrNull()?.objectifCalorieMode
+                ?: CalorieMode.Recomposition
+        } else {
+            CalorieMode.Recomposition
+        }
+        val goal = CalorieCalculator.goal(latestWeighIn.poidsKg, latestWeighIn.bfPct, mode)
+        return NutritionTargetCalculator.targetFor(typeJour, goal.targetCalories, goal.proteinesG)
     }
 
     /** Cible personnalisée saisie librement — les préréglages training/repos
