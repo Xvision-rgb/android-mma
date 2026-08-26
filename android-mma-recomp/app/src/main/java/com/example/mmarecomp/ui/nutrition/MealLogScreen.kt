@@ -434,10 +434,10 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     onClick = {
                         viewModel.logMeal(
                             slot = selectedSlot,
-                            calories = calories.toIntOrNull() ?: 0,
-                            proteinesG = proteines.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                            glucidesG = glucides.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                            lipidesG = lipides.replace(",", ".").toDoubleOrNull() ?: 0.0,
+                            calories = (calories.toIntOrNull() ?: 0).coerceAtLeast(0),
+                            proteinesG = (proteines.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+                            glucidesG = (glucides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+                            lipidesG = (lipides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
                             description = description,
                         ) { saved ->
                             showSaved = saved
