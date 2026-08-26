@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
+import com.example.mmarecomp.ui.components.AskClaudeCard
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.NextWorkoutCard
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
@@ -119,6 +120,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                 exerciseName = suggestion?.first,
                 muscleGroup = suggestion?.second,
                 onStartClick = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            AskClaudeCard(
+                mockSummary = "Tu as loggé ${viewModel.workoutsThisWeek.size} séances cette semaine. Charge max: 80kg. Continue comme ça 💪",
                 modifier = Modifier.fillMaxWidth(),
             )
         }
