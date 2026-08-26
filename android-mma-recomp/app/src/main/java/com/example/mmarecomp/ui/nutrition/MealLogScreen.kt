@@ -433,6 +433,32 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         item { Text("Aliment préchargé (optionnel)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        val recentFoodLabels = viewModel.recentFoodLabels
+        if (recentFoodLabels.isNotEmpty()) {
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    recentFoodLabels.forEach { label ->
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val match = viewModel.foods.firstOrNull { it.nom.equals(label, ignoreCase = true) }
+                                if (match != null) {
+                                    selectedFood = match
+                                    viewModel.foodQuery = match.nom
+                                    quantiteG = "100"
+                                } else {
+                                    viewModel.foodQuery = label
+                                }
+                            },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+        }
         item {
             OutlinedTextField(
                 value = viewModel.foodQuery,
