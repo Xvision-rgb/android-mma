@@ -59,6 +59,7 @@ import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.ui.components.CalorieProgressRing
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
@@ -197,6 +198,11 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
         val target = viewModel.target
         if (target != null) {
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    CalorieProgressRing(actual = viewModel.totalCalories, target = target.caloriesCible)
+                }
+            }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Cible du jour", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
