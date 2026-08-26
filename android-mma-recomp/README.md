@@ -327,3 +327,8 @@ changement de schéma Supabase :
   export disponible, comblé pour cohérence avec pesées/séances.
 - **Ressenti moyen MMA** : moyenne du ressenti sur les dernières séances
   affichée dans le log MMA — donnée déjà loguée mais jamais agrégée.
+- **Historique récent des repas** : le log repas était le seul écran de
+  log sans section historique dépliable — "Voir l'historique récent (14
+  derniers jours)" ajouté, avec une action "Reprendre" par ligne pour
+  reloguer un repas habituel sans tout ressaisir (même pattern que les
+  autres écrans).
