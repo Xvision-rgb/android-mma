@@ -148,6 +148,32 @@ class WorkoutLogViewModel(
         exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10)
     }
 
+    /** Charge cible pré-remplie avec la dernière charge réelle connue pour ce
+     *  nom d'exercice — réduit la friction de saisie (cf. Strong/Hevy qui
+     *  pré-chargent le poids de la dernière séance). N'écrase jamais une
+     *  charge cible déjà saisie par l'utilisateur : appelé uniquement au
+     *  moment où le nom change et que chargeCibleKg est encore vide. */
+    fun prefillChargeFromLastKnown(index: Int, exerciseName: String) {
+        val exercice = exercices.getOrNull(index) ?: return
+        if (exercice.chargeCibleKg != null) return
+        val charge = lastKnownCharge(exerciseName) ?: return
+        updateExercise(index, exercice.copy(chargeCibleKg = charge))
+    }
+
+    /** Record personnel (MAX historique, pas seulement la dernière séance)
+     *  de charge réelle pour ce nom d'exercice, sur l'historique déjà
+     *  chargé (recentWorkouts). Distinct de lastKnownCharge qui ne renvoie
+     *  que la dernière séance — sert à détecter un nouveau record quand la
+     *  charge saisie aujourd'hui le dépasse. */
+    fun personalRecordCharge(exerciseName: String): Double? {
+        if (exerciseName.isBlank()) return null
+        return recentWorkouts
+            .flatMap { it.exercices }
+            .filter { it.nom.equals(exerciseName, ignoreCase = true) }
+            .mapNotNull { it.chargeReelleKg }
+            .maxOrNull()
+    }
+
     /** Duplique un exercice juste après lui — pratique pour les supersets
      *  ou une variante de la même série de mouvements. */
     fun duplicateExercise(index: Int) {
