@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -74,7 +75,17 @@ fun WeightTrendChart(points: List<TrendPoint>, modifier: Modifier = Modifier, li
         areaPath.lineTo((points.size - 1) * stepX, h)
         areaPath.close()
 
-        drawPath(areaPath, color = lineColor.copy(alpha = 0.10f), style = Fill)
+        // Dégradé léger sous la courbe (s'estompe vers le bas) plutôt qu'une
+        // teinte plate — reste subtil, jamais un effet lourd.
+        drawPath(
+            areaPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(lineColor.copy(alpha = 0.18f), lineColor.copy(alpha = 0f)),
+                startY = 0f,
+                endY = h,
+            ),
+            style = Fill,
+        )
         drawPath(linePath, color = lineColor, style = Stroke(width = 5f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
     }
 }
