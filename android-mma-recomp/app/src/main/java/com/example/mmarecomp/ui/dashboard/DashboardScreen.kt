@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
@@ -178,7 +180,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                             var expanded by remember(day.id) { mutableStateOf(false) }
                             Box {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .defaultMinSize(minHeight = Dimens.minTouchTarget)
+                                        .clickable { expanded = true },
+                                    verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
                                     Text(
