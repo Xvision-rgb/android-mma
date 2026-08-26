@@ -21,17 +21,27 @@ private const val NOTIFICATION_ID = 1001
 private const val REQUEST_CODE = 2001
 private const val PREFS_NAME = "weighin_reminder_prefs"
 private const val KEY_ENABLED = "enabled"
+private const val KEY_LAST_LOGGED_DATE = "last_logged_date"
 private const val REMINDER_HOUR = 7
 private const val REMINDER_MINUTE = 30
 
 /** Rappel local quotidien, doux et non culpabilisant, pour la pesée du
- *  matin à jeun. Désactivé par défaut — opt-in explicite dans Réglages. */
+ *  matin à jeun. Désactivé par défaut — opt-in explicite dans Réglages.
+ *  "Intelligent" : ne se déclenche pas si une pesée du matin a déjà été
+ *  loguée aujourd'hui, pour ne jamais relancer un rappel devenu inutile. */
 object WeighInReminder {
     fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
         if (enabled) schedule(context) else cancel(context)
+    }
+
+    /** À appeler après une pesée du matin loguée avec succès, pour que le
+     *  rappel du jour ne se déclenche pas inutilement. Purement local
+     *  (SharedPreferences), aucun appel réseau depuis le receiver. */
+    fun markLoggedToday(context: Context, dateIso: String) {
+        prefs(context).edit().putString(KEY_LAST_LOGGED_DATE, dateIso).apply()
     }
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -74,6 +84,9 @@ object WeighInReminder {
     }
 
     internal fun showNotification(context: Context) {
+        val today = com.example.mmarecomp.util.DateUtils.today()
+        if (prefs(context).getString(KEY_LAST_LOGGED_DATE, null) == today) return
+
         ensureChannel(context)
         val hasPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
