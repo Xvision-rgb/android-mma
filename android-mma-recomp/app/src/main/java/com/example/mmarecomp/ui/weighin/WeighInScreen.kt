@@ -62,6 +62,12 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     var showSaved by remember { mutableStateOf(false) }
+    LaunchedEffect(showSaved) {
+        if (showSaved) {
+            kotlinx.coroutines.delay(4000)
+            showSaved = false
+        }
+    }
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

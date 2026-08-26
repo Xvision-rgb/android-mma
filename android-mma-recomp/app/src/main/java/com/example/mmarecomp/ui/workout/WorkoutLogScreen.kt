@@ -62,6 +62,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaSheet: () -> Unit) {
     var showSavedMessage by remember { mutableStateOf(false) }
+    LaunchedEffect(showSavedMessage) {
+        if (showSavedMessage) {
+            kotlinx.coroutines.delay(4000)
+            showSavedMessage = false
+        }
+    }
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -264,7 +270,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Text("Retirer cet exercice", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

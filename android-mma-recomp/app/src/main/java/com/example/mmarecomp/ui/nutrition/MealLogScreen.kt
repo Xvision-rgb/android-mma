@@ -97,6 +97,12 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     var selectedFood by remember { mutableStateOf<Food?>(null) }
     var quantiteG by remember { mutableStateOf("100") }
     var showSaved by remember { mutableStateOf(false) }
+    LaunchedEffect(showSaved) {
+        if (showSaved) {
+            kotlinx.coroutines.delay(4000)
+            showSaved = false
+        }
+    }
     var showChangeTarget by remember { mutableStateOf(false) }
 
     fun applyFood(food: Food, grams: String) {
