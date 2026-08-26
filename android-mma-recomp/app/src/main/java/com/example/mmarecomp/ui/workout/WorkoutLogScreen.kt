@@ -5,6 +5,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,7 +188,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             )
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
                 listOf(30, 45, 60, 90).forEach { minutes ->
                     FilterChip(
                         selected = viewModel.dureeMin == minutes.toString(),
@@ -313,7 +318,9 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                         if (availableTypes.size > 1) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.padding(bottom = 8.dp),
+                                modifier = Modifier
+                                    .padding(bottom = 8.dp)
+                                    .horizontalScroll(rememberScrollState()),
                             ) {
                                 availableTypes.forEach { availableType ->
                                     FilterChip(
