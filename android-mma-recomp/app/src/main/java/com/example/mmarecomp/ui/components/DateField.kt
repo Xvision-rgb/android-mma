@@ -10,6 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -36,7 +37,10 @@ fun DateField(
     val context = LocalContext.current
 
     Box(
-        modifier = modifier.clickable {
+        modifier = modifier.clickable(
+            role = Role.Button,
+            onClickLabel = "Choisir une date",
+        ) {
             val dialog = DatePickerDialog(
                 context,
                 { _, year, month, day -> onDateChange(LocalDate.of(year, month + 1, day)) },

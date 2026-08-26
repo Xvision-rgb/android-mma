@@ -194,7 +194,7 @@ class WorkoutLogViewModel(
                 date = DateUtils.string(date),
                 type = type,
                 exercices = exercices,
-                dureeMin = dureeMin.toIntOrNull(),
+                dureeMin = dureeMin.toIntOrNull()?.coerceAtLeast(0),
                 notes = notes.ifBlank { null },
             )
             try {

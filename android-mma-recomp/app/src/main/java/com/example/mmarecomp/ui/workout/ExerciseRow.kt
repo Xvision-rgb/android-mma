@@ -65,14 +65,18 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, la
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = exercice.chargeCibleKg?.toString() ?: "",
-                onValueChange = { onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull())) },
+                onValueChange = {
+                    onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
+                },
                 label = { Text("Charge cible (kg)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
             )
             OutlinedTextField(
                 value = exercice.chargeReelleKg?.toString() ?: "",
-                onValueChange = { onChange(exercice.copy(chargeReelleKg = it.replace(",", ".").toDoubleOrNull())) },
+                onValueChange = {
+                    onChange(exercice.copy(chargeReelleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
+                },
                 label = { Text("Charge réelle (kg)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
