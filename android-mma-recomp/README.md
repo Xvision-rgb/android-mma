@@ -619,3 +619,28 @@ Lot 12 (badges d'état) : "Recommandé" et "✓ atteint" étaient un texte
 coloré simple à deux endroits différents. Nouveau StatusBadge
 réutilisable, appliqué aux deux — les messages complets restent des
 SoftAlertBanner.
+
+Lot 13 (nav bar et FAB) : primaryContainer/secondaryContainer n'étaient
+jamais câblés dans Theme.kt — l'indicateur d'onglet sélectionné et le
+FAB retombaient donc sur les teintes violettes par défaut de Material 3
+depuis toujours. Couleurs dérivées mathématiquement de Steel/Clay
+existants (compositeOver sur la surface) plutôt que choisies à l'œil.
+
+Lot 14 (cohérence des formulaires) : audit de 12 fichiers avec
+OutlinedTextField, la plupart déjà cohérents. Vrais écarts corrigés :
+espacement en dur (6.dp) remplacé par Dimens.spaceSm dans
+ExerciseRow/PlannedExerciseRow ; imeAction manquant sur plusieurs champs
+numériques (ExerciseRow, cible personnalisée de MealLogScreen), aligné
+sur le chaînage Next/Done déjà en place ailleurs ; espacements
+d'AuthScreen matchant exactement un token remplacés.
+
+Lot 15 (audit contraste clair/sombre) : mesure du contraste texte/fond
+par luminance relative WCAG sur toutes les couleurs ajoutées dans cette
+passe. Deux vrais défauts sous le seuil AA 4.5:1 trouvés et corrigés :
+le fond du StatusBadge en mode clair (4.09:1 → 4.54:1, alpha réduit) et
+PrimaryContainerDark, utilisé comme fond du texte de l'ExtendedFAB en
+mode sombre (4.33:1 → 4.86:1, alpha réduit). Le reste (SecondaryContainer,
+couleurs par type de séance, dégradé du graphique de poids) ne porte
+jamais de texte directement dessus : aucun changement nécessaire.
+
+Ceci conclut les 15 lots de la passe d'amélioration graphique globale.
