@@ -259,3 +259,16 @@ avoir laissé des détails de côté (audit du code, pas seulement de l'ajout) :
 
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.
+
+- **Réduction des recompositions inutiles** : `activityStreakDays`
+  (Dashboard), `foodCategories` et `filteredFoods` (log repas) étaient
+  lues deux fois par passage de composition — chacune refaisait tout son
+  calcul (parcours, filtrage) au lieu d'être hoistée en `val` locale une
+  seule fois.
+- **Auto-masquage des confirmations d'enregistrement** : les messages
+  "enregistré ✓" (pesée, séance, repas) restaient affichés indéfiniment
+  après le premier enregistrement au lieu de disparaître comme le fait
+  déjà le feedback de duplication ; harmonisé à 4s sur les trois écrans.
+- **Nettoyage visuel log séance** : suppression d'un libellé texte
+  redondant avec le `contentDescription` de l'icône de suppression
+  d'exercice, incohérent avec les autres boutons icône de la même ligne.
