@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -328,6 +329,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     } else {
                         "D'autres créneaux ont des repas loggés aujourd'hui."
                     },
+                    icon = Icons.Filled.Restaurant,
                     actionLabel = if (hasOtherSlotsWithMeals) "Voir tous les repas" else null,
                     onAction = { slotFilter = null }.takeIf { hasOtherSlotsWithMeals },
                 )

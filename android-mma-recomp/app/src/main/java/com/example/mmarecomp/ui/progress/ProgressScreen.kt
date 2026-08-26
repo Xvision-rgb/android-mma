@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -198,6 +199,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                 EmptyState(
                     title = "Pas encore de progression à afficher",
                     subtitle = "Log tes séances avec la charge réelle pour la voir apparaître ici.",
+                    icon = Icons.Filled.BarChart,
                 )
             }
         }
