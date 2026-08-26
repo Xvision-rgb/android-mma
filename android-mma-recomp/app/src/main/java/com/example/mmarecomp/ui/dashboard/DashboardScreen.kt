@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.StreakBadge
 import com.example.mmarecomp.ui.components.WeightTrendChart
@@ -94,6 +95,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             StreakBadge(
                 currentStreak = viewModel.currentStreak,
                 bestStreak = viewModel.bestStreak,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            RecoveryReadinessCard(
+                status = viewModel.readinessStatus,
+                weightTrendDown = viewModel.weightTrendingDown,
+                sleepHours = viewModel.sleepHoursLastNight,
+                intensityPercent = viewModel.activeIntensityPercent,
+                daysSinceLastRest = viewModel.daysSinceLastRest,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

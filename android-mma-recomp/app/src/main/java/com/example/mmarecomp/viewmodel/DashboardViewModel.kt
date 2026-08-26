@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.model.AchievementType
+import com.example.mmarecomp.ui.components.ReadinessStatus
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
@@ -165,6 +166,44 @@ class DashboardViewModel(
 
     val currentStreak: Int get() = streakManager?.getCurrentStreak() ?: 0
     val bestStreak: Int get() = streakManager?.getBestStreak() ?: 0
+
+    val readinessStatus: ReadinessStatus
+        get() {
+            val needsRest = daysSinceLastRest >= 5
+            val lowSleep = false // Mock data — futur Apple Health
+            val highIntensity = activeIntensityPercent >= 70
+
+            return when {
+                needsRest -> ReadinessStatus.REST
+                lowSleep || highIntensity -> ReadinessStatus.CAUTIOUS
+                else -> ReadinessStatus.READY
+            }
+        }
+
+    val weightTrendingDown: Boolean get() = weightTrendDirection == TrendDirection.BAISSE
+    val sleepHoursLastNight: Double? = null // Mock — future Apple Health
+    val activeIntensityPercent: Int
+        get() {
+            if (workoutsThisWeek.isEmpty()) return 0
+            val cleanWorkouts = workoutsThisWeek.count { w -> w.exercices.any { it.propre } }
+            return (cleanWorkouts * 100) / workoutsThisWeek.size
+        }
+
+    val daysSinceLastRest: Int
+        get() {
+            val allLoggedDates = buildSet {
+                addAll(mealsLast7Days.map { it.date })
+                addAll(workoutsThisWeek.map { it.date })
+                addAll(morningWeighIns.map { it.date })
+            }
+            var cursor = java.time.LocalDate.now()
+            var days = 0
+            while (allLoggedDates.contains(DateUtils.string(cursor))) {
+                days++
+                cursor = cursor.minusDays(1)
+            }
+            return days
+        }
 
     /** Cible calorique moyenne sur les jours où une cible a été définie
      *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans
