@@ -284,3 +284,9 @@ UX non négociables respectées, petits commits testables.
 - **Menu rapide FAB** : le menu d'accès rapide (pesée/repas/séance) du
   Dashboard pouvait rester déplié après un changement d'onglet, faute de
   réinitialisation de son état à la navigation.
+- **Messages d'erreur réseau distincts** : tous les écrans de chargement
+  initial (Dashboard, pesée, repas, séance, plan, progression, historique
+  MMA, réglages) affichaient un message d'échec générique même en cas de
+  simple coupure réseau. Chacun distingue maintenant une erreur réseau
+  d'une erreur applicative, avec un message qui invite à réessayer plutôt
+  qu'à douter des données.
