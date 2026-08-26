@@ -1,6 +1,7 @@
 package com.example.mmarecomp.ui.workout
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -225,7 +226,11 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
             }
         }
         item {
-            AnimatedVisibility(visible = showSaved, enter = fadeIn() + scaleIn(initialScale = 0.9f), exit = fadeOut()) {
+            AnimatedVisibility(
+                visible = showSaved,
+                enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
+                exit = fadeOut(tween(200)),
+            ) {
                 Text("Séance MMA enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
             }
         }
