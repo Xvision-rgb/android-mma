@@ -66,3 +66,13 @@ enum class Phase(val value: String, val label: String) {
     @SerialName("ete") Ete("ete", "Été"),
     @SerialName("curriculum_mma") CurriculumMma("curriculum_mma", "Curriculum MMA"),
 }
+
+/** Mode d'objectif calorique — Recomposition reste la recommandation par
+ *  défaut pour un pratiquant de sport de combat qui veut rester sec plutôt
+ *  qu'un déficit agressif qui coûte du muscle (cf. CalorieCalculator). */
+@Serializable
+enum class CalorieMode(val value: String, val label: String) {
+    @SerialName("bulk") Bulk("bulk", "Bulk"),
+    @SerialName("recomposition") Recomposition("recomposition", "Recomposition"),
+    @SerialName("coupe") Coupe("coupe", "Coupe"),
+}

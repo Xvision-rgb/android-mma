@@ -8,11 +8,24 @@ data class DailyTarget(val calories: Int, val proteinesG: Double)
 data class SlotTarget(val calories: Int, val proteinesG: Double)
 
 object NutritionTargetCalculator {
-    /** Cible du jour selon calorie cycling : plus haut les jours training,
-     *  plus bas les jours off, protéines maintenues hautes dans les deux cas. */
+    private const val TRAINING_REST_SPREAD = 150
+
+    /** Cible du jour selon calorie cycling — valeurs de repli génériques,
+     *  utilisées uniquement tant qu'aucune pesée n'existe encore pour
+     *  calculer une cible personnalisée (cf. targetFor / CalorieCalculator).
+     *  Ne pas s'y fier pour un pratiquant de sport de combat : ces chiffres
+     *  sous-estiment largement sa dépense réelle. */
     fun target(typeJour: TypeJour): DailyTarget = when (typeJour) {
         TypeJour.Training -> DailyTarget(2050, 135.0) // milieu de 2000-2100 kcal / 130-140g
         TypeJour.Repos -> DailyTarget(1800, 130.0)
+    }
+
+    /** Cycle training/repos autour d'une cible personnalisée (calculée à
+     *  partir du poids réel et du mode choisi via CalorieCalculator) plutôt
+     *  que des valeurs génériques figées. */
+    fun targetFor(typeJour: TypeJour, baseCalories: Int, proteinesG: Int): DailyTarget = when (typeJour) {
+        TypeJour.Training -> DailyTarget(baseCalories + TRAINING_REST_SPREAD, proteinesG.toDouble())
+        TypeJour.Repos -> DailyTarget(baseCalories - TRAINING_REST_SPREAD, proteinesG.toDouble())
     }
 
     /** Répartition indicative (non bloquante) de la cible du jour sur les

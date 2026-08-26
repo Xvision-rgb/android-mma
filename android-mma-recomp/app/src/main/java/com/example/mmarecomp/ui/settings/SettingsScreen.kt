@@ -51,6 +51,7 @@ fun SettingsScreen(
     onPhaseSaved: (Phase) -> Unit,
     onSignOut: () -> Unit,
     onImportPlan: () -> Unit = {},
+    onOpenCalorieGoal: () -> Unit = {},
 ) {
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -91,6 +92,11 @@ fun SettingsScreen(
         }
         item { Text("Objectifs", style = MaterialTheme.typography.titleMedium) }
 
+        item {
+            OutlinedButton(onClick = onOpenCalorieGoal, modifier = Modifier.fillMaxWidth()) {
+                Text("Objectif calorique (Bulk / Recomposition / Coupe)")
+            }
+        }
         item {
             val poidsValeur = viewModel.poidsObjectifKg.replace(",", ".").toDoubleOrNull()
             val poidsInvalide = viewModel.poidsObjectifKg.isNotBlank() && (poidsValeur == null || poidsValeur < 20 || poidsValeur > 400)
