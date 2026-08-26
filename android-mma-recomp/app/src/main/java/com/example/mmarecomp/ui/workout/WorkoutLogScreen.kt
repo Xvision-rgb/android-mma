@@ -247,6 +247,8 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
 
+        item { RestTimer() }
+
         if (viewModel.exercices.isEmpty()) {
             item {
                 EmptyState(
@@ -260,8 +262,12 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             Column {
                 ExerciseRow(
                     exercice = exercice,
-                    onChange = { viewModel.updateExercise(index, it) },
+                    onChange = { updated ->
+                        viewModel.updateExercise(index, updated)
+                        if (updated.nom != exercice.nom) viewModel.prefillChargeFromLastKnown(index, updated.nom)
+                    },
                     lastKnownCharge = viewModel.lastKnownCharge(exercice.nom),
+                    personalRecordKg = viewModel.personalRecordCharge(exercice.nom),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.moveExerciseUp(index) }, enabled = index > 0) {

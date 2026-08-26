@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,11 +17,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -29,7 +33,17 @@ import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.util.Formatting
 
 @Composable
-fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, lastKnownCharge: Double? = null) {
+fun ExerciseRow(
+    exercice: LoggedExercise,
+    onChange: (LoggedExercise) -> Unit,
+    lastKnownCharge: Double? = null,
+    personalRecordKg: Double? = null,
+) {
+    val haptic = LocalHapticFeedback.current
+    val isNewRecord = personalRecordKg != null && (exercice.chargeReelleKg ?: 0.0) > personalRecordKg
+    LaunchedEffect(isNewRecord, exercice.chargeReelleKg) {
+        if (isNewRecord) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -135,6 +149,13 @@ fun ExerciseRow(exercice: LoggedExercise, onChange: (LoggedExercise) -> Unit, la
             SoftAlertBanner(
                 message = "Séance propre — essaie +2.5kg la prochaine fois (${Formatting.oneDecimal(suggestion)}kg)",
                 icon = Icons.Filled.NorthEast,
+            )
+        }
+
+        if (isNewRecord) {
+            SoftAlertBanner(
+                message = "Nouveau record sur cet exercice — ${Formatting.oneDecimal(exercice.chargeReelleKg ?: 0.0)}kg 🎉",
+                icon = Icons.Filled.EmojiEvents,
             )
         }
     }
