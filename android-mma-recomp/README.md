@@ -559,3 +559,28 @@ rows de chips sans défilement horizontal, snackbars avec actionLabel
 sans duration explicite, imports dupliqués, appels @Composable hors
 item{} dans un LazyListScope. Résultat : rien à corriger, tout le
 nouveau code respecte déjà les patrons établis.
+
+## 20. Passe graphique globale — identité visuelle cohérente sur toute l'app
+
+Lot 1 (typographie) : ajout d'un style displayLarge (40sp, gras) pour
+les chiffres-clés en direct — appliqué au streak d'activité, au
+nombre de séances faites de la semaine, et à la maintenance calorique
+estimée (restructurés en "gros chiffre + légende").
+
+Lot 2 (hiérarchie de surfaces, audit) : vérifié que le fond des cartes
+(colorScheme.surface sur colorScheme.background) était déjà conforme à
+l'esprit Material 3 — pas de changement visuel. Vrai défaut trouvé :
+deux couleurs de palette (PaperLightAlt/PaperDarkAlt) existaient mais
+n'étaient jamais câblées à un rôle Material 3, risquant de faire
+retomber un futur usage de surfaceContainerHigh sur la teinte violette
+par défaut — corrigé par robustesse.
+
+Lot 3 (anneau de progression calorique, inspiré d'Apple Fitness) :
+nouveau CalorieProgressRing sur l'écran Repas, en complément du
+texte/barre existants. Une seule teinte positive, jamais de couleur
+d'échec.
+
+Lot 4 (cibles tactiles) : IconButton a déjà un minimum 48dp intégré
+par Material3. Vrai défaut trouvé : la ligne de jour du programme sur
+le Dashboard (deux Text sur une ligne, sans hauteur minimale) —
+corrigée avec le token Dimens.minTouchTarget déjà existant.
