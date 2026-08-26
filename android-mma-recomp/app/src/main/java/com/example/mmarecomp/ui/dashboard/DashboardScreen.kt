@@ -43,6 +43,7 @@ import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.StreakBadge
+import com.example.mmarecomp.ui.components.WearablesCard
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -107,6 +108,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                 daysSinceLastRest = viewModel.daysSinceLastRest,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        item {
+            WearablesCard(modifier = Modifier.fillMaxWidth())
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
