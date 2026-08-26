@@ -38,8 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.components.AchievementUnlockModal
+import com.example.mmarecomp.ui.components.AskClaudeCard
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.NextWorkoutCard
+import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
+import com.example.mmarecomp.ui.components.StreakBadge
+import com.example.mmarecomp.ui.components.WearablesCard
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -55,14 +61,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
 
-    if (viewModel.isLoading && !hasData) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    LazyColumn(
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (viewModel.isLoading && !hasData) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = 96.dp,
@@ -90,6 +93,41 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                     }
                 }
             }
+        }
+        item {
+            StreakBadge(
+                currentStreak = viewModel.currentStreak,
+                bestStreak = viewModel.bestStreak,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            RecoveryReadinessCard(
+                status = viewModel.readinessStatus,
+                weightTrendDown = viewModel.weightTrendingDown,
+                sleepHours = viewModel.sleepHoursLastNight,
+                intensityPercent = viewModel.activeIntensityPercent,
+                daysSinceLastRest = viewModel.daysSinceLastRest,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            WearablesCard(modifier = Modifier.fillMaxWidth())
+        }
+        item {
+            val suggestion = viewModel.suggestedExercise
+            NextWorkoutCard(
+                exerciseName = suggestion?.first,
+                muscleGroup = suggestion?.second,
+                onStartClick = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            AskClaudeCard(
+                mockSummary = "Tu as loggé ${viewModel.workoutsThisWeek.size} séances cette semaine. Charge max: 80kg. Continue comme ça 💪",
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
@@ -297,6 +335,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
+    }
+    }
+
+        viewModel.unlockedAchievement?.let { achievement ->
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                AchievementUnlockModal(
+                    achievementType = achievement,
+                    onDismiss = { viewModel.unlockedAchievement = null },
+                )
             }
         }
     }

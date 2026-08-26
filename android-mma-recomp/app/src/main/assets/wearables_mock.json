@@ -1,0 +1,12 @@
+{
+  "apple_health": {
+    "sleep_hours": 7.5,
+    "sleep_quality": "good",
+    "resting_hr": 52,
+    "hr_trend": "stable"
+  },
+  "google_health": {
+    "sleep_hours": 7.25,
+    "resting_hr": 54
+  }
+}
