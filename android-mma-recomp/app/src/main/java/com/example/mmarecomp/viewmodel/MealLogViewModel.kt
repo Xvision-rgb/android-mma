@@ -77,6 +77,8 @@ class MealLogViewModel(
             try {
                 mealsForDay = mealRepository.fetchForDate(forDate = dateString)
                 target = targetRepository.fetch(forDate = dateString)
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger les repas du jour."
             } finally {
