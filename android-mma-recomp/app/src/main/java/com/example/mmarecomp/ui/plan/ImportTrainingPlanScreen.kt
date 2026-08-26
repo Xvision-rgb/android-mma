@@ -126,7 +126,7 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                             FilterChip(
                                 selected = draft.appendToExisting,
                                 onClick = { viewModel.setAppendMode(draft.jourSemaine, true) },

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.theme.Dimens
 import kotlinx.coroutines.delay
 
 private val REST_PRESETS_SECONDS = listOf(60, 90, 120, 150)
@@ -57,7 +58,7 @@ fun RestTimer(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
             modifier = Modifier.horizontalScroll(rememberScrollState()),
         ) {
             REST_PRESETS_SECONDS.forEach { seconds ->
@@ -69,7 +70,7 @@ fun RestTimer(modifier: Modifier = Modifier) {
             }
         }
         remainingSeconds?.let { seconds ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 Text("Repos : ${seconds}s restantes", style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = { remainingSeconds = null }) { Text("Arrêter") }
             }

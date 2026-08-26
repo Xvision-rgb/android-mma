@@ -52,6 +52,7 @@ import com.example.mmarecomp.ui.plan.TrainingPlanEditScreen
 import com.example.mmarecomp.ui.progress.ProgressScreen
 import com.example.mmarecomp.ui.settings.CalorieGoalScreen
 import com.example.mmarecomp.ui.settings.SettingsScreen
+import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.weighin.WeighInScreen
 import com.example.mmarecomp.ui.workout.MmaSessionScreen
 import com.example.mmarecomp.ui.workout.WorkoutLogScreen
@@ -88,9 +89,9 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
         floatingActionButton = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             if (backStackEntry?.destination?.route == "dashboard") {
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     AnimatedVisibility(visible = fabExpanded) {
-                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                             ExtendedFloatingActionButton(
                                 onClick = { fabExpanded = false; navController.navigate("weighin") },
                                 icon = { Icon(Icons.Filled.MonitorWeight, contentDescription = null) },

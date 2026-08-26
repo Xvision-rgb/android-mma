@@ -164,7 +164,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     duplicateFeedback = null
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 TextButton(onClick = { viewModel.duplicateFromYesterday { found -> duplicateFeedback = found } }) {
                     Text("Reprendre la séance d'hier")
                 }
@@ -197,7 +197,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
         item {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
             ) {
                 listOf(30, 45, 60, 90).forEach { minutes ->

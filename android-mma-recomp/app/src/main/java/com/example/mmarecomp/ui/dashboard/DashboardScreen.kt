@@ -98,7 +98,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         if (activityStreakDays >= 2) {
             item {
                 DashCard {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                         Icon(
                             Icons.Filled.LocalFireDepartment,
                             contentDescription = "Série d'activité",
@@ -174,7 +174,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                     ) {
                         typeBreakdown.entries.forEach { (type, count) ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs)) {
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)

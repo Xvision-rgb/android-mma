@@ -210,7 +210,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     TextButton(onClick = { showChangeTarget = !showChangeTarget }) { Text("Changer") }
                 }
                 if (showChangeTarget) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training); showChangeTarget = false }) { Text("Jour training") }
                         OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos); showChangeTarget = false }) { Text("Jour repos") }
                     }
@@ -290,7 +290,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         } else {
             item {
                 Text("Pas encore de cible définie pour ce jour.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Training) }) { Text("Jour training") }
                     OutlinedButton(onClick = { viewModel.setTarget(TypeJour.Repos) }) { Text("Jour repos") }
                 }
@@ -303,7 +303,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         if (viewModel.mealsForDay.isNotEmpty()) {
             item {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                 ) {
                     FilterChip(selected = slotFilter == null, onClick = { slotFilter = null }, label = { Text("Tous") })
@@ -345,7 +345,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                             slot.label,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.spaceXs),
                         )
                     }
                 }
@@ -453,7 +453,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         if (recentFoodLabels.isNotEmpty()) {
             item {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                 ) {
                     recentFoodLabels.forEach { label ->
@@ -495,7 +495,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         if (foodCategories.isNotEmpty()) {
             item {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                 ) {
                     foodCategories.forEach { category ->
@@ -650,7 +650,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 Button(
                     onClick = {
                         val savedDate = viewModel.date
