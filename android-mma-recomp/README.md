@@ -235,5 +235,27 @@ Amélioration continue par petits lots, fusionnés au fur et à mesure :
   section "Voir le programme de la semaine" — TrainingPlanRepository.upsert
   existait déjà côté données mais n'avait aucune UI pour l'appeler.
 
+
+## 10. Améliorations UX — round 4 (accessibilité, robustesse, polish)
+
+Après trois rounds, le gisement de nouvelles fonctionnalités sûres était
+jugé épuisé — ce round se concentre sur l'accessibilité, la robustesse et
+la cohérence, en repartant du principe qu'un round précédent peut toujours
+avoir laissé des détails de côté (audit du code, pas seulement de l'ajout) :
+
+- **Toggles accessibles** : les rangées label+Switch (pesée, rappels)
+  utilisent `Modifier.toggleable` — toute la ligne cliquable, annoncée
+  correctement par TalkBack.
+- **Garde-fous valeurs négatives** : calories/macros, charge cible/réelle,
+  durée de séance ne peuvent plus être négatives.
+- **DateField** : rôle et label d'accessibilité explicites sur le
+  déclencheur du sélecteur de date.
+- **Feedback transitoire auto-masqué** : les messages "repris depuis
+  hier" se masquent après 4s au lieu de rester affichés indéfiniment.
+- **Indice %BF manquant** : explique pourquoi la carte %BF n'apparaît pas
+  au lieu de la faire disparaître silencieusement.
+- **Navigation clavier** : chaîne Next/Done complétée sur Settings
+  (Objectifs) et le formulaire d'ajout de repas.
+
 Toujours la même discipline : aucun changement de schéma Supabase, règles
 UX non négociables respectées, petits commits testables.

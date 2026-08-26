@@ -94,20 +94,30 @@ fun SettingsScreen(viewModel: ProfileViewModel, userEmail: String, onPhaseSaved:
                 label = { Text("Poids objectif (kg)") },
                 isError = poidsInvalide,
                 supportingText = if (poidsInvalide) { { Text("Entre un nombre valide, ex. 78") } } else null,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             val bfInvalide = viewModel.bfObjectifPct.isNotBlank() &&
                 (viewModel.bfObjectifPct.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it < 0 || it > 60 }
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
                 value = viewModel.bfObjectifPct,
                 onValueChange = { viewModel.bfObjectifPct = it },
                 label = { Text("% BF objectif") },
                 isError = bfInvalide,
                 supportingText = if (bfInvalide) { { Text("Entre un pourcentage entre 0 et 60") } } else null,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
