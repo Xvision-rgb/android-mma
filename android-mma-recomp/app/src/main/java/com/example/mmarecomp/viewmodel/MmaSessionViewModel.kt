@@ -31,6 +31,16 @@ class MmaSessionViewModel(
 
     val parsedMovements: List<ParsedWodMovement> get() = WodParser.parse(wodContent)
 
+    /** Ressenti moyen sur les séances récemment loguées (1 = très difficile,
+     *  5 = facile) — repère factuel sur la charge perçue, jamais un objectif
+     *  à atteindre. Null tant qu'aucune séance avec ressenti n'est loguée. */
+    val averageRessenti: Double?
+        get() {
+            val values = recentSessions.mapNotNull { it.ressenti }
+            if (values.isEmpty()) return null
+            return values.average()
+        }
+
     /** Vide le formulaire (garde la date sélectionnée). */
     fun resetForm() {
         wodContent = ""
