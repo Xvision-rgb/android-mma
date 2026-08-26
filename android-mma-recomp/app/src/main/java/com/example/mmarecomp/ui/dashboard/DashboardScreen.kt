@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.NextWorkoutCard
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.StreakBadge
@@ -111,6 +112,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         }
         item {
             WearablesCard(modifier = Modifier.fillMaxWidth())
+        }
+        item {
+            val suggestion = viewModel.suggestedExercise
+            NextWorkoutCard(
+                exerciseName = suggestion?.first,
+                muscleGroup = suggestion?.second,
+                onStartClick = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }

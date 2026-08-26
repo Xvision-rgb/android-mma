@@ -205,6 +205,13 @@ class DashboardViewModel(
             return days
         }
 
+    val suggestedExercise: Pair<String, String>?
+        get() {
+            if (planThisWeek.isEmpty()) return null
+            val exercises = planThisWeek.flatMap { day -> day.exercices.map { it.nom to day.type.label } }
+            return exercises.randomOrNull()
+        }
+
     /** Cible calorique moyenne sur les jours où une cible a été définie
      *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans
      *  le récap hebdomadaire, jamais recalculé différemment. */
