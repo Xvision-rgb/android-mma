@@ -13,14 +13,30 @@ import androidx.compose.ui.graphics.compositeOver
 // prend l'indicateur d'onglet sélectionné de la NavigationBar et le FAB par
 // défaut. Dérivées ici de la palette existante (Steel/Clay) par composition
 // alpha sur la surface plutôt que de nouvelles teintes choisies à l'œil.
+// Lot 15 (audit contraste) : mesuré au ratio de luminance relative WCAG.
+// PrimaryContainerLight (texte de l'ExtendedFAB en onPrimaryContainer) est à
+// 4.64:1, au-dessus du seuil AA 4.5:1 — inchangé. SecondaryContainerLight
+// est à 3.91:1, sous 4.5:1, mais onSecondaryContainer n'y sert QUE de teinte
+// d'icône (indicateur d'onglet sélectionné de la NavigationBar, jamais de
+// texte dessus) : seuil applicable 3:1 pour un élément d'UI non textuel,
+// largement respecté — pas de changement nécessaire ici.
 private val PrimaryContainerLight = Steel.copy(alpha = 0.16f).compositeOver(SurfaceLight)
 private val OnPrimaryContainerLight = Steel
 private val SecondaryContainerLight = Clay.copy(alpha = 0.16f).compositeOver(SurfaceLight)
 private val OnSecondaryContainerLight = Clay
 
-private val PrimaryContainerDark = SteelDark.copy(alpha = 0.20f).compositeOver(SurfaceDark)
+// Lot 15 (audit contraste) : à 0.20 le ratio de contraste texte/fond du
+// PrimaryContainerDark tombait à 4.33:1, sous le seuil WCAG AA 4.5:1 —
+// mesuré car le texte de l'ExtendedFloatingActionButton ("Pesée"/"Repas"/
+// "Séance") s'affiche justement en onPrimaryContainer sur primaryContainer.
+// Alpha réduit à 0.14 (calculé par luminance relative) : ramène ce couple à
+// 4.86:1 tout en gardant une teinte de conteneur bien visible. Secondary
+// aligné sur la même valeur par cohérence visuelle — son propre usage
+// (icône sélectionnée de la NavigationBar) ne dépend que du seuil UI 3:1,
+// déjà largement respecté avant comme après ce changement.
+private val PrimaryContainerDark = SteelDark.copy(alpha = 0.14f).compositeOver(SurfaceDark)
 private val OnPrimaryContainerDark = SteelDark
-private val SecondaryContainerDark = ClayDark.copy(alpha = 0.20f).compositeOver(SurfaceDark)
+private val SecondaryContainerDark = ClayDark.copy(alpha = 0.14f).compositeOver(SurfaceDark)
 private val OnSecondaryContainerDark = ClayDark
 
 private val LightColors = lightColorScheme(
