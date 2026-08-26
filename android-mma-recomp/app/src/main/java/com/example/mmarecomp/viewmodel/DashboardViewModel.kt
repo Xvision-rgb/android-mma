@@ -67,7 +67,6 @@ class DashboardViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var unlockedAchievement by mutableStateOf<AchievementType?>(null)
-        private set
 
     val avgCaloriesLast7Days: Int
         get() {
