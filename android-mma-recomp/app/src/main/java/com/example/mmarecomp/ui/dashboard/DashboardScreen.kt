@@ -2,8 +2,10 @@ package com.example.mmarecomp.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -40,6 +42,7 @@ import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
+import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
@@ -166,11 +169,25 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                 }
                 val typeBreakdown = viewModel.workoutTypeBreakdown
                 if (typeBreakdown.isNotEmpty()) {
-                    Text(
-                        typeBreakdown.entries.joinToString(" · ") { (type, count) -> "${type.label} ×$count" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    ) {
+                        typeBreakdown.entries.forEach { (type, count) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(workoutTypeColor(type), androidx.compose.foundation.shape.CircleShape),
+                                )
+                                Text(
+                                    "${type.label} ×$count",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                 }
                 if (viewModel.planThisWeek.isNotEmpty()) {
                     var showProgram by remember { mutableStateOf(false) }
