@@ -81,6 +81,8 @@ class ProgressViewModel(
             try {
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger la progression."
             } finally {

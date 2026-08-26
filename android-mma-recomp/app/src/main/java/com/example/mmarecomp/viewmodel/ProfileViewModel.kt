@@ -33,6 +33,8 @@ class ProfileViewModel(
                 poidsObjectifKg = fetched.poidsObjectifKg.toString()
                 bfObjectifPct = fetched.bfObjectifPct.toString()
                 phase = fetched.phase
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger le profil."
             }
