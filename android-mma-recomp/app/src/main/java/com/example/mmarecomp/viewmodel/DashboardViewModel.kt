@@ -20,6 +20,7 @@ import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
+import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
@@ -155,6 +156,15 @@ class DashboardViewModel(
 
     val seancesFaitesCount: Int get() = workoutsThisWeek.size
     val seancesPlanifieesCount: Int get() = planThisWeek.count { it.type.value != "repos" }
+
+    /** Répartition des séances faites cette semaine par type — inspiré de la
+     *  heat map de récupération musculaire de Fitbod, mais adapté à nos
+     *  catégories existantes (WorkoutType) plutôt qu'un découpage par groupe
+     *  musculaire qu'on n'a pas. Signal factuel de variété, jamais un
+     *  jugement ("tu ne fais jamais X") : uniquement un décompte affiché tel
+     *  quel côté écran. */
+    val workoutTypeBreakdown: Map<WorkoutType, Int>
+        get() = workoutsThisWeek.groupingBy { it.type }.eachCount()
 
     /** Séance prévue aujourd'hui d'après le split programmé, si elle
      *  n'a pas déjà été loguée. */

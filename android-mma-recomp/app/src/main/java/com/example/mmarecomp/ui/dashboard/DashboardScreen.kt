@@ -145,6 +145,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                val typeBreakdown = viewModel.workoutTypeBreakdown
+                if (typeBreakdown.isNotEmpty()) {
+                    Text(
+                        typeBreakdown.entries.joinToString(" · ") { (type, count) -> "${type.label} ×$count" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (viewModel.planThisWeek.isNotEmpty()) {
                     var showProgram by remember { mutableStateOf(false) }
                     TextButton(onClick = { showProgram = !showProgram }) {
