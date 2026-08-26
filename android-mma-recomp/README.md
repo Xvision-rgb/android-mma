@@ -359,3 +359,17 @@ poids/%BF depuis la dernière pesée (champs scalaires uniques, remplacer
 est le comportement voulu) ; les cibles nutritionnelles (une seule par
 jour par design) ; tous les `remember` locaux (aucun non-clé partagé
 entre plusieurs éléments d'une même liste trouvé).
+
+## 13. Import et édition du programme d'entraînement
+
+- **Progression vers l'objectif de %BF (Dashboard)** : `bfObjectifPct`
+  était saisi dans Réglages mais jamais réutilisé — même traitement que
+  l'objectif de poids (moyenne mobile 7j, message neutre sans direction
+  imposée).
+- **Éditeur d'exercices du programme** : jusqu'ici seul le type de séance
+  de chaque jour du split hebdo était modifiable — la liste d'exercices
+  programmés (`PlannedExercise`) n'avait aucune UI d'édition. Nouvel
+  écran accessible via une icône crayon sur chaque jour de "Voir le
+  programme de la semaine" (Dashboard) : ajouter/modifier/dupliquer/
+  réordonner/retirer un exercice, brouillon local avec un seul
+  enregistrement explicite (pas d'écriture à chaque frappe).
