@@ -43,6 +43,9 @@ class WorkoutLogViewModel(
         viewModelScope.launch {
             recentWorkouts = try {
                 workoutRepository.fetchRecent()
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                emptyList()
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger l'historique des séances."
                 emptyList()
@@ -124,6 +127,9 @@ class WorkoutLogViewModel(
             val jour = DateUtils.weekdayIso(DateUtils.string(date))
             val plan = try {
                 trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                return@launch
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger le plan de séance."
                 return@launch
