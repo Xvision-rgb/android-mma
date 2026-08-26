@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,9 +47,18 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
             modifier = Modifier.fillMaxWidth(),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // value lié directement à exercice.series.toString() empêchait de vider le
+            // champ pour retaper un nombre : toIntOrNull() sur "" retombait sur l'ancienne
+            // valeur, donc le texte affiché ne changeait jamais visuellement à l'effacement.
+            // Un texte local (resynchronisé seulement quand la valeur committée change)
+            // laisse l'utilisateur taper/effacer librement.
+            var seriesText by remember(exercice.series) { mutableStateOf(exercice.series.toString()) }
             OutlinedTextField(
-                value = exercice.series.toString(),
-                onValueChange = { onChange(exercice.copy(series = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.series)) },
+                value = seriesText,
+                onValueChange = { text ->
+                    seriesText = text
+                    text.toIntOrNull()?.takeIf { it >= 1 }?.let { onChange(exercice.copy(series = it)) }
+                },
                 label = { Text("Séries") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Number,
@@ -53,9 +66,13 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
                 ),
                 modifier = Modifier.weight(1f),
             )
+            var repsText by remember(exercice.reps) { mutableStateOf(exercice.reps.toString()) }
             OutlinedTextField(
-                value = exercice.reps.toString(),
-                onValueChange = { onChange(exercice.copy(reps = it.toIntOrNull()?.coerceAtLeast(1) ?: exercice.reps)) },
+                value = repsText,
+                onValueChange = { text ->
+                    repsText = text
+                    text.toIntOrNull()?.takeIf { it >= 1 }?.let { onChange(exercice.copy(reps = it)) }
+                },
                 label = { Text("Reps") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Number,
