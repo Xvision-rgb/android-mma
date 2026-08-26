@@ -551,3 +551,11 @@ Lot 8 (rappels intelligents, inspiré de Duolingo) :
 - Heure de rappel personnalisable pour la pesée et les repas (au lieu
   de 7h30/20h fixes pour tout le monde), sans reprendre le système de
   streak à pression de Duolingo.
+
+Lot 9 (audit général) : vérification systématique des patrons de bugs
+déjà traqués cette session sur tout le code touché par les lots 1-8 —
+champs numériques liés directement à un Int/Double sans état local,
+rows de chips sans défilement horizontal, snackbars avec actionLabel
+sans duration explicite, imports dupliqués, appels @Composable hors
+item{} dans un LazyListScope. Résultat : rien à corriger, tout le
+nouveau code respecte déjà les patrons établis.
