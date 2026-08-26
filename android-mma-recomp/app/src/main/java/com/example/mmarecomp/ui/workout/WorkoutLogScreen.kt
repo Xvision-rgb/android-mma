@@ -302,12 +302,33 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         if (viewModel.recentWorkouts.isNotEmpty()) {
             item {
                 var showHistory by remember { mutableStateOf(false) }
+                var historyTypeFilter by remember { mutableStateOf<WorkoutType?>(null) }
                 Column {
                     TextButton(onClick = { showHistory = !showHistory }) {
                         Text(if (showHistory) "Masquer l'historique des séances" else "Voir l'historique des séances")
                     }
                     if (showHistory) {
-                        viewModel.recentWorkouts.forEach { workout ->
+                        val availableTypes = viewModel.recentWorkouts.map { it.type }.distinct()
+                        if (availableTypes.size > 1) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            ) {
+                                availableTypes.forEach { availableType ->
+                                    FilterChip(
+                                        selected = historyTypeFilter == availableType,
+                                        onClick = {
+                                            historyTypeFilter = if (historyTypeFilter == availableType) null else availableType
+                                        },
+                                        label = { Text(availableType.label) },
+                                    )
+                                }
+                            }
+                        }
+                        val filteredHistory = historyTypeFilter?.let { filter ->
+                            viewModel.recentWorkouts.filter { it.type == filter }
+                        } ?: viewModel.recentWorkouts
+                        filteredHistory.forEach { workout ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
