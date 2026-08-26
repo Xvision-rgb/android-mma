@@ -104,6 +104,13 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                         "${viewModel.workouts.size} séance(s) loguée(s) · ${viewModel.weighIns.size} pesée(s) loguée(s)",
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    if (viewModel.workoutTypeBreakdown.isNotEmpty()) {
+                        Text(
+                            viewModel.workoutTypeBreakdown.joinToString(" · ") { (type, count) -> "$count ${type.label}" },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

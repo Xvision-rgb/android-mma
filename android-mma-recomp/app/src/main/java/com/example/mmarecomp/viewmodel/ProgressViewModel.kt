@@ -10,6 +10,7 @@ import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
+import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
@@ -51,6 +52,14 @@ class ProgressViewModel(
                 }
             return MovingAverage.sevenDay(points)
         }
+
+    /** Répartition des séances loguées par type sur la fenêtre sélectionnée,
+     *  triée par fréquence décroissante — vue d'ensemble de la régularité
+     *  par type d'entraînement. */
+    val workoutTypeBreakdown: List<Pair<WorkoutType, Int>>
+        get() = workouts.groupingBy { it.type }.eachCount().entries
+            .sortedByDescending { it.value }
+            .map { it.key to it.value }
 
     /** Progression de charge par exercice sur la fenêtre sélectionnée. */
     val chargeProgressionByExercise: Map<String, List<ChargePoint>>
