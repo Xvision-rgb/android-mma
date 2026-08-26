@@ -57,6 +57,18 @@ fun TrainingPlanEditScreen(
     onSaved: () -> Unit,
 ) {
     LaunchedEffect(jourSemaine, phase) { viewModel.load(jourSemaine, phase) }
+    val scope = rememberCoroutineScope()
+
+    fun attemptSave() {
+        viewModel.save { saved ->
+            if (saved) {
+                scope.launch {
+                    kotlinx.coroutines.delay(500)
+                    onSaved()
+                }
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (viewModel.isLoading && viewModel.exercices.isEmpty()) {
@@ -178,7 +190,14 @@ fun TrainingPlanEditScreen(
             }
 
             viewModel.errorMessage?.let { error ->
-                item { ErrorBanner(error, onRetry = { viewModel.load(jourSemaine, phase) }) }
+                item {
+                    ErrorBanner(
+                        error,
+                        onRetry = {
+                            if (viewModel.errorIsFromSave) attemptSave() else viewModel.load(jourSemaine, phase)
+                        },
+                    )
+                }
             }
 
             if (viewModel.hasUnsavedChanges) {
@@ -192,18 +211,8 @@ fun TrainingPlanEditScreen(
             }
 
             item {
-                val scope = rememberCoroutineScope()
                 Button(
-                    onClick = {
-                        viewModel.save { saved ->
-                            if (saved) {
-                                scope.launch {
-                                    kotlinx.coroutines.delay(500)
-                                    onSaved()
-                                }
-                            }
-                        }
-                    },
+                    onClick = { attemptSave() },
                     enabled = !viewModel.isSaving,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
