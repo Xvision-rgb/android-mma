@@ -254,7 +254,9 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             item {
                 EmptyState(
                     title = "Aucun exercice pour l'instant",
-                    subtitle = "Ajoute-en un avec le bouton ci-dessous.",
+                    subtitle = "Ajoute-en un pour commencer ta séance.",
+                    actionLabel = "Ajouter un exercice",
+                    onAction = { viewModel.addExercise() },
                 )
             }
         }
