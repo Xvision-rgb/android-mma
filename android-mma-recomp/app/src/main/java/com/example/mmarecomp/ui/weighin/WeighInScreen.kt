@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -77,7 +78,11 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         viewModel.deleteFromHistory(entry) {
             scope.launch {
-                val result = snackbarHostState.showSnackbar(message = "Pesée supprimée", actionLabel = "Annuler")
+                val result = snackbarHostState.showSnackbar(
+                    message = "Pesée supprimée",
+                    actionLabel = "Annuler",
+                    duration = SnackbarDuration.Long,
+                )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreToHistory(entry)
             }
         }

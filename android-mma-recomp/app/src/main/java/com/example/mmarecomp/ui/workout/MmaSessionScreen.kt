@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -63,7 +64,11 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         viewModel.deleteFromHistory(session) {
             scope.launch {
-                val result = snackbarHostState.showSnackbar(message = "Séance MMA supprimée", actionLabel = "Annuler")
+                val result = snackbarHostState.showSnackbar(
+                    message = "Séance MMA supprimée",
+                    actionLabel = "Annuler",
+                    duration = SnackbarDuration.Long,
+                )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreToHistory(session)
             }
         }
