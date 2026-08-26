@@ -107,26 +107,33 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         }
         item {
             DashCard {
-                Text("Bilan de la semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                val volume = viewModel.weeklyTrainingVolume
-                if (volume > 0) {
-                    Text(
-                        "${volume.toInt()}kg de volume d'entraînement cumulé (séries × reps × charge réelle)",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                Text("Cette semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${viewModel.seancesFaitesCount} séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                val avgTarget = viewModel.avgTargetCaloriesLast7Days
+                Text(
+                    if (avgTarget != null) {
+                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne (cible ~$avgTarget kcal)"
+                    } else {
+                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Text(
                     "${viewModel.daysWithMealsLast7Days} jour(s) sur 7 avec au moins un repas loggé",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val trendLabel = when (viewModel.weightTrendDirection) {
-                    TrendDirection.HAUSSE -> "Poids : légère hausse sur la période"
-                    TrendDirection.BAISSE -> "Poids : légère baisse sur la période"
-                    TrendDirection.STABLE -> "Poids : stable sur la période"
+                val weeklyTrendLabel = when (viewModel.weightTrendDirection) {
+                    TrendDirection.HAUSSE -> "Poids : légère hausse cette semaine"
+                    TrendDirection.BAISSE -> "Poids : légère baisse cette semaine"
+                    TrendDirection.STABLE -> "Poids : stable cette semaine"
                     TrendDirection.INDETERMINE -> null
                 }
-                trendLabel?.let {
+                weeklyTrendLabel?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -134,10 +141,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         item {
             DashCard {
                 Text("Séances", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    "${viewModel.seancesFaitesCount} faites / ${viewModel.seancesPlanifieesCount} prévues",
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                val volume = viewModel.weeklyTrainingVolume
+                if (volume > 0) {
+                    Text(
+                        "${volume.toInt()}kg de volume d'entraînement cumulé (séries × reps × charge réelle)",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
                 viewModel.todayPlan?.let { plan ->
                     Text(
                         "Aujourd'hui : ${plan.type.label}",
