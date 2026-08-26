@@ -27,7 +27,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.theme.Dimens
@@ -49,7 +48,7 @@ fun ExerciseRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = Dimens.spaceSm),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
     ) {
         OutlinedTextField(
             value = exercice.nom,
@@ -63,6 +62,9 @@ fun ExerciseRow(
                 }
             },
             singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+            ),
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -80,7 +82,10 @@ fun ExerciseRow(
                     text.toIntOrNull()?.takeIf { it >= 1 }?.let { onChange(exercice.copy(series = it)) }
                 },
                 label = { Text("Séries") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.weight(1f),
             )
             var repsText by remember(exercice.reps) { mutableStateOf(exercice.reps.toString()) }
@@ -91,7 +96,10 @@ fun ExerciseRow(
                     text.toIntOrNull()?.takeIf { it >= 1 }?.let { onChange(exercice.copy(reps = it)) }
                 },
                 label = { Text("Reps") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -103,16 +111,26 @@ fun ExerciseRow(
                     onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
                 },
                 label = { Text("Charge cible (kg)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                ),
                 modifier = Modifier.weight(1f),
             )
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
             OutlinedTextField(
                 value = exercice.chargeReelleKg?.toString() ?: "",
                 onValueChange = {
                     onChange(exercice.copy(chargeReelleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
                 },
                 label = { Text("Charge réelle (kg)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
