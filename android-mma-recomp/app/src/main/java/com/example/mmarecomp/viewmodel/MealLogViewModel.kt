@@ -83,6 +83,22 @@ class MealLogViewModel(
         }
     }
 
+    /** Jusqu'à 5 aliments distincts les plus récemment loggés, déduits des
+     *  descriptions déjà chargées (mealsForDay + recentMeals) — pas de
+     *  requête serveur supplémentaire, cf. MyFitnessPal qui met en avant les
+     *  aliments récents pour éviter de re-rechercher chaque jour. Limite
+     *  assumée : une description tapée à la main (descriptionIsAuto=false
+     *  côté écran) peut produire une entrée qui ne correspond à aucun
+     *  aliment de la bibliothèque — sans conséquence, le clic dessus se
+     *  comporte alors comme une recherche simple sans résultat. */
+    val recentFoodLabels: List<String>
+        get() = (mealsForDay + recentMeals)
+            .flatMap { it.description.orEmpty().split(",") }
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it != "Repas repris" }
+            .distinct()
+            .take(5)
+
     val totalCalories: Int get() = mealsForDay.sumOf { it.calories }
     val totalProteines: Double get() = mealsForDay.sumOf { it.proteinesG }
     val totalGlucides: Double get() = mealsForDay.sumOf { it.glucidesG }
