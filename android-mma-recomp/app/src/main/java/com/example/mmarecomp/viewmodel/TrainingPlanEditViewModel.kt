@@ -1,0 +1,125 @@
+package com.example.mmarecomp.viewmodel
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.TrainingPlanRepository
+import com.example.mmarecomp.model.NewTrainingPlanDay
+import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanDayType
+import com.example.mmarecomp.model.PlannedExercise
+import kotlinx.coroutines.launch
+
+/** Édite les exercices programmés d'un jour du split hebdo (training_plan) —
+ *  jusqu'ici seul le type de séance du jour était modifiable depuis le
+ *  Dashboard, la liste d'exercices elle-même n'avait aucune UI d'édition.
+ *  Brouillon local modifiable librement, un seul enregistrement explicite
+ *  via save() — pas d'écriture à chaque frappe. */
+class TrainingPlanEditViewModel(
+    private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
+) : ViewModel() {
+    var jourSemaine by mutableStateOf(1)
+        private set
+    var phase by mutableStateOf(Phase.Ete)
+        private set
+    var type by mutableStateOf(PlanDayType.Repos)
+    var exercices by mutableStateOf<List<PlannedExercise>>(emptyList())
+        private set
+    var notes by mutableStateOf("")
+    var isLoading by mutableStateOf(false)
+        private set
+    var isSaving by mutableStateOf(false)
+        private set
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    fun load(jourSemaine: Int, phase: Phase) {
+        this.jourSemaine = jourSemaine
+        this.phase = phase
+        isLoading = true
+        errorMessage = null
+        viewModelScope.launch {
+            try {
+                val day = trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jourSemaine }
+                type = day?.type ?: PlanDayType.Repos
+                exercices = day?.exercices ?: emptyList()
+                notes = day?.notes ?: ""
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+            } catch (e: Exception) {
+                errorMessage = "Impossible de charger le programme de ce jour."
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun addExercise() {
+        exercices = exercices + PlannedExercise(nom = "", series = 3, reps = 10)
+    }
+
+    /** Ajoute plusieurs exercices d'un coup (import) à la suite de ceux déjà
+     *  présents — jamais en remplaçant, même logique que le reste de l'app. */
+    fun addExercises(new: List<PlannedExercise>) {
+        exercices = exercices + new
+    }
+
+    fun replaceAllExercises(new: List<PlannedExercise>) {
+        exercices = new
+    }
+
+    fun updateExercise(index: Int, updated: PlannedExercise) {
+        exercices = exercices.toMutableList().also { it[index] = updated }
+    }
+
+    fun removeExercise(index: Int) {
+        exercices = exercices.filterIndexed { i, _ -> i != index }
+    }
+
+    fun duplicateExercise(index: Int) {
+        val source = exercices.getOrNull(index) ?: return
+        exercices = exercices.toMutableList().also { it.add(index + 1, source.copy()) }
+    }
+
+    fun moveExerciseUp(index: Int) {
+        if (index <= 0) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index - 1]; it[index - 1] = it[index]; it[index] = tmp
+        }
+    }
+
+    fun moveExerciseDown(index: Int) {
+        if (index >= exercices.size - 1) return
+        exercices = exercices.toMutableList().also {
+            val tmp = it[index + 1]; it[index + 1] = it[index]; it[index] = tmp
+        }
+    }
+
+    fun save(onResult: (Boolean) -> Unit) {
+        isSaving = true
+        errorMessage = null
+        viewModelScope.launch {
+            val newDay = NewTrainingPlanDay(
+                jourSemaine = jourSemaine,
+                type = type,
+                exercices = exercices,
+                phase = phase,
+                notes = notes.ifBlank { null },
+            )
+            try {
+                trainingPlanRepository.upsert(newDay)
+                onResult(true)
+            } catch (e: java.io.IOException) {
+                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                onResult(false)
+            } catch (e: Exception) {
+                errorMessage = "Impossible d'enregistrer le programme."
+                onResult(false)
+            } finally {
+                isSaving = false
+            }
+        }
+    }
+}
