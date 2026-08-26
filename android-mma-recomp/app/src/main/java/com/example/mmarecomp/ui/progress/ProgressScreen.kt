@@ -124,6 +124,14 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                     )
                 }
             }
+        } else if (viewModel.weighIns.isNotEmpty()) {
+            item {
+                Text(
+                    "Ajoute un % de masse grasse à tes pesées pour voir cette courbe apparaître ici.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         item { Text("Charges — progression par exercice", style = MaterialTheme.typography.titleMedium) }
