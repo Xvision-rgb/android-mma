@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.StreakBadge
@@ -56,14 +57,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
 
-    if (viewModel.isLoading && !hasData) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    LazyColumn(
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (viewModel.isLoading && !hasData) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = 96.dp,
@@ -305,6 +303,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
+    }
+    }
+
+        viewModel.unlockedAchievement?.let { achievement ->
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                AchievementUnlockModal(
+                    achievementType = achievement,
+                    onDismiss = { viewModel.unlockedAchievement = null },
+                )
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MealRepository
+import com.example.mmarecomp.model.AchievementType
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
@@ -25,6 +26,7 @@ import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
+import com.example.mmarecomp.util.AchievementManager
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakManager
 import com.example.mmarecomp.util.TrendDirection
@@ -42,6 +44,7 @@ class DashboardViewModel(
     private val context: Context? = null,
 ) : ViewModel() {
     private val streakManager = context?.let { StreakManager(it) }
+    private val achievementManager = context?.let { AchievementManager(it) }
     var planThisWeek by mutableStateOf<List<TrainingPlanDay>>(emptyList())
         private set
     var workoutsThisWeek by mutableStateOf<List<Workout>>(emptyList())
@@ -61,6 +64,8 @@ class DashboardViewModel(
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
+        private set
+    var unlockedAchievement by mutableStateOf<AchievementType?>(null)
         private set
 
     val avgCaloriesLast7Days: Int
@@ -255,12 +260,24 @@ class DashboardViewModel(
                     poidsObjectifKg = profile?.poidsObjectifKg
                     bfObjectifPct = profile?.bfObjectifPct
                 }
+
+                checkAchievements()
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — le dashboard s'affichera dès que le réseau revient."
             } catch (e: Exception) {
                 errorMessage = "Impossible de charger le dashboard pour le moment."
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    private fun checkAchievements() {
+        achievementManager?.let {
+            if (it.checkAndUnlockFirstWorkout(workoutsThisWeek.isNotEmpty())) {
+                unlockedAchievement = AchievementType.FIRST_WORKOUT
+            } else if (it.checkAndUnlockFiveConsecutiveDays(currentStreak)) {
+                unlockedAchievement = AchievementType.FIVE_CONSECUTIVE_DAYS
             }
         }
     }
