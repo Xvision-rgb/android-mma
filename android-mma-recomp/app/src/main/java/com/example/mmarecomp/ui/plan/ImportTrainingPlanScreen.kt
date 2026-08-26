@@ -71,7 +71,11 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
             )
         }
         item {
-            Button(onClick = { viewModel.parse() }, enabled = viewModel.rawText.isNotBlank()) {
+            Button(
+                onClick = { viewModel.parse() },
+                enabled = viewModel.rawText.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text("Analyser le texte")
             }
         }
