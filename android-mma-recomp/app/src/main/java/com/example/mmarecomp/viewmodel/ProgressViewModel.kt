@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.MealRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
@@ -22,10 +24,13 @@ data class ChargePoint(val date: LocalDate, val chargeKg: Double)
 class ProgressViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
+    private val mealRepository: MealRepository = MealRepository(),
 ) : ViewModel() {
     var weighIns by mutableStateOf<List<WeighIn>>(emptyList())
         private set
     var workouts by mutableStateOf<List<Workout>>(emptyList())
+        private set
+    var meals by mutableStateOf<List<Meal>>(emptyList())
         private set
     var isLoading by mutableStateOf(false)
         private set
@@ -50,6 +55,16 @@ class ProgressViewModel(
                     val bf = w.bfPct
                     if (d != null && bf != null) TrendPoint(d, bf) else null
                 }
+            return MovingAverage.sevenDay(points)
+        }
+
+    /** Apport calorique quotidien moyenné sur 7 jours — jamais le total brut
+     *  d'un seul jour, pour rester cohérent avec le principe de lissage déjà
+     *  appliqué au poids (pas de comparaison jour à jour culpabilisante). */
+    val caloriesTrend: List<TrendPoint>
+        get() {
+            val dailyTotals = meals.groupBy { it.date }.mapValues { (_, dayMeals) -> dayMeals.sumOf { it.calories }.toDouble() }
+            val points = dailyTotals.mapNotNull { (date, total) -> DateUtils.date(date)?.let { TrendPoint(it, total) } }
             return MovingAverage.sevenDay(points)
         }
 
@@ -108,6 +123,7 @@ class ProgressViewModel(
             try {
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
+                meals = mealRepository.fetchSince(since)
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {

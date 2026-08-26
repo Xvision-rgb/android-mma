@@ -158,6 +158,18 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             }
         }
 
+        if (viewModel.caloriesTrend.isNotEmpty()) {
+            item {
+                ProgressCard(title = "Calories (moyenne 7j)") {
+                    WeightTrendChart(
+                        points = viewModel.caloriesTrend,
+                        modifier = Modifier.fillMaxWidth().height(110.dp),
+                        lineColor = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+
         item { Text("Charges — progression par exercice", style = MaterialTheme.typography.titleMedium) }
 
         val charges = viewModel.chargeProgressionByExercise

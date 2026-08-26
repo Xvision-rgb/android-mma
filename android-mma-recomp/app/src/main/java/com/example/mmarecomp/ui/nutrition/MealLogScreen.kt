@@ -72,6 +72,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     val scope = rememberCoroutineScope()
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     fun deleteWithUndo(meal: Meal) {
         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
@@ -465,6 +466,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
+                        val savedDate = viewModel.date
                         viewModel.logMeal(
                             slot = selectedSlot,
                             calories = (calories.toIntOrNull() ?: 0).coerceAtLeast(0),
@@ -477,6 +479,12 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                             if (saved) {
                                 calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
                                 scope.launch { listState.animateScrollToItem(0) }
+                                if (savedDate == java.time.LocalDate.now()) {
+                                    com.example.mmarecomp.notification.MealReminder.markLoggedToday(
+                                        context,
+                                        com.example.mmarecomp.util.DateUtils.string(savedDate),
+                                    )
+                                }
                             }
                         }
                     },

@@ -71,6 +71,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     fun deleteWithUndo(entry: WeighIn) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -263,11 +264,19 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
+                        val savedType = viewModel.type
+                        val savedDate = viewModel.date
                         viewModel.save { saved ->
                             showSaved = saved
                             if (saved) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.poidsKg = ""; viewModel.bfPct = ""
+                                if (savedType == WeighInType.MatinJeun && savedDate == java.time.LocalDate.now()) {
+                                    com.example.mmarecomp.notification.WeighInReminder.markLoggedToday(
+                                        context,
+                                        com.example.mmarecomp.util.DateUtils.string(savedDate),
+                                    )
+                                }
                             }
                         }
                     },

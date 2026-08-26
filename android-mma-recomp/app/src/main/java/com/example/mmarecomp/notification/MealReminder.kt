@@ -21,18 +21,28 @@ private const val NOTIFICATION_ID = 1002
 private const val REQUEST_CODE = 2002
 private const val PREFS_NAME = "meal_reminder_prefs"
 private const val KEY_ENABLED = "enabled"
+private const val KEY_LAST_LOGGED_DATE = "last_logged_date"
 private const val REMINDER_HOUR = 20
 private const val REMINDER_MINUTE = 0
 
 /** Rappel local quotidien, doux, pour penser à loguer les repas du jour.
  *  Désactivé par défaut — opt-in explicite dans Réglages. Même structure
- *  que WeighInReminder, canal et identifiants distincts. */
+ *  que WeighInReminder, canal et identifiants distincts. "Intelligent" :
+ *  ne se déclenche pas si un repas a déjà été loggé aujourd'hui. */
 object MealReminder {
     fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
         if (enabled) schedule(context) else cancel(context)
+    }
+
+    /** À appeler après qu'un repas a été loggé avec succès pour la date du
+     *  jour, pour que le rappel du soir ne se déclenche pas inutilement.
+     *  Purement local (SharedPreferences), aucun appel réseau depuis le
+     *  receiver. */
+    fun markLoggedToday(context: Context, dateIso: String) {
+        prefs(context).edit().putString(KEY_LAST_LOGGED_DATE, dateIso).apply()
     }
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -75,6 +85,9 @@ object MealReminder {
     }
 
     internal fun showNotification(context: Context) {
+        val today = com.example.mmarecomp.util.DateUtils.today()
+        if (prefs(context).getString(KEY_LAST_LOGGED_DATE, null) == today) return
+
         ensureChannel(context)
         val hasPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
