@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.MmaSession
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
@@ -53,7 +55,7 @@ import com.example.mmarecomp.viewmodel.MmaSessionViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
+fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit, onBack: () -> Unit = {}) {
     val parsed = remember(viewModel.wodContent) { viewModel.parsedMovements }
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -76,14 +78,13 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(title = "Log MMA", onBack = onBack) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Log MMA", style = MaterialTheme.typography.titleLarge) }
-
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
@@ -237,5 +238,6 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit) {
         }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
     }
 }

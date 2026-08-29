@@ -121,6 +121,15 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
         bottomBar = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
+            // La barre d'onglets n'appartient qu'aux destinations de premier
+            // niveau. Sur un écran empilé (édition de plan, WOD MMA, import,
+            // objectif calorique) elle restait affichée sans être pertinente,
+            // alors même qu'aucun retour n'y était proposé — c'est la
+            // TopAppBar de l'écran qui porte désormais la sortie.
+            val isTopLevel = currentDestination?.hierarchy?.any { destination ->
+                tabs.any { it.route == destination.route }
+            } == true
+            if (isTopLevel) {
             NavigationBar {
                 tabs.forEach { tab ->
                     NavigationBarItem(
@@ -145,6 +154,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                         },
                     )
                 }
+            }
             }
         },
     ) { padding ->
@@ -175,6 +185,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     jourSemaine = jourSemaine,
                     phase = currentPhase,
                     onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable("workout") {
@@ -183,7 +194,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("workout/mma") {
                 val vm = remember { MmaSessionViewModel() }
-                MmaSessionScreen(vm, onSaved = { navController.popBackStack() })
+                MmaSessionScreen(
+                    vm,
+                    onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
+                )
             }
             composable("meals") {
                 val vm = remember(userId) { MealLogViewModel(userId = userId) }
@@ -213,11 +228,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("plan_import") {
                 val vm = remember { ImportTrainingPlanViewModel() }
-                ImportTrainingPlanScreen(vm, currentPhase)
+                ImportTrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
             composable("calorie_goal") {
                 val vm = remember(userId) { CalorieGoalViewModel(userId = userId) }
-                CalorieGoalScreen(vm)
+                CalorieGoalScreen(vm, onBack = { navController.popBackStack() })
             }
         }
     }
