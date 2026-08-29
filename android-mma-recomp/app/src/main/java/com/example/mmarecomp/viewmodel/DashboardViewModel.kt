@@ -6,15 +6,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.DailyCheckInRepository
 import com.example.mmarecomp.data.MealRepository
+import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.model.AchievementType
-import com.example.mmarecomp.ui.components.ReadinessStatus
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.Meal
+import com.example.mmarecomp.model.MmaSession
+import com.example.mmarecomp.model.MuscleZone
+import com.example.mmarecomp.model.NewDailyCheckIn
 import com.example.mmarecomp.model.NewTrainingPlanDay
 import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.Phase
@@ -31,6 +36,12 @@ import com.example.mmarecomp.util.AchievementManager
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakManager
 import com.example.mmarecomp.util.TrendDirection
+import com.example.mmarecomp.util.ForceRelative
+import com.example.mmarecomp.util.InterferenceChecker
+import com.example.mmarecomp.util.ModulationSeance
+import com.example.mmarecomp.util.MuscleZoneClassifier
+import com.example.mmarecomp.util.RelativeStrength
+import com.example.mmarecomp.util.TrainingLoad
 import com.example.mmarecomp.util.TrendPoint
 import kotlinx.coroutines.launch
 
@@ -42,6 +53,8 @@ class DashboardViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val nutritionTargetRepository: NutritionTargetRepository = NutritionTargetRepository(),
     private val profileRepository: ProfileRepository = ProfileRepository(),
+    private val dailyCheckInRepository: DailyCheckInRepository = DailyCheckInRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
     private val context: Context? = null,
 ) : ViewModel() {
     private val streakManager = context?.let { StreakManager(it) }
@@ -66,8 +79,13 @@ class DashboardViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
-    var unlockedAchievement by mutableStateOf<AchievementType?>(null)
+    var checkInsRecents by mutableStateOf<List<DailyCheckIn>>(emptyList())
         private set
+    var workoutsLast28Days by mutableStateOf<List<Workout>>(emptyList())
+        private set
+    var mmaSessions by mutableStateOf<List<MmaSession>>(emptyList())
+        private set
+    var unlockedAchievement by mutableStateOf<AchievementType?>(null)
 
     val avgCaloriesLast7Days: Int
         get() {
@@ -127,12 +145,12 @@ class DashboardViewModel(
             return streak
         }
 
-    /** Volume total d'entraînement (séries × reps × charge réelle) cumulé sur
-     *  les séances de la semaine — vue synthèse, jamais une comparaison
+    /** Volume total d'entraînement (Σ reps × charge, série par série) cumulé
+     *  sur les séances de la semaine — vue synthèse, jamais une comparaison
      *  culpabilisante d'une semaine à l'autre. */
     val weeklyTrainingVolume: Double
         get() = workoutsThisWeek.sumOf { workout ->
-            workout.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+            workout.exercices.sumOf { it.volumeTotal }
         }
 
     /** Nombre de jours distincts avec au moins un repas loggé sur les 7
@@ -167,21 +185,53 @@ class DashboardViewModel(
     val currentStreak: Int get() = streakManager?.getCurrentStreak() ?: 0
     val bestStreak: Int get() = streakManager?.getBestStreak() ?: 0
 
-    val readinessStatus: ReadinessStatus
-        get() {
-            val needsRest = daysSinceLastRest >= 5
-            val lowSleep = false // Mock data — futur Apple Health
-            val highIntensity = activeIntensityPercent >= 70
+    /** Modulation de la séance du jour, dérivée du check-in réel et de la
+     *  charge interne — plus aucune donnée mockée ici. */
+    val modulation: ModulationSeance
+        get() = TrainingLoad.moduler(
+            score = checkInAujourdhui?.score,
+            acwr = acwr,
+            ecartHrvSigma = TrainingLoad.ecartHrvEnSigma(checkInsRecents),
+            joursConsecutifsEnRouge = TrainingLoad.joursConsecutifsEnRouge(checkInsRecents),
+        )
 
-            return when {
-                needsRest -> ReadinessStatus.REST
-                lowSleep || highIntensity -> ReadinessStatus.CAUTIOUS
-                else -> ReadinessStatus.READY
-            }
-        }
+    /** Séances sur la fenêtre chronique, sans doublon : workoutsLast28Days
+     *  recouvre déjà la semaine en cours, et compter deux fois gonflerait la
+     *  charge aiguë. */
+    private val workoutsFenetreChronique: List<Workout>
+        get() = (workoutsLast28Days + workoutsThisWeek).distinctBy { it.id }
+
+    val acwr: Double?
+        get() = TrainingLoad.acwr(TrainingLoad.chargesParJour(workoutsFenetreChronique, mmaSessions))
+
+    val checkInAujourdhui: DailyCheckIn?
+        get() = checkInsRecents.firstOrNull { it.date == DateUtils.today() }
+
+    val scoreReadiness: Int? get() = checkInAujourdhui?.score
+
+    /** Répartition du volume par zone sur les séances de la semaine. */
+    val repartitionVolume: Map<MuscleZone, Double>
+        get() = MuscleZoneClassifier.repartition(workoutsThisWeek.flatMap { it.exercices })
+
+    val ratioTiragePoussee: Double?
+        get() = MuscleZoneClassifier.ratioTiragePoussee(workoutsThisWeek.flatMap { it.exercices })
+
+    /** Indicateur directeur : 1RM estimé / poids de corps en moyenne mobile
+     *  7 jours. Jamais une pesée brute — le ratio hériterait de son bruit. */
+    val forcesRelatives: List<ForceRelative>
+        get() = RelativeStrength.parExercice(
+            workouts = workoutsFenetreChronique,
+            poidsCorpsKg = weightTrend7Day.lastOrNull()?.value,
+        )
+
+    val conflitsMma: List<String>
+        get() = InterferenceChecker.conflits(
+            date = java.time.LocalDate.now(),
+            workouts = workoutsThisWeek,
+            mmaSessions = mmaSessions,
+        )
 
     val weightTrendingDown: Boolean get() = weightTrendDirection == TrendDirection.BAISSE
-    val sleepHoursLastNight: Double? = null // Mock — future Apple Health
     val activeIntensityPercent: Int
         get() {
             if (workoutsThisWeek.isEmpty()) return 0
@@ -301,6 +351,19 @@ class DashboardViewModel(
                 morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
                 recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
+
+                // Fenêtre de 28 jours : c'est la base chronique de l'ACWR.
+                // Une fenêtre plus courte rendrait le ratio instable.
+                val vingtHuitJours = DateUtils.daysAgo(28)
+                workoutsLast28Days = runCatching {
+                    workoutRepository.fetchWeek(vingtHuitJours)
+                }.getOrDefault(emptyList())
+                checkInsRecents = runCatching {
+                    dailyCheckInRepository.fetchSince(vingtHuitJours)
+                }.getOrDefault(emptyList())
+                mmaSessions = runCatching {
+                    mmaSessionRepository.fetchSince(vingtHuitJours)
+                }.getOrDefault(emptyList())
                 if (userId.isNotBlank()) {
                     val profile = runCatching { profileRepository.fetch(userId) }.getOrNull()
                     poidsObjectifKg = profile?.poidsObjectifKg
@@ -314,6 +377,38 @@ class DashboardViewModel(
                 errorMessage = "Impossible de charger le dashboard pour le moment."
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    /** Enregistre le point de forme du matin. Échoue silencieusement côté
+     *  UI plutôt que de bloquer le dashboard : un check-in raté ne doit
+     *  jamais empêcher de consulter ses données. */
+    fun enregistrerCheckIn(
+        sommeil: Int,
+        courbatures: Int,
+        fatigue: Int,
+        humeur: Int,
+        stress: Int,
+        hrvRmssd: Double?,
+        deadHangSec: Int?,
+    ) {
+        viewModelScope.launch {
+            val nouveau = NewDailyCheckIn(
+                date = DateUtils.today(),
+                sommeil = sommeil.coerceIn(1, 5),
+                courbatures = courbatures.coerceIn(1, 5),
+                fatigue = fatigue.coerceIn(1, 5),
+                humeur = humeur.coerceIn(1, 5),
+                stress = stress.coerceIn(1, 5),
+                hrvRmssd = hrvRmssd,
+                deadHangSec = deadHangSec,
+            )
+            try {
+                val enregistre = dailyCheckInRepository.log(nouveau)
+                checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
+            } catch (e: Exception) {
+                errorMessage = "Impossible d'enregistrer le point du jour."
             }
         }
     }

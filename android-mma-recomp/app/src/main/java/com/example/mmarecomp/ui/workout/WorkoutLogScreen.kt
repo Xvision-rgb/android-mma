@@ -221,7 +221,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
         item {
-            val totalSeries = viewModel.exercices.sumOf { it.series }
+            val totalSeries = viewModel.exercices.sumOf { it.effectiveSets.size }
             Text(
                 when {
                     viewModel.exercices.isEmpty() -> "Exercices"
@@ -229,10 +229,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
-            val volumeTotal = viewModel.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+            val volumeTotal = viewModel.exercices.sumOf { it.volumeTotal }
             if (volumeTotal > 0) {
                 Text(
-                    "Volume estimé : ${volumeTotal.toInt()}kg (séries × reps × charge réelle)",
+                    "Volume estimé : ${volumeTotal.toInt()}kg (Σ reps × charge, série par série)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -270,6 +270,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     },
                     lastKnownCharge = viewModel.lastKnownCharge(exercice.nom),
                     personalRecordKg = viewModel.personalRecordCharge(exercice.nom),
+                    protocole = viewModel.protocoleApre,
+                    incrementKg = viewModel.incrementChargeKg,
+                    biaisRir = viewModel.biaisRir,
+                    seuilChuteStrict = com.example.mmarecomp.util.SetStopAdvisor.estStrict(viewModel.type),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { viewModel.moveExerciseUp(index) }, enabled = index > 0) {

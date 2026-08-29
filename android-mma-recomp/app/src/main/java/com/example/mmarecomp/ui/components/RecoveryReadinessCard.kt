@@ -12,83 +12,93 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.theme.Dimens
+import com.example.mmarecomp.util.Formatting
+import com.example.mmarecomp.util.ModulationSeance
+import com.example.mmarecomp.util.ReadinessAction
+import com.example.mmarecomp.util.TrainingLoad
 
-enum class ReadinessStatus(val emoji: String, val label: String, val recommendation: String) {
-    READY("💚", "Ready to train", "Train hard today!"),
-    CAUTIOUS("⚠️", "Take it easy", "Light training recommended"),
-    REST("😴", "Rest recommended", "Recovery day — active rest only"),
-}
-
+/** État de forme du jour et modulation qui en découle.
+ *
+ *  Deux principes tiennent toute la carte : l'ajustement porte sur le VOLUME
+ *  avant la charge, et il n'existe aucun état « repos complet » — la dose
+ *  minimale entretient l'adaptation, l'arrêt total la perd. Une mauvaise
+ *  journée allège la séance, elle ne la supprime pas. */
 @Composable
 fun RecoveryReadinessCard(
-    status: ReadinessStatus,
-    weightTrendDown: Boolean,
-    sleepHours: Double?,
-    intensityPercent: Int,
-    daysSinceLastRest: Int,
+    modulation: ModulationSeance,
+    score: Int?,
+    acwr: Double?,
+    aCheckInAujourdhui: Boolean,
+    onCheckIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val statusColor = when (status) {
-        ReadinessStatus.READY -> MaterialTheme.colorScheme.tertiary
-        ReadinessStatus.CAUTIOUS -> MaterialTheme.colorScheme.secondary
-        ReadinessStatus.REST -> MaterialTheme.colorScheme.error
+    val couleur = when (modulation.action) {
+        ReadinessAction.NOMINALE -> MaterialTheme.colorScheme.tertiary
+        ReadinessAction.VOLUME_REDUIT -> MaterialTheme.colorScheme.secondary
+        ReadinessAction.ALLEGEE, ReadinessAction.DELOAD -> MaterialTheme.colorScheme.primary
     }
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd))
+            .padding(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(statusColor, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(status.emoji, style = MaterialTheme.typography.headlineMedium)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(status.label, style = MaterialTheme.typography.titleMedium)
-                Text(status.recommendation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
+        Text(
+            "État du jour",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Poids", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(if (weightTrendDown) "↓ Trending down" else "→ Stable", style = MaterialTheme.typography.bodySmall)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Sommeil", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    sleepHours?.let { "${"%.1f".format(it)}h" } ?: "—",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Intensité", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("$intensityPercent%", style = MaterialTheme.typography.bodySmall)
-            }
+            Box(modifier = Modifier.size(10.dp).background(couleur, CircleShape))
+            Text(modulation.action.label, style = MaterialTheme.typography.titleMedium)
         }
 
         Text(
-            "Dernier repos il y a $daysSinceLastRest jour(s)",
+            modulation.explication,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        if (!aCheckInAujourdhui) {
+            Text(
+                "Pas encore de point ce matin — la modulation se base sur ta charge seule.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onCheckIn) { Text("Faire le point du jour (20 s)") }
+        } else {
+            score?.let {
+                Text(
+                    "Score de forme : $it/25",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        acwr?.let {
+            val zone = when {
+                it > TrainingLoad.ACWR_ALERTE -> "montée de charge marquée"
+                it > TrainingLoad.ACWR_MAX -> "au-dessus de ta zone habituelle"
+                it < TrainingLoad.ACWR_MIN -> "en dessous de ta zone habituelle"
+                else -> "dans ta zone habituelle"
+            }
+            Text(
+                "Charge 7j / 28j : ${Formatting.oneDecimal(it)} — $zone.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

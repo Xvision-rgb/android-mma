@@ -13,6 +13,9 @@ data class Workout(
     val type: WorkoutType,
     val exercices: List<LoggedExercise>,
     @SerialName("duree_min") val dureeMin: Int? = null,
+    /** RPE global de la séance (1-10). Multiplié par la durée, il donne la
+     *  charge interne (session-RPE) dont dérive l'ACWR. */
+    val rpe: Int? = null,
     val notes: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
 )
@@ -23,5 +26,6 @@ data class NewWorkout(
     val type: WorkoutType,
     val exercices: List<LoggedExercise>,
     @SerialName("duree_min") val dureeMin: Int? = null,
+    val rpe: Int? = null,
     val notes: String? = null,
 )
