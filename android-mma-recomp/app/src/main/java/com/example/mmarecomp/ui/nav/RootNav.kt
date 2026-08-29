@@ -161,6 +161,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     vm,
                     currentPhase,
                     onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                    onStartWorkout = { navController.navigate("workout") },
                 )
             }
             composable(

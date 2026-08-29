@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
-import com.example.mmarecomp.ui.components.AskClaudeCard
 import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.RelativeStrengthCard
@@ -47,8 +46,6 @@ import com.example.mmarecomp.ui.components.VolumeDistributionCard
 import com.example.mmarecomp.ui.components.NextWorkoutCard
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
-import com.example.mmarecomp.ui.components.StreakBadge
-import com.example.mmarecomp.ui.components.WearablesCard
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -58,7 +55,12 @@ import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: (Int) -> Unit = {}) {
+fun DashboardScreen(
+    viewModel: DashboardViewModel,
+    phase: Phase,
+    onEditPlanDay: (Int) -> Unit = {},
+    onStartWorkout: () -> Unit = {},
+) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
     var showCheckIn by remember { mutableStateOf(false) }
@@ -100,13 +102,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             }
         }
         item {
-            StreakBadge(
-                currentStreak = viewModel.currentStreak,
-                bestStreak = viewModel.bestStreak,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        item {
             RecoveryReadinessCard(
                 modulation = viewModel.modulation,
                 score = viewModel.scoreReadiness,
@@ -142,20 +137,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             }
         }
         item {
-            WearablesCard(modifier = Modifier.fillMaxWidth())
-        }
-        item {
             val suggestion = viewModel.suggestedExercise
             NextWorkoutCard(
                 exerciseName = suggestion?.first,
                 muscleGroup = suggestion?.second,
-                onStartClick = {},
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        item {
-            AskClaudeCard(
-                mockSummary = "Tu as loggé ${viewModel.workoutsThisWeek.size} séances cette semaine. Charge max: 80kg. Continue comme ça 💪",
+                onStartClick = onStartWorkout,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -192,16 +178,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                val avgTarget = viewModel.avgTargetCaloriesLast7Days
-                Text(
-                    if (avgTarget != null) {
-                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne (cible ~$avgTarget kcal)"
-                    } else {
-                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Les calories moyennes 7j vivent uniquement dans la carte
+                // Nutrition ci-dessous — les répéter ici affichait deux fois
+                // la même valeur sur le même écran.
                 Text(
                     "${viewModel.daysWithMealsLast7Days} jour(s) sur 7 avec au moins un repas loggé",
                     style = MaterialTheme.typography.bodySmall,
@@ -340,6 +319,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             DashCard {
                 Text("Nutrition", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${viewModel.avgCaloriesLast7Days} kcal/jour (moy. 7j)", style = MaterialTheme.typography.titleMedium)
+                viewModel.avgTargetCaloriesLast7Days?.let { avgTarget ->
+                    Text(
+                        "Cible moyenne sur la même période : ~$avgTarget kcal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     "${viewModel.mealsLoggedToday} repas loggé(s) aujourd'hui",
                     style = MaterialTheme.typography.bodySmall,
