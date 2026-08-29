@@ -126,13 +126,20 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             )
         }
         item {
+            com.example.mmarecomp.ui.components.VolumeLandmarksCard(
+                bilan = viewModel.bilanVolume,
+                alertes = viewModel.alertesSurcharge,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
             VolumeDistributionCard(
                 repartition = viewModel.repartitionVolume,
                 ratioTiragePoussee = viewModel.ratioTiragePoussee,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        viewModel.conflitsMma.forEach { conflit ->
+        viewModel.conflitsProgrammation.forEach { conflit ->
             item {
                 SoftAlertBanner(
                     message = conflit,

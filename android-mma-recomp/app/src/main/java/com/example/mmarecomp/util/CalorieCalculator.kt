@@ -1,6 +1,7 @@
 package com.example.mmarecomp.util
 
 import com.example.mmarecomp.model.CalorieMode
+import com.example.mmarecomp.model.ContexteSportif
 import kotlin.math.roundToInt
 
 data class CalorieGoal(
@@ -36,7 +37,19 @@ data class AdaptiveRecalibration(
 object CalorieCalculator {
     const val ACTIVITY_MULTIPLIER_LOW = 1.4
     const val ACTIVITY_MULTIPLIER_HIGH = 1.6
+
+    /** Le défaut à 1,5 supposait une pratique de combat en parallèle. Sans
+     *  sparring ni grappling, la dépense hors salle chute nettement : ce sont
+     *  les rounds qui coûtent cher, pas trois séries de squat de plus.
+     *  Garder 1,5 dans ce cas surestime la maintenance et transforme une
+     *  recomposition en léger surplus, sans que rien ne le signale.
+     *
+     *  Le recalibrage adaptatif finirait par corriger, mais il lui faut au
+     *  moins 14 jours : autant partir juste. Préférer
+     *  [multiplicateurPour] quand le contexte sportif est connu. */
     const val ACTIVITY_MULTIPLIER_DEFAULT = 1.5
+
+    fun multiplicateurPour(contexte: ContexteSportif): Double = contexte.multiplicateurActivite
 
     private const val BULK_OFFSET = 400 // milieu de la plage recommandée 300-500
     private const val COUPE_OFFSET = 250 // milieu de la plage recommandée 200-300, jamais -600
