@@ -12,6 +12,9 @@ data class CalorieGoal(
     val glucidesG: Int,
     val lipidesG: Int,
     val warning: String?,
+    /** Planchers macro qui ont dû relever la cible, avec leur raison.
+     *  Affiché tel quel pour que l'utilisateur voie que le calcul a bougé. */
+    val macroCorrections: List<String> = emptyList(),
 )
 
 /** Résultat d'un recalibrage adaptatif — cf. CalorieCalculator.adaptiveRecalibration. */
@@ -42,6 +45,13 @@ object CalorieCalculator {
     private const val SURPLUS_WARNING_THRESHOLD = 500
     private const val HIGH_BF_COUPE_THRESHOLD = 18.0
 
+    /** Attention à la base : ce ratio porte sur la MASSE MAIGRE, pas sur le
+     *  poids total. À 12 % de masse grasse, 2,0 g/kg de masse maigre valent
+     *  ~1,76 g/kg de poids de corps — dans la fourchette recommandée
+     *  (1,2–2,4 g/kg) mais sous la cible usuelle de ~2 g/kg de poids total.
+     *  Choix assumé : l'assiette maigre est la base la plus défendable quand
+     *  le %BF est connu. Voir MacroFloors.PROTEINES_CIBLE_G_PAR_KG pour la
+     *  cible exprimée en poids de corps. */
     private const val PROTEIN_G_PER_KG_LEAN_MASS = 2.0
     private const val FAT_SHARE_OF_CALORIES = 0.275 // milieu de la plage recommandée 25-30%
     private const val FALLBACK_LEAN_MASS_SHARE = 0.85 // si le %BF n'est pas encore connu
@@ -120,18 +130,26 @@ object CalorieCalculator {
         val minimumCalories = (poidsKg * MINIMUM_CALORIES_PER_KG).roundToInt()
         val target = (maintenance + offset).coerceAtLeast(minimumCalories)
         val leanMass = leanMassKg(poidsKg, bfPct)
-        val proteinesG = (leanMass * PROTEIN_G_PER_KG_LEAN_MASS).roundToInt()
-        val lipidesG = (target * FAT_SHARE_OF_CALORIES / 9.0).roundToInt()
-        val glucidesG = ((target - proteinesG * 4 - lipidesG * 9) / 4.0).coerceAtLeast(0.0).roundToInt()
+        val proteinesBruts = (leanMass * PROTEIN_G_PER_KG_LEAN_MASS).roundToInt()
+        val lipidesBruts = (target * FAT_SHARE_OF_CALORIES / 9.0).roundToInt()
+        val glucidesBruts = ((target - proteinesBruts * 4 - lipidesBruts * 9) / 4.0)
+            .coerceAtLeast(0.0).roundToInt()
+
+        // Une cible calorique atteignable peut rester mal composée : un
+        // déficit tenu en coupant les glucides sabote l'entraînement bien
+        // avant de faire perdre du gras.
+        val ajustees = MacroFloors.appliquer(poidsKg, glucidesBruts, proteinesBruts, lipidesBruts)
+
         return CalorieGoal(
             mode = mode,
             maintenanceCalories = maintenance,
-            targetCalories = target,
+            targetCalories = maxOf(target, ajustees.caloriesTotales),
             offsetCalories = offset,
-            proteinesG = proteinesG,
-            glucidesG = glucidesG,
-            lipidesG = lipidesG,
+            proteinesG = ajustees.proteinesG,
+            glucidesG = ajustees.glucidesG,
+            lipidesG = ajustees.lipidesG,
             warning = warningFor(offset),
+            macroCorrections = ajustees.corrections,
         )
     }
 
@@ -153,8 +171,16 @@ object CalorieCalculator {
         periodDays: Int,
         avgLoggedCalories: Double,
         staticMaintenanceCalories: Int,
+        /** Complétude du suivi sur la période (cf. LoggingConfidence).
+         *  Le calcul déduit la dépense des calories LOGUÉES : sous-reporter
+         *  fausse l'estimation d'autant, et le sous-report est le mode
+         *  d'échec normal du suivi alimentaire, pas l'exception. En dessous
+         *  du seuil, on ne recalibre pas — on mesurerait surtout les repas
+         *  manquants. */
+        completudeSuivi: Double = 1.0,
     ): AdaptiveRecalibration? {
         if (periodDays < RECALIBRATION_MIN_DAYS) return null
+        if (completudeSuivi < LoggingConfidence.SEUIL_RECALIBRAGE) return null
         val dailyChangeCalories = weightChangeKg * KCAL_PER_KG_BODY_MASS / periodDays
         val estimatedExpenditure = (avgLoggedCalories - dailyChangeCalories).roundToInt()
         return AdaptiveRecalibration(

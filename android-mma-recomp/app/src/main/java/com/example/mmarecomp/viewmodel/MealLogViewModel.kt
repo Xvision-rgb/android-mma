@@ -19,8 +19,12 @@ import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.util.CalorieCalculator
+import com.example.mmarecomp.util.ConfianceSuivi
 import com.example.mmarecomp.util.DailyTarget
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.DisponibiliteEnergetique
+import com.example.mmarecomp.util.EnergyAvailability
+import com.example.mmarecomp.util.LoggingConfidence
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
 import java.time.LocalDate
@@ -45,6 +49,39 @@ class MealLogViewModel(
         private set
     var recentMeals by mutableStateOf<List<Meal>>(emptyList())
         private set
+
+    /** Poids et %BF de la dernière pesée connue — mémorisés au calcul de la
+     *  cible pour que la disponibilité énergétique n'ait pas à refaire un
+     *  aller-retour réseau. */
+    var poidsCorpsKg by mutableStateOf<Double?>(null)
+        private set
+    var bfPct by mutableStateOf<Double?>(null)
+        private set
+
+    /** Charge interne de la journée (session-RPE × durée), injectée par
+     *  l'écran depuis les séances du jour. Module la périodisation glucidique
+     *  et sert de base à l'estimation de dépense d'exercice. */
+    var chargeInterneDuJour by mutableStateOf<Double?>(null)
+
+    val caloriesDuJour: Int get() = mealsForDay.sumOf { it.calories }
+
+    /** Disponibilité énergétique du jour : ce qui reste une fois
+     *  l'entraînement payé. Null tant que le poids n'est pas connu — on
+     *  n'invente pas une masse maigre. */
+    val disponibiliteEnergetique: DisponibiliteEnergetique?
+        get() {
+            val poids = poidsCorpsKg ?: return null
+            val masseMaigre = CalorieCalculator.leanMassKg(poids, bfPct)
+            val depense = chargeInterneDuJour
+                ?.let { EnergyAvailability.depuisChargeInterne(it) }
+                ?: 0
+            return EnergyAvailability.calculer(caloriesDuJour, depense, masseMaigre)
+        }
+
+    /** Complétude du suivi sur deux semaines — conditionne le recalibrage
+     *  adaptatif et le niveau de confiance affiché. */
+    val confianceSuivi: ConfianceSuivi
+        get() = LoggingConfidence.evaluer(recentMeals + mealsForDay, jours = 14)
 
     /** Repas des deux dernières semaines, hors jour actuellement affiché —
      *  pour l'historique dépliable (lecture seule pour l'instant, la
@@ -137,6 +174,8 @@ class MealLogViewModel(
                 typeJour = typeJour,
                 caloriesCible = computed.calories,
                 proteinesCibleG = computed.proteinesG,
+                glucidesCibleG = computed.glucidesG.takeIf { it > 0 },
+                lipidesCibleG = computed.lipidesG.takeIf { it > 0 },
             )
             target = runCatching { targetRepository.set(newTarget) }.getOrNull()
         }
@@ -161,7 +200,16 @@ class MealLogViewModel(
             CalorieMode.Recomposition
         }
         val goal = CalorieCalculator.goal(latestWeighIn.poidsKg, latestWeighIn.bfPct, mode)
-        return NutritionTargetCalculator.targetFor(typeJour, goal.targetCalories, goal.proteinesG)
+        poidsCorpsKg = latestWeighIn.poidsKg
+        bfPct = latestWeighIn.bfPct
+        return NutritionTargetCalculator.targetFor(
+            typeJour = typeJour,
+            baseCalories = goal.targetCalories,
+            proteinesG = goal.proteinesG,
+            lipidesG = goal.lipidesG,
+            poidsKg = latestWeighIn.poidsKg,
+            chargeInterne = chargeInterneDuJour,
+        )
     }
 
     /** Cible personnalisée saisie librement — les préréglages training/repos

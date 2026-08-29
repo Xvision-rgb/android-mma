@@ -197,6 +197,14 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
+        item {
+            com.example.mmarecomp.ui.components.EnergyAvailabilityCard(
+                ea = viewModel.disponibiliteEnergetique,
+                confiance = viewModel.confianceSuivi,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
         val target = viewModel.target
         if (target != null) {
             item {
