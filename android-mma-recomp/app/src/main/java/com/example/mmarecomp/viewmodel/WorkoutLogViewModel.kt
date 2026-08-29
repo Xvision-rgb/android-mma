@@ -8,12 +8,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.LoggedExercise
+import com.example.mmarecomp.model.LoggedSet
 import com.example.mmarecomp.model.NewWorkout
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
+import com.example.mmarecomp.util.ApreEngine
+import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.DateUtils
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -26,7 +29,25 @@ class WorkoutLogViewModel(
     var type by mutableStateOf(WorkoutType.JambesForce)
     var exercices by mutableStateOf<List<LoggedExercise>>(emptyList())
     var dureeMin by mutableStateOf("")
+    var rpe by mutableStateOf("")
     var notes by mutableStateOf("")
+
+    /** Protocole d'autorégulation appliqué à la séance. Le type de séance
+     *  donne le défaut : une séance de force vise moins de reps par série
+     *  qu'une séance d'hypertrophie. */
+    val protocoleApre: ApreProtocol
+        get() = when (type) {
+            WorkoutType.JambesForce, WorkoutType.TorseForce -> ApreProtocol.APRE_6
+            else -> ApreProtocol.APRE_10
+        }
+
+    /** Incrément de charge disponible en salle. Réglable — tous les gymnases
+     *  n'ont pas de disques de 1,25 kg. */
+    var incrementChargeKg by mutableStateOf(ApreEngine.INCREMENT_DEFAUT)
+
+    /** Biais d'estimation du RIR, injecté par l'écran depuis RirCalibration
+     *  (qui a besoin d'un Context que le ViewModel n'a pas ici). */
+    var biaisRir by mutableStateOf(0.0)
     var isSaving by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -77,6 +98,7 @@ class WorkoutLogViewModel(
                 type = workout.type,
                 exercices = workout.exercices,
                 dureeMin = workout.dureeMin,
+                rpe = workout.rpe,
                 notes = workout.notes,
             )
             try {
@@ -93,6 +115,7 @@ class WorkoutLogViewModel(
     fun resetForm() {
         exercices = emptyList()
         dureeMin = ""
+        rpe = ""
         notes = ""
         prefilledFromPlan = false
     }
@@ -145,7 +168,12 @@ class WorkoutLogViewModel(
     }
 
     fun addExercise() {
-        exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10)
+        // Trois séries vides d'emblée : un exercice sans série n'a rien à
+        // afficher, et le cas le plus courant reste 3 séries.
+        val sets = (1..3).map { i ->
+            LoggedSet(index = i, reps = 10, chargeKg = 0.0, estAmrap = i == 3)
+        }
+        exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10, sets = sets)
     }
 
     /** Charge cible pré-remplie avec la dernière charge réelle connue pour ce
@@ -220,7 +248,7 @@ class WorkoutLogViewModel(
             val previous = recentWorkouts
                 .filter { it.type == type && it.date != DateUtils.string(date) }
                 .maxByOrNull { it.date } ?: return null
-            return previous.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+            return previous.exercices.sumOf { it.volumeTotal }
         }
 
     fun lastKnownCharge(exerciseName: String): Double? {
@@ -241,6 +269,7 @@ class WorkoutLogViewModel(
                 type = type,
                 exercices = exercices,
                 dureeMin = dureeMin.toIntOrNull()?.coerceAtLeast(0),
+                rpe = rpe.toIntOrNull()?.coerceIn(1, 10),
                 notes = notes.ifBlank { null },
             )
             try {

@@ -40,7 +40,10 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.AskClaudeCard
+import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.RelativeStrengthCard
+import com.example.mmarecomp.ui.components.VolumeDistributionCard
 import com.example.mmarecomp.ui.components.NextWorkoutCard
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
@@ -57,6 +60,8 @@ import com.example.mmarecomp.viewmodel.DashboardViewModel
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: (Int) -> Unit = {}) {
     LaunchedEffect(phase) { viewModel.load(phase) }
+
+    var showCheckIn by remember { mutableStateOf(false) }
 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
@@ -103,13 +108,38 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         }
         item {
             RecoveryReadinessCard(
-                status = viewModel.readinessStatus,
-                weightTrendDown = viewModel.weightTrendingDown,
-                sleepHours = viewModel.sleepHoursLastNight,
-                intensityPercent = viewModel.activeIntensityPercent,
-                daysSinceLastRest = viewModel.daysSinceLastRest,
+                modulation = viewModel.modulation,
+                score = viewModel.scoreReadiness,
+                acwr = viewModel.acwr,
+                aCheckInAujourdhui = viewModel.checkInAujourdhui != null,
+                onCheckIn = { showCheckIn = true },
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        // L'indicateur directeur passe avant le poids : c'est lui qui répond
+        // à la question posée (être plus fort pour son poids), là où la
+        // balance seule ne tranche dans aucun sens.
+        item {
+            RelativeStrengthCard(
+                forces = viewModel.forcesRelatives,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            VolumeDistributionCard(
+                repartition = viewModel.repartitionVolume,
+                ratioTiragePoussee = viewModel.ratioTiragePoussee,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        viewModel.conflitsMma.forEach { conflit ->
+            item {
+                SoftAlertBanner(
+                    message = conflit,
+                    tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         item {
             WearablesCard(modifier = Modifier.fillMaxWidth())
@@ -339,6 +369,29 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         }
     }
     }
+
+        if (showCheckIn) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(Dimens.spaceMd)
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd)),
+                ) {
+                    DailyCheckInSheet(
+                        onSubmit = { sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang ->
+                            viewModel.enregistrerCheckIn(sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang)
+                            showCheckIn = false
+                        },
+                        onDismiss = { showCheckIn = false },
+                    )
+                }
+            }
+        }
 
         viewModel.unlockedAchievement?.let { achievement ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

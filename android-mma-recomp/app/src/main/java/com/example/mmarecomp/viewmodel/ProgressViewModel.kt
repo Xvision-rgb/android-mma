@@ -102,7 +102,7 @@ class ProgressViewModel(
                 val weekStart = date.with(
                     java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY),
                 )
-                val volume = workout.exercices.sumOf { it.series * it.reps * (it.chargeReelleKg ?: 0.0) }
+                val volume = workout.exercices.sumOf { it.volumeTotal }
                 byWeek[weekStart] = (byWeek[weekStart] ?: 0.0) + volume
             }
             return byWeek.entries.sortedBy { it.key }.map { (date, vol) -> TrendPoint(date, vol) }

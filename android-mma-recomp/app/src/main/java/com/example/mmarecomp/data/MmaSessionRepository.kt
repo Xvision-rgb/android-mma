@@ -16,6 +16,17 @@ class MmaSessionRepository {
             }
             .decodeList()
 
+    /** Séances MMA depuis une date — alimente la charge interne (l'ACWR
+     *  compterait faux en ignorant le sparring) et la détection de conflit
+     *  avec la musculation. */
+    suspend fun fetchSince(sinceDate: String): List<MmaSession> =
+        client.postgrest.from("mma_sessions")
+            .select {
+                filter { gte("date", sinceDate) }
+                order("date", Order.ASCENDING)
+            }
+            .decodeList()
+
     suspend fun log(session: NewMmaSession): MmaSession =
         client.postgrest.from("mma_sessions")
             .insert(session) { select() }
