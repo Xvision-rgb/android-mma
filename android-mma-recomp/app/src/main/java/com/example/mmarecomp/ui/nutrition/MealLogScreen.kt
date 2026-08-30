@@ -72,7 +72,18 @@ import kotlinx.coroutines.launch
 
 /** Un aliment ajouté au repas en cours de composition, avant enregistrement
  *  — plusieurs peuvent s'accumuler pour un même créneau. */
+private var mealFoodItemSeq = 0L
+
+private fun nextMealFoodItemId(): Long = ++mealFoodItemSeq
+
 private data class MealFoodItem(
+    /** Identité stable de la ligne, indépendante de sa position.
+     *
+     *  Sans elle, LazyColumn se rabat sur l'index : supprimer un aliment au
+     *  milieu de la liste décale tous les suivants et Compose réutilise les
+     *  mauvaises lignes. Passer `key = index` explicitement ne change rien —
+     *  c'est déjà le comportement par défaut. */
+    val id: Long = nextMealFoodItemId(),
     val label: String,
     val calories: Int,
     val proteinesG: Double,
@@ -621,7 +632,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            itemsIndexed(mealItems) { index, mealItem ->
+            itemsIndexed(mealItems, key = { _, item -> item.id }) { index, mealItem ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
