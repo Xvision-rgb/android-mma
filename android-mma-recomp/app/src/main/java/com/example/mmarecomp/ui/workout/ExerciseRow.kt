@@ -33,6 +33,7 @@ import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.ApreEngine
 import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.Formatting
+import com.example.mmarecomp.util.RirTargets
 import com.example.mmarecomp.util.SetStopAdvisor
 
 @Composable
@@ -100,8 +101,9 @@ fun ExerciseRow(
             )
         }
 
+        val cibleRir = if (exercice.nom.isNotBlank()) RirTargets.cible(exercice) else null
         Text(
-            "Séries",
+            if (cibleRir != null) "Séries — RIR cible ${cibleRir.label}" else "Séries",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -172,6 +174,13 @@ fun ExerciseRow(
             SoftAlertBanner(
                 message = "Prochaine fois : ${Formatting.oneDecimal(prescription.chargeKg)}kg — ${prescription.justification}",
                 icon = Icons.Filled.NorthEast,
+            )
+        }
+
+        RirTargets.note(exercice)?.let { note ->
+            SoftAlertBanner(
+                message = note,
+                tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
             )
         }
 

@@ -31,7 +31,10 @@ object EnduranceInterference {
      *  celle-ci est la priorité. */
     const val SEUIL_VOLUME_ELEVE_PAR_SEMAINE = 4
 
-    private val typesEndurance = setOf(WorkoutType.Hiit, WorkoutType.MmaWod)
+    /** MmaWod n'est volontairement PAS ici : une séance de combat n'est pas
+     *  une sortie de course, et les confondre corrompait le decompte des
+     *  sorties comme celui des seances MMA. */
+    private val typesEndurance = setOf(WorkoutType.Course, WorkoutType.Hiit)
 
     private val basDuCorps = setOf(
         WorkoutType.JambesForce,

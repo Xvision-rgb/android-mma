@@ -6,10 +6,13 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -24,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,16 +37,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.model.ContexteSportif
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.ThemeMode
+import com.example.mmarecomp.util.ContextePreference
 import com.example.mmarecomp.ui.theme.ThemePreference
 import com.example.mmarecomp.viewmodel.ProfileViewModel
 
@@ -171,6 +178,53 @@ fun SettingsScreen(
         }
 
         item { HorizontalDivider() }
+        item { Text("Contexte de pratique", style = MaterialTheme.typography.titleMedium) }
+        item {
+            val contextePref = remember(context) { ContextePreference(context) }
+            var contexte by remember { mutableStateOf(contextePref.contexte) }
+            Text(
+                "Détermine les règles d'interférence et l'estimation de dépense. " +
+                    "À repasser sur « avec sport de combat » le jour où le club rouvre.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.spaceXs)) {
+                ContexteSportif.entries.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = Dimens.minTouchTarget)
+                            .selectable(
+                                selected = contexte == option,
+                                role = Role.RadioButton,
+                                onClick = {
+                                    contexte = option
+                                    contextePref.contexte = option
+                                },
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                    ) {
+                        RadioButton(selected = contexte == option, onClick = null)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(option.label, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                option.description,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                "Maintenance estimée : ${(87 * 30 * contexte.multiplicateurActivite).toInt()} kcal " +
+                    "pour 87 kg (multiplicateur ${contexte.multiplicateurActivite}).",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         item { Text("Programme d'entraînement", style = MaterialTheme.typography.titleMedium) }
         item {
             Text(

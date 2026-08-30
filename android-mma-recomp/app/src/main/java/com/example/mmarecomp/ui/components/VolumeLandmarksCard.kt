@@ -31,6 +31,9 @@ import com.example.mmarecomp.util.ZoneVolume
 fun VolumeLandmarksCard(
     bilan: List<BilanVolume>,
     alertes: List<String>,
+    deadHangSec: Int? = null,
+    lecturePoigne: String? = null,
+    progressionDeadHangSec: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     if (bilan.isEmpty()) return
@@ -84,6 +87,33 @@ fun VolumeLandmarksCard(
 
         alertes.take(2).forEach { alerte ->
             SoftAlertBanner(message = alerte, tone = SoftAlertTone.NEUTRAL)
+        }
+
+        if (deadHangSec != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Dimens.spaceXs),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Dead hang", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    buildString {
+                        append("$deadHangSec s")
+                        progressionDeadHangSec?.takeIf { it != 0 }?.let {
+                            append(if (it > 0) "  +$it s" else "  $it s")
+                        }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            lecturePoigne?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

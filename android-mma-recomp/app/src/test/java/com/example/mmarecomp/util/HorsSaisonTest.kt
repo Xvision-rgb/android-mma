@@ -171,6 +171,39 @@ class OverreachingDetectorTest {
     }
 }
 
+class TypeCourseTest {
+
+    private val jour: LocalDate = LocalDate.of(2026, 8, 26)
+
+    @Test
+    fun `une seance mma ne compte plus comme une sortie de course`() {
+        val workouts = listOf(
+            seance(jour, WorkoutType.JambesForce),
+            seance(jour, WorkoutType.MmaWod),
+        )
+        // Avant l'ajout du type Course, MmaWod servait de proxy : une séance
+        // de combat déclenchait donc une alerte d'interférence course/jambes.
+        assertTrue(EnduranceInterference.conflits(jour, workouts).isEmpty())
+    }
+
+    @Test
+    fun `une sortie de course declenche bien l alerte`() {
+        val workouts = listOf(
+            seance(jour, WorkoutType.JambesForce),
+            seance(jour, WorkoutType.Course),
+        )
+        assertTrue(EnduranceInterference.conflits(jour, workouts).isNotEmpty())
+    }
+
+    @Test
+    fun `le type course existe dans le plan et se convertit`() {
+        assertEquals(
+            WorkoutType.Course,
+            com.example.mmarecomp.model.PlanDayType.Course.toWorkoutTypeOrNull(),
+        )
+    }
+}
+
 class ContexteSportifTest {
 
     @Test

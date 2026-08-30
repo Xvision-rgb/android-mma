@@ -85,6 +85,9 @@ private data class MealFoodItem(
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
     LaunchedEffect(viewModel.date) { viewModel.loadRecentHistory() }
+    LaunchedEffect(viewModel.target?.caloriesCible) {
+        viewModel.loadSignauxNutrition(viewModel.target?.caloriesCible)
+    }
     LaunchedEffect(Unit) { viewModel.loadFoods() }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -205,6 +208,26 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             )
         }
 
+        viewModel.alerteRythmePerte?.let { alerte ->
+            item {
+                com.example.mmarecomp.ui.components.SoftAlertBanner(
+                    message = alerte,
+                    tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        viewModel.suggestionPause?.let { pause ->
+            item {
+                com.example.mmarecomp.ui.components.SoftAlertBanner(
+                    message = pause,
+                    tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         val target = viewModel.target
         if (target != null) {
             item {
@@ -292,6 +315,15 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    com.example.mmarecomp.util.NutritionTargetCalculator
+                        .notePriseProteique(viewModel.indicativeSplit.values.firstOrNull()?.proteinesG ?: 0.0)
+                        ?.let { note ->
+                            Text(
+                                note,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     viewModel.indicativeSplit.forEach { (slot, slotTarget) ->
                         Column {
                             Text(slot.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -69,6 +69,15 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaSheet: () -> Unit) {
+    // Le biais d'estimation du RIR vit dans SharedPreferences (donc a besoin
+    // d'un Context, que le ViewModel n'a pas) : l'écran fait le pont. Sans
+    // cette ligne, biaisRir restait à 0 et la correction n'agissait jamais.
+    val calibrationContext = androidx.compose.ui.platform.LocalContext.current
+    val rirCalibration = remember(calibrationContext) {
+        com.example.mmarecomp.util.RirCalibration(calibrationContext)
+    }
+    LaunchedEffect(rirCalibration) { viewModel.biaisRir = rirCalibration.biais }
+
     var showSavedMessage by remember { mutableStateOf(false) }
     LaunchedEffect(showSavedMessage) {
         if (showSavedMessage) {
@@ -244,6 +253,22 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     )
                 }
             }
+        }
+
+        item {
+            OutlinedTextField(
+                value = viewModel.rpe,
+                onValueChange = { viewModel.rpe = it.filter { c -> c.isDigit() }.take(2) },
+                label = { Text("RPE de la séance (1-10)") },
+                supportingText = {
+                    Text("Difficulté ressentie globale. Multipliée par la durée, elle donne la charge interne dont dépend l'état du jour.")
+                },
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         item { RestTimer() }

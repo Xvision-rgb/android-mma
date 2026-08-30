@@ -129,6 +129,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             com.example.mmarecomp.ui.components.VolumeLandmarksCard(
                 bilan = viewModel.bilanVolume,
                 alertes = viewModel.alertesSurcharge,
+                deadHangSec = viewModel.deadHangSec,
+                lecturePoigne = viewModel.lecturePoigne,
+                progressionDeadHangSec = viewModel.progressionDeadHangSec,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

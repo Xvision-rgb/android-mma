@@ -11,6 +11,7 @@ enum class WorkoutType(val value: String, val label: String) {
     @SerialName("torse_hypertrophie") TorseHypertrophie("torse_hypertrophie", "Torse hypertrophie"),
     @SerialName("hiit") Hiit("hiit", "HIIT"),
     @SerialName("mma_wod") MmaWod("mma_wod", "MMA (WOD)"),
+    @SerialName("course") Course("course", "Course à pied"),
 }
 
 /** Type de jour dans le split hebdo programmé — inclut "repos", contrairement
@@ -23,6 +24,7 @@ enum class PlanDayType(val value: String, val label: String) {
     @SerialName("torse_hypertrophie") TorseHypertrophie("torse_hypertrophie", "Torse hypertrophie"),
     @SerialName("hiit") Hiit("hiit", "HIIT"),
     @SerialName("mma_wod") MmaWod("mma_wod", "MMA (WOD)"),
+    @SerialName("course") Course("course", "Course à pied"),
     @SerialName("repos") Repos("repos", "Repos"),
 }
 
@@ -33,6 +35,7 @@ fun PlanDayType.toWorkoutTypeOrNull(): WorkoutType? = when (this) {
     PlanDayType.TorseHypertrophie -> WorkoutType.TorseHypertrophie
     PlanDayType.Hiit -> WorkoutType.Hiit
     PlanDayType.MmaWod -> WorkoutType.MmaWod
+    PlanDayType.Course -> WorkoutType.Course
     PlanDayType.Repos -> null
 }
 

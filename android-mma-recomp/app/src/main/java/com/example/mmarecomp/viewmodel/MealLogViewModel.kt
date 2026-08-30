@@ -24,7 +24,11 @@ import com.example.mmarecomp.util.DailyTarget
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.DisponibiliteEnergetique
 import com.example.mmarecomp.util.EnergyAvailability
+import com.example.mmarecomp.util.DietBreak
 import com.example.mmarecomp.util.LoggingConfidence
+import com.example.mmarecomp.util.MacroFloors
+import com.example.mmarecomp.util.MovingAverage
+import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
 import java.time.LocalDate
@@ -82,6 +86,56 @@ class MealLogViewModel(
      *  adaptatif et le niveau de confiance affiché. */
     val confianceSuivi: ConfianceSuivi
         get() = LoggingConfidence.evaluer(recentMeals + mealsForDay, jours = 14)
+
+    /** Historique de pesées matinales, pour juger le rythme de descente.
+     *  Toujours lissé en moyenne mobile 7 jours avant comparaison. */
+    var tendancePoids by mutableStateOf<List<TrendPoint>>(emptyList())
+        private set
+
+    /** Descente trop rapide : au-delà d'1 kg/semaine, la masse maigre part
+     *  avec le gras. Null si le rythme est correct ou l'historique trop court. */
+    val alerteRythmePerte: String?
+        get() {
+            val points = tendancePoids
+            if (points.size < 2) return null
+            val premier = points.first()
+            val dernier = points.last()
+            val jours = java.time.temporal.ChronoUnit.DAYS.between(premier.date, dernier.date).toInt()
+            return MacroFloors.alertePerteTropRapide(dernier.value - premier.value, jours)
+        }
+
+    /** Jours consécutifs où la cible enregistrée était sous la maintenance —
+     *  base de la proposition de pause. On compte les cibles réelles, pas une
+     *  intention déclarée dans le profil. */
+    var joursEnDeficit by mutableStateOf(0)
+        private set
+
+    val suggestionPause: String? get() = DietBreak.proposerPause(joursEnDeficit)
+
+    /** Charge l'historique de poids et le compte de jours en déficit.
+     *  Échoue en silence : ces deux signaux sont secondaires et ne doivent
+     *  jamais empêcher de loguer un repas. */
+    fun loadSignauxNutrition(maintenanceKcal: Int?) {
+        viewModelScope.launch {
+            runCatching {
+                val pesees = weighInRepository.fetch(DateUtils.daysAgo(60))
+                    .filter { it.type == com.example.mmarecomp.model.WeighInType.MatinJeun }
+                    .mapNotNull { w -> DateUtils.date(w.date)?.let { TrendPoint(it, w.poidsKg) } }
+                tendancePoids = MovingAverage.sevenDay(pesees)
+            }
+            if (maintenanceKcal != null) {
+                runCatching {
+                    val cibles = targetRepository.fetchSince(DateUtils.daysAgo(90))
+                        .sortedByDescending { it.date }
+                    var compte = 0
+                    for (cible in cibles) {
+                        if (cible.caloriesCible < maintenanceKcal - 100) compte++ else break
+                    }
+                    joursEnDeficit = compte
+                }
+            }
+        }
+    }
 
     /** Repas des deux dernières semaines, hors jour actuellement affiché —
      *  pour l'historique dépliable (lecture seule pour l'instant, la

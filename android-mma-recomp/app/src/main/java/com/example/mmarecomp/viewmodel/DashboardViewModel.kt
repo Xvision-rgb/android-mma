@@ -40,6 +40,7 @@ import com.example.mmarecomp.util.ForceRelative
 import com.example.mmarecomp.util.BilanVolume
 import com.example.mmarecomp.util.ContextePreference
 import com.example.mmarecomp.util.EnduranceInterference
+import com.example.mmarecomp.util.GripBenchmarks
 import com.example.mmarecomp.util.InterferenceChecker
 import com.example.mmarecomp.util.OverreachingDetector
 import com.example.mmarecomp.util.VolumeLandmarks
@@ -254,7 +255,7 @@ class DashboardViewModel(
 
     private val sortiesEnduranceCetteSemaine: Int
         get() = workoutsThisWeek.count {
-            it.type == WorkoutType.Hiit || it.type == WorkoutType.MmaWod
+            it.type == WorkoutType.Course || it.type == WorkoutType.Hiit
         }
 
     /** Séries par zone face aux repères de volume — le moteur réel de
@@ -264,6 +265,22 @@ class DashboardViewModel(
 
     val zonesADevelopper: List<BilanVolume>
         get() = VolumeLandmarks.zonesADevelopper(workoutsThisWeek)
+
+    /** Dernier dead hang mesuré et sa lecture. La poigne étant le facteur
+     *  limitant du tirage, c'est une métrique de première classe : elle était
+     *  stockée depuis le check-in mais jamais relue. */
+    val deadHangSec: Int?
+        get() = checkInsRecents.sortedBy { it.date }.lastOrNull { it.deadHangSec != null }?.deadHangSec
+
+    val lecturePoigne: String? get() = deadHangSec?.let { GripBenchmarks.lecture(it) }
+
+    /** Progression du dead hang entre la première et la dernière mesure. */
+    val progressionDeadHangSec: Int?
+        get() {
+            val mesures = checkInsRecents.sortedBy { it.date }.mapNotNull { it.deadHangSec }
+            if (mesures.size < 2) return null
+            return mesures.last() - mesures.first()
+        }
 
     /** Exercices dont la charge recule plusieurs séances de suite : signe que
      *  le volume dépasse ce qui est récupérable. */
