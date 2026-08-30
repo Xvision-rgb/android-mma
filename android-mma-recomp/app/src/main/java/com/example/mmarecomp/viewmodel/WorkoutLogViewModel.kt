@@ -231,6 +231,9 @@ class WorkoutLogViewModel(
     }
 
     fun updateExercise(index: Int, updated: LoggedExercise) {
+        // Garde de bornes : un index périmé (recomposition Compose après un
+        // retrait/réordonnancement) ne doit jamais faire crasher la saisie.
+        if (index !in exercices.indices) return
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
 

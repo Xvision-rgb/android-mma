@@ -1,0 +1,9 @@
+{
+  "name": "MMA Recomp Android",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "user": "ubuntu",
+  "install": "cd android-mma-recomp && ./scripts/cloud-agent-install.sh"
+}

@@ -17,7 +17,10 @@ class AchievementManager(private val context: Context) {
     }
 
     fun checkAndUnlockFiveConsecutiveDays(currentStreak: Int): Boolean {
-        if (currentStreak == 5 && !isUnlocked(AchievementType.FIVE_CONSECUTIVE_DAYS)) {
+        // `>= 5` plutôt que `== 5` : une série d'activité peut sauter la valeur
+        // exacte 5 (ex. plusieurs jours renseignés d'un coup) ; le garde
+        // `!isUnlocked` garantit malgré tout un unique déblocage.
+        if (currentStreak >= 5 && !isUnlocked(AchievementType.FIVE_CONSECUTIVE_DAYS)) {
             unlock(AchievementType.FIVE_CONSECUTIVE_DAYS)
             return true
         }
