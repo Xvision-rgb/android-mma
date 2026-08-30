@@ -82,7 +82,7 @@ fun DashboardScreen(
         actions = {
             IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
                 if (viewModel.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(Dimens.iconSm))
                 } else {
                     Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
                 }
@@ -96,7 +96,7 @@ fun DashboardScreen(
             LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = 96.dp,
+            start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = Dimens.scrollBottomInset,
         ),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.spaceMd),
     ) {
@@ -178,7 +178,7 @@ fun DashboardScreen(
         item {
             DashCard {
                 Text("Cette semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     Text("${viewModel.seancesFaitesCount}", style = MaterialTheme.typography.displayLarge)
                     Text(
                         "séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
@@ -224,14 +224,14 @@ fun DashboardScreen(
                 val typeBreakdown = viewModel.workoutTypeBreakdown
                 if (typeBreakdown.isNotEmpty()) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                     ) {
                         typeBreakdown.entries.forEach { (type, count) ->
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs)) {
                                 Box(
                                     modifier = Modifier
-                                        .size(8.dp)
+                                        .size(Dimens.dotSm)
                                         .background(workoutTypeColor(type), androidx.compose.foundation.shape.CircleShape),
                                 )
                                 Text(
@@ -300,7 +300,7 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+                WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(Dimens.chartHeight))
                 if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
                     SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
                 }

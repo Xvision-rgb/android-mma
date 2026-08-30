@@ -51,7 +51,7 @@ fun RestTimer(modifier: Modifier = Modifier) {
         remainingSeconds = current - 1
     }
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
         Text(
             "Minuteur de repos",
             style = MaterialTheme.typography.labelSmall,

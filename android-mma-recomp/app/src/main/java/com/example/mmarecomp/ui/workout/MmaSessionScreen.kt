@@ -106,7 +106,7 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit, onBack
                 Text("Mouvements détectés (${parsed.size})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     parsed.take(4).forEach { movement ->
                         FilterChip(
                             selected = false,

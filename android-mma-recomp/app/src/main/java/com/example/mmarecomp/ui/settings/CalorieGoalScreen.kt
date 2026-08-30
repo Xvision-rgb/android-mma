@@ -91,7 +91,7 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel, onBack: () -> Unit = {}) 
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     Text("${goalRecomposition.maintenanceCalories}", style = MaterialTheme.typography.displayLarge)
                     Text(
                         "kcal/jour",

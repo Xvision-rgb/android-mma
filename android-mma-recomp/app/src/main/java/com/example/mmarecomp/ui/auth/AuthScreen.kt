@@ -118,7 +118,7 @@ fun AuthScreen(viewModel: AuthViewModel) {
             enabled = !viewModel.isSubmitting && formValide,
         ) {
             if (viewModel.isSubmitting) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(modifier = Modifier.size(Dimens.iconSm), color = MaterialTheme.colorScheme.onPrimary)
             } else {
                 Text("Se connecter")
             }

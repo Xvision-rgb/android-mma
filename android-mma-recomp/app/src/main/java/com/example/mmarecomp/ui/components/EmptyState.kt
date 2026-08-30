@@ -39,7 +39,7 @@ fun EmptyState(
             icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(Dimens.iconMd),
         )
         Text(
             title,

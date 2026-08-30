@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.theme.Dimens
 
 @Composable
 fun TargetVsActualBar(
@@ -37,7 +38,7 @@ fun TargetVsActualBar(
         },
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 Text(label, style = MaterialTheme.typography.bodyMedium)
                 // Badge neutre, jamais négatif : uniquement un "atteint" positif,
                 // jamais de mention "pas encore" ou "en retard".
@@ -56,14 +57,14 @@ fun TargetVsActualBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(7.dp)
-                .clip(RoundedCornerShape(999.dp))
+                .clip(RoundedCornerShape(Dimens.cornerPill))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(ratio.toFloat().coerceIn(0f, 1f))
                     .height(7.dp)
-                    .clip(RoundedCornerShape(999.dp))
+                    .clip(RoundedCornerShape(Dimens.cornerPill))
                     .background(barColor),
             )
         }

@@ -155,7 +155,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                             leadingIcon = {
                                 Box(
                                     modifier = Modifier
-                                        .size(10.dp)
+                                        .size(Dimens.dotMd)
                                         .background(workoutTypeColor(option), androidx.compose.foundation.shape.CircleShape),
                                 )
                             },
@@ -356,9 +356,9 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                         val availableTypes = viewModel.recentWorkouts.map { it.type }.distinct()
                         if (availableTypes.size > 1) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                                 modifier = Modifier
-                                    .padding(bottom = 8.dp)
+                                    .padding(bottom = Dimens.spaceSm)
                                     .horizontalScroll(rememberScrollState()),
                             ) {
                                 availableTypes.forEach { availableType ->
@@ -381,10 +381,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                                     Box(
                                         modifier = Modifier
-                                            .size(8.dp)
+                                            .size(Dimens.dotSm)
                                             .background(workoutTypeColor(workout.type), androidx.compose.foundation.shape.CircleShape),
                                     )
                                     Text(

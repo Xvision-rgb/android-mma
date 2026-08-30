@@ -108,7 +108,7 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
             )
         }
         item {
-            WeightTrendChart(points = viewModel.trend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+            WeightTrendChart(points = viewModel.trend7Day, modifier = Modifier.fillMaxWidth().height(Dimens.chartHeight))
         }
         item {
             val direction = com.example.mmarecomp.util.MovingAverage.direction(viewModel.trend7Day)
