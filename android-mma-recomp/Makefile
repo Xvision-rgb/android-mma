@@ -1,9 +1,14 @@
-.PHONY: test lint
+.PHONY: bootstrap lint test check
 
-# Logique métier JVM (JUnit). Nécessite le SDK Android / Gradle wrapper
-# du module — pas disponible dans tous les environnements CI légers.
-test:
-	./gradlew test --offline || ./gradlew test
+bootstrap:
+	@test -f app/src/main/java/com/example/mmarecomp/SupabaseConfig.kt || \
+		cp app/src/main/java/com/example/mmarecomp/SupabaseConfig.kt.example \
+		   app/src/main/java/com/example/mmarecomp/SupabaseConfig.kt
 
-lint:
-	./gradlew lint || true
+lint: bootstrap
+	./gradlew lintDebug
+
+test: bootstrap
+	./gradlew testDebugUnitTest
+
+check: lint test
