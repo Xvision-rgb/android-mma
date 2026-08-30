@@ -31,12 +31,7 @@ fun VolumeDistributionCard(
     ratioTiragePoussee: Double?,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd))
-            .padding(Dimens.spaceMd),
-        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
-    ) {
+    AppCard(modifier = modifier) {
         Text(
             "Répartition du volume (7 jours)",
             style = MaterialTheme.typography.labelSmall,
@@ -49,7 +44,7 @@ fun VolumeDistributionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            return@Column
+            return@AppCard
         }
 
         MuscleZone.entries.forEach { zone ->

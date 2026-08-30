@@ -18,9 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.theme.Dimens
+import com.example.mmarecomp.ui.theme.readinessColor
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.ModulationSeance
-import com.example.mmarecomp.util.ReadinessAction
 import com.example.mmarecomp.util.TrainingLoad
 
 /** État de forme du jour et modulation qui en découle.
@@ -38,18 +38,11 @@ fun RecoveryReadinessCard(
     onCheckIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val couleur = when (modulation.action) {
-        ReadinessAction.NOMINALE -> MaterialTheme.colorScheme.tertiary
-        ReadinessAction.VOLUME_REDUIT -> MaterialTheme.colorScheme.secondary
-        ReadinessAction.ALLEGEE, ReadinessAction.DELOAD -> MaterialTheme.colorScheme.primary
-    }
+    // Le mapping état -> couleur vit désormais dans SemanticColors : les
+    // trois tons sont partagés avec le reste de l'app plutôt que redéfinis ici.
+    val couleur = readinessColor(modulation.action)
 
-    Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd))
-            .padding(Dimens.spaceMd),
-        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
-    ) {
+    AppCard(modifier = modifier) {
         Text(
             "État du jour",
             style = MaterialTheme.typography.labelSmall,
@@ -60,7 +53,7 @@ fun RecoveryReadinessCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
         ) {
-            Box(modifier = Modifier.size(10.dp).background(couleur, CircleShape))
+            Box(modifier = Modifier.size(Dimens.dotMd).background(couleur, CircleShape))
             Text(modulation.action.label, style = MaterialTheme.typography.titleMedium)
         }
 

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
+import com.example.mmarecomp.ui.components.AppCard
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
@@ -389,14 +390,10 @@ fun DashboardScreen(
     }
 }
 
+/** Délègue à `AppCard` : les ~10 appels du dashboard restent inchangés, mais
+ *  la carte prend l'élévation, la bordure et les tokens partagés au lieu du
+ *  `Column` + `.background()` recopié qu'elle portait. */
 @Composable
 private fun DashCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
-        content = content,
-    )
+    AppCard(content = content)
 }
