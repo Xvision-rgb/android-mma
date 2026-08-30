@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -171,7 +172,8 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             exitTransition = { fadeOut(animationSpec = tween(150)) },
         ) {
             composable("dashboard") {
-                val vm = remember(userId) { DashboardViewModel(userId = userId) }
+                val appContext = LocalContext.current.applicationContext
+                val vm = remember(userId) { DashboardViewModel(userId = userId, context = appContext) }
                 DashboardScreen(
                     vm,
                     currentPhase,
@@ -206,7 +208,8 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 )
             }
             composable("meals") {
-                val vm = remember(userId) { MealLogViewModel(userId = userId) }
+                val appContext = LocalContext.current.applicationContext
+                val vm = remember(userId) { MealLogViewModel(userId = userId, context = appContext) }
                 MealLogScreen(vm)
             }
             composable("weighin") {
@@ -236,7 +239,8 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 ImportTrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
             composable("calorie_goal") {
-                val vm = remember(userId) { CalorieGoalViewModel(userId = userId) }
+                val appContext = LocalContext.current.applicationContext
+                val vm = remember(userId) { CalorieGoalViewModel(userId = userId, context = appContext) }
                 CalorieGoalScreen(vm, onBack = { navController.popBackStack() })
             }
         }

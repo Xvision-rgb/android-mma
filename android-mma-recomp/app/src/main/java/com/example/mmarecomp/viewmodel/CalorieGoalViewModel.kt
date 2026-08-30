@@ -1,5 +1,6 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,7 +11,6 @@ import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.model.CalorieMode
-import com.example.mmarecomp.model.NewNutritionTarget
 import com.example.mmarecomp.model.ProfileUpdate
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.model.WeighIn
@@ -18,9 +18,13 @@ import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.util.AdaptiveRecalibration
 import com.example.mmarecomp.util.CalorieCalculator
 import com.example.mmarecomp.util.CalorieGoal
+import com.example.mmarecomp.util.ContextePreference
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.LoggingConfidence
 import com.example.mmarecomp.util.MovingAverage
+import com.example.mmarecomp.util.NutritionTargetDraft
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.util.WeighInSelector
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.launch
 
@@ -30,7 +34,13 @@ class CalorieGoalViewModel(
     private val profileRepository: ProfileRepository = ProfileRepository(),
     private val targetRepository: NutritionTargetRepository = NutritionTargetRepository(),
     private val mealRepository: MealRepository = MealRepository(),
+    context: Context? = null,
 ) : ViewModel() {
+    private val contextePreference = context?.let { ContextePreference(it) }
+
+    private val activityMultiplier: Double
+        get() = contextePreference?.let { CalorieCalculator.multiplicateurPour(it.contexte) }
+            ?: CalorieCalculator.ACTIVITY_MULTIPLIER_DEFAULT
     var poidsKg by mutableStateOf<Double?>(null)
         private set
     var bfPct by mutableStateOf<Double?>(null)
@@ -65,7 +75,7 @@ class CalorieGoalViewModel(
     fun goalFor(mode: CalorieMode): CalorieGoal? {
         val poids = poidsInputKg.replace(",", ".").toDoubleOrNull() ?: return null
         val bf = bfInputPct.replace(",", ".").toDoubleOrNull()
-        return CalorieCalculator.goal(poids, bf, mode)
+        return CalorieCalculator.goal(poids, bf, mode, activityMultiplier)
     }
 
     fun load() {
@@ -74,7 +84,7 @@ class CalorieGoalViewModel(
         viewModelScope.launch {
             try {
                 val recent = weighInRepository.fetch(DateUtils.daysAgo(30))
-                val latest = recent.lastOrNull { it.poidsKg > 0 }
+                val latest = WeighInSelector.latestReference(recent)
                 poidsKg = latest?.poidsKg
                 bfPct = latest?.bfPct
                 poidsInputKg = latest?.poidsKg?.toString() ?: ""
@@ -116,12 +126,14 @@ class CalorieGoalViewModel(
         if (caloriesByDate.isEmpty()) return
         val avgLoggedCalories = caloriesByDate.values.average()
 
-        val staticMaintenance = CalorieCalculator.maintenanceCalories(currentPoidsKg)
+        val staticMaintenance = CalorieCalculator.maintenanceCalories(currentPoidsKg, activityMultiplier)
+        val confiance = LoggingConfidence.evaluer(meals, periodDays)
         val result = CalorieCalculator.adaptiveRecalibration(
             weightChangeKg = last.value - first.value,
             periodDays = periodDays,
             avgLoggedCalories = avgLoggedCalories,
             staticMaintenanceCalories = staticMaintenance,
+            completudeSuivi = confiance.completude,
         ) ?: return
         if (CalorieCalculator.isRecalibrationSignificant(result)) {
             recalibration = result
@@ -143,12 +155,7 @@ class CalorieGoalViewModel(
             try {
                 val goal = CalorieCalculator.goalFromMaintenance(estimated, poids, bf, mode)
                 targetRepository.set(
-                    NewNutritionTarget(
-                        date = DateUtils.today(),
-                        typeJour = TypeJour.Training,
-                        caloriesCible = goal.targetCalories,
-                        proteinesCibleG = goal.proteinesG.toDouble(),
-                    ),
+                    NutritionTargetDraft.fromGoal(DateUtils.today(), TypeJour.Training, goal),
                 )
                 recalibration = null
                 savedConfirmation = true
@@ -174,12 +181,7 @@ class CalorieGoalViewModel(
                     profileRepository.update(userId, ProfileUpdate(objectifCalorieMode = mode))
                 }
                 targetRepository.set(
-                    NewNutritionTarget(
-                        date = DateUtils.today(),
-                        typeJour = TypeJour.Training,
-                        caloriesCible = goal.targetCalories,
-                        proteinesCibleG = goal.proteinesG.toDouble(),
-                    ),
+                    NutritionTargetDraft.fromGoal(DateUtils.today(), TypeJour.Training, goal),
                 )
                 appliedMode = mode
                 savedConfirmation = true

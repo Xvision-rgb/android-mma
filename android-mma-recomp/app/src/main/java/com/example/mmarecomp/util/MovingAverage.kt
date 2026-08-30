@@ -7,14 +7,26 @@ data class TrendPoint(val date: LocalDate, val value: Double)
 enum class TrendDirection { HAUSSE, BAISSE, STABLE, INDETERMINE }
 
 object MovingAverage {
-    /** Direction de la tendance moyenne mobile — jamais de valeur brute,
-     *  juste hausse/baisse/stable entre le premier et le dernier point de
-     *  la fenêtre. */
-    fun direction(points: List<TrendPoint>): TrendDirection = when {
-        points.size < 2 -> TrendDirection.INDETERMINE
-        points.last().value > points.first().value -> TrendDirection.HAUSSE
-        points.last().value < points.first().value -> TrendDirection.BAISSE
-        else -> TrendDirection.STABLE
+    /**
+     * Direction de la tendance moyenne mobile — jamais de valeur brute.
+     *
+     * Compare le dernier point au point le plus proche de [lookbackDays]
+     * jours plus tôt. Comparer le premier et le dernier point d'une série
+     * de 60 jours ferait passer une tendance de deux mois pour « cette
+     * semaine » dès que l'historique dépasse 7 jours.
+     */
+    fun direction(points: List<TrendPoint>, lookbackDays: Long = 7): TrendDirection {
+        if (points.size < 2) return TrendDirection.INDETERMINE
+        val sorted = points.sortedBy { it.date }
+        val last = sorted.last()
+        val cutoff = last.date.minusDays(lookbackDays)
+        val reference = sorted.lastOrNull { it.date <= cutoff } ?: sorted.first()
+        if (reference.date == last.date) return TrendDirection.INDETERMINE
+        return when {
+            last.value > reference.value -> TrendDirection.HAUSSE
+            last.value < reference.value -> TrendDirection.BAISSE
+            else -> TrendDirection.STABLE
+        }
     }
 
     /** Moyenne mobile 7 jours sur une série (date, valeur).

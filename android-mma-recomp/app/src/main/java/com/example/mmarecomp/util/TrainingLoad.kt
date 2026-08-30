@@ -52,6 +52,15 @@ object TrainingLoad {
         return ressenti.toDouble() * DUREE_MMA_DEFAUT_MIN
     }
 
+    /** Charge interne d'une date donnée (session-RPE cumulée). Null si
+     *  aucune séance ce jour-là n'a à la fois un RPE et une durée — on
+     *  n'invente pas une dépense. */
+    fun chargePourDate(
+        date: String,
+        workouts: List<Workout>,
+        mmaSessions: List<MmaSession> = emptyList(),
+    ): Double? = chargesParJour(workouts, mmaSessions)[date]?.takeIf { it > 0.0 }
+
     /** Charges quotidiennes cumulées, musculation et MMA confondues. */
     fun chargesParJour(
         workouts: List<Workout>,
