@@ -2,6 +2,7 @@ package com.example.mmarecomp.util
 
 import com.example.mmarecomp.model.MuscleZone
 import com.example.mmarecomp.model.Workout
+import com.example.mmarecomp.model.WorkoutType
 
 enum class ZoneVolume(val label: String) {
     SOUS_MAINTIEN("Sous le maintien"),
@@ -48,9 +49,14 @@ object VolumeLandmarks {
      *
      *  Une série ne compte que si elle a été réellement travaillée : une
      *  série à vide ou à zéro rep gonflerait le décompte sans rien stimuler. */
+    /** Une sortie de course sollicite les jambes mais ne produit pas de
+     *  volume de résistance : la compter gonflerait la zone quadriceps et
+     *  masquerait un vrai déficit de travail de force. */
+    private val typesHorsVolume = setOf(WorkoutType.Course, WorkoutType.Hiit, WorkoutType.MmaWod)
+
     fun seriesParZone(workouts: List<Workout>): Map<MuscleZone, Int> {
         val compte = mutableMapOf<MuscleZone, Int>()
-        workouts.forEach { workout ->
+        workouts.filterNot { it.type in typesHorsVolume }.forEach { workout ->
             workout.exercices.forEach { exercice ->
                 if (exercice.nom.isBlank()) return@forEach
                 val zone = MuscleZoneClassifier.classifier(exercice.nom)
