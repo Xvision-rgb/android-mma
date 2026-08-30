@@ -55,7 +55,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.R
 import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
@@ -65,6 +67,8 @@ import com.example.mmarecomp.ui.components.CalorieProgressRing
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
@@ -110,11 +114,13 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
     fun deleteWithUndo(meal: Meal) {
         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+        val undoMessage = context.getString(R.string.meal_undo)
+        val undoAction = context.getString(R.string.meal_undo_action)
         viewModel.deleteMeal(meal) {
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
-                    message = "Repas supprimé",
-                    actionLabel = "Annuler",
+                    message = undoMessage,
+                    actionLabel = undoAction,
                     duration = SnackbarDuration.Long,
                 )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreMeal(meal)
@@ -201,7 +207,45 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         scope.launch { listState.animateScrollToItem(0) }
     }
 
-    AppScaffold(title = "Log repas") { padding ->
+    fun performSave() {
+        val savedDate = viewModel.date
+        viewModel.logMeal(
+            slot = selectedSlot,
+            calories = (calories.toIntOrNull() ?: 0).coerceAtLeast(0),
+            proteinesG = (proteines.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+            glucidesG = (glucides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+            lipidesG = (lipides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
+            description = description,
+        ) { saved ->
+            showSaved = saved
+            if (saved) {
+                calories = ""
+                proteines = ""
+                glucides = ""
+                lipides = ""
+                description = ""
+                mealItems.clear()
+                descriptionIsAuto = true
+                scope.launch { listState.animateScrollToItem(0) }
+                if (savedDate == java.time.LocalDate.now()) {
+                    com.example.mmarecomp.notification.MealReminder.markLoggedToday(
+                        context,
+                        com.example.mmarecomp.util.DateUtils.string(savedDate),
+                    )
+                }
+            }
+        }
+    }
+
+    AppScaffold(
+        title = stringResource(R.string.meal_log_title),
+        bottomBar = {
+            PrimaryActionBar(
+                label = stringResource(R.string.meal_save),
+                onClick = { performSave() },
+            )
+        },
+    ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         state = listState,
@@ -706,55 +750,46 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             )
         }
 
-        viewModel.errorMessage?.let { error ->
-            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
+        viewModel.screenError?.let { error ->
+            item {
+                ErrorBanner(
+                    error = error,
+                    onRetry = {
+                        when (error.operation) {
+                            ErrorOperation.LOAD -> viewModel.load()
+                            ErrorOperation.SAVE -> performSave()
+                            ErrorOperation.DELETE -> viewModel.retryPendingDelete()
+                            ErrorOperation.UPDATE -> viewModel.load()
+                        }
+                    },
+                )
+            }
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
-                Button(
-                    onClick = {
-                        val savedDate = viewModel.date
-                        viewModel.logMeal(
-                            slot = selectedSlot,
-                            calories = (calories.toIntOrNull() ?: 0).coerceAtLeast(0),
-                            proteinesG = (proteines.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
-                            glucidesG = (glucides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
-                            lipidesG = (lipides.replace(",", ".").toDoubleOrNull() ?: 0.0).coerceAtLeast(0.0),
-                            description = description,
-                        ) { saved ->
-                            showSaved = saved
-                            if (saved) {
-                                calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
-                                mealItems.clear()
-                                descriptionIsAuto = true
-                                scope.launch { listState.animateScrollToItem(0) }
-                                if (savedDate == java.time.LocalDate.now()) {
-                                    com.example.mmarecomp.notification.MealReminder.markLoggedToday(
-                                        context,
-                                        com.example.mmarecomp.util.DateUtils.string(savedDate),
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                ) { Text("Enregistrer ce repas") }
-                TextButton(onClick = {
-                    calories = ""; proteines = ""; glucides = ""; lipides = ""; description = ""
-                    selectedFood = null; viewModel.foodQuery = ""
+            TextButton(
+                onClick = {
+                    calories = ""
+                    proteines = ""
+                    glucides = ""
+                    lipides = ""
+                    description = ""
+                    selectedFood = null
+                    viewModel.foodQuery = ""
                     mealItems.clear()
                     descriptionIsAuto = true
-                }) { Text("Vider") }
-            }
+                },
+                modifier = Modifier.defaultMinSize(minHeight = Dimens.minTouchTarget),
+            ) { Text(stringResource(R.string.meal_clear)) }
         }
+
         item {
             AnimatedVisibility(
                 visible = showSaved,
                 enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
                 exit = fadeOut(tween(200)),
             ) {
-                Text("Repas enregistré ✓", color = MaterialTheme.colorScheme.tertiary)
+                Text(stringResource(R.string.meal_saved), color = MaterialTheme.colorScheme.tertiary)
             }
         }
     }

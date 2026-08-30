@@ -43,6 +43,11 @@ object RirTargets {
         val rirs = exercice.effectiveSets.mapNotNull { it.rir }
         if (rirs.isEmpty() || exercice.setsSontDerives) return null
 
+        if (rirs.any { it == 0 }) {
+            return "Au moins une série à 0 RIR — très proche de l'échec. Utile ponctuellement, " +
+                "coûteux si c'est systématique sur les polyarticulaires."
+        }
+
         val moyen = rirs.average()
         return when {
             moyen < cible.min ->

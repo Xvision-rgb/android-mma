@@ -52,6 +52,9 @@ import com.example.mmarecomp.util.MuscleZoneClassifier
 import com.example.mmarecomp.util.RelativeStrength
 import com.example.mmarecomp.util.TrainingLoad
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(
@@ -99,6 +102,16 @@ class DashboardViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
+    private fun reportError(message: String, operation: ErrorOperation) {
+        errorMessage = message
+        errorOperation = operation
+    }
     var checkInsRecents by mutableStateOf<List<DailyCheckIn>>(emptyList())
         private set
     var workoutsLast28Days by mutableStateOf<List<Workout>>(emptyList())
@@ -197,7 +210,7 @@ class DashboardViewModel(
         get() = TrainingLoad.moduler(
             score = checkInAujourdhui?.score,
             acwr = acwr,
-            ecartHrvSigma = TrainingLoad.ecartHrvEnSigma(checkInsRecents),
+            ecartHrvSigma = TrainingLoad.ecartHrvEnSigma(checkInsRecents, java.time.LocalDate.now()),
             joursConsecutifsEnRouge = TrainingLoad.joursConsecutifsEnRouge(checkInsRecents),
         )
 
@@ -265,7 +278,7 @@ class DashboardViewModel(
     /** Séries par zone face aux repères de volume — le moteur réel de
      *  l'adaptation, que le tonnage en kg ne mesurait pas. */
     val bilanVolume: List<BilanVolume>
-        get() = VolumeLandmarks.bilan(workoutsFenetreChronique)
+        get() = VolumeLandmarks.bilan(workoutsLast7Days)
 
     val zonesADevelopper: List<BilanVolume>
         get() = VolumeLandmarks.zonesADevelopper(workoutsThisWeek)
@@ -373,8 +386,9 @@ class DashboardViewModel(
             try {
                 trainingPlanRepository.upsert(updated)
                 planThisWeek = planThisWeek.map { if (it.id == day.id) it.copy(type = newType) else it }
-            } catch (e: Exception) {
-                errorMessage = "Impossible de mettre à jour le programme."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible de mettre à jour le programme.", ErrorOperation.UPDATE)
             }
         }
     }
@@ -430,10 +444,16 @@ class DashboardViewModel(
                 }
 
                 checkAchievements()
-            } catch (e: java.io.IOException) {
-                errorMessage = "Pas de connexion internet — le dashboard s'affichera dès que le réseau revient."
-            } catch (e: Exception) {
-                errorMessage = "Impossible de charger le dashboard pour le moment."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
+                reportError("Pas de connexion internet — le dashboard s'affichera dès que le réseau revient.", ErrorOperation.LOAD)
+                    }
+                    else -> {
+                reportError("Impossible de charger le dashboard pour le moment.", ErrorOperation.LOAD)
+                    }
+                }
             } finally {
                 isLoading = false
             }
@@ -467,8 +487,9 @@ class DashboardViewModel(
                 val enregistre = dailyCheckInRepository.log(nouveau)
                 checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
                 activityDates = activityDates + enregistre.date
-            } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer le point du jour."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible d'enregistrer le point du jour.", ErrorOperation.SAVE)
             }
         }
     }

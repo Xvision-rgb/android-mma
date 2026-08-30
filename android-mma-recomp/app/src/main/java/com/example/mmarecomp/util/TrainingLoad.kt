@@ -15,8 +15,9 @@ enum class ReadinessAction(val label: String) {
 }
 
 /** Modulation prescrite — agit sur le VOLUME en priorité, la charge en
- *  dernier recours. On ne propose jamais un repos complet : la dose minimale
- *  maintient l'adaptation, le repos total la perd. */
+ *  dernier recours. La dose minimale entretient l'adaptation ; en cas de
+ *  douleur aiguë, maladie ou commotion suspectée, arrêter l'entraînement
+ *  et consulter un professionnel de santé. */
 data class ModulationSeance(
     val action: ReadinessAction,
     val facteurVolume: Double,
@@ -29,13 +30,16 @@ data class ModulationSeance(
  *
  *  La charge de séance (session-RPE) est le produit du RPE global par la
  *  durée. L'ACWR compare la charge des 7 derniers jours à la moyenne des 28 :
- *  la zone 0,8–1,3 correspond au risque de blessure minimal, au-delà de 1,5 le
- *  risque augmente nettement. */
+ *  la zone 0,8–1,3 est souvent citée comme plage habituelle dans la littérature,
+ *  mais c'est un indicateur contextuel — pas un diagnostic ni une règle absolue.
+ *  Au-delà de 1,5, la charge aiguë dépasse nettement la base chronique récente. */
 object TrainingLoad {
 
     const val ACWR_MIN = 0.8
     const val ACWR_MAX = 1.3
     const val ACWR_ALERTE = 1.5
+    /** Jours avec charge non nulle requis dans la fenêtre chronique (28 j). */
+    private const val ACWR_COUVERTURE_CHRONIQUE_MIN = 21
 
     /** Durée par défaut d'une séance MMA quand elle n'est pas chronométrée —
      *  ignorer ces séances sous-estimerait la charge réelle de moitié. */
@@ -47,9 +51,14 @@ object TrainingLoad {
         return rpe.toDouble() * duree
     }
 
+    /** Convertit le ressenti MMA (1 = très difficile, 5 = facile) en intensité
+     *  comparable au RPE (2–10). Null si hors échelle. */
+    fun intensiteMma(ressenti: Int): Int? =
+        ressenti.takeIf { it in 1..5 }?.let { (6 - it) * 2 }
+
     fun chargeSeance(session: MmaSession): Double {
-        val ressenti = session.ressenti ?: return 0.0
-        return ressenti.toDouble() * DUREE_MMA_DEFAUT_MIN
+        val intensite = intensiteMma(session.ressenti ?: return 0.0) ?: return 0.0
+        return intensite.toDouble() * DUREE_MMA_DEFAUT_MIN
     }
 
     /** Charge interne d'une date donnée (session-RPE cumulée). Null si
@@ -88,6 +97,12 @@ object TrainingLoad {
             }
             return total / jours
         }
+        val joursChroniques = (0 until 28).count { offset ->
+            val date = DateUtils.string(aujourdhui.minusDays((27 - offset).toLong()))
+            (chargesParJour[date] ?: 0.0) > 0.0
+        }
+        if (joursChroniques < ACWR_COUVERTURE_CHRONIQUE_MIN) return null
+
         val chronique = moyenneSur(28)
         if (chronique <= 0.0) return null
         return moyenneSur(7) / chronique
@@ -98,19 +113,27 @@ object TrainingLoad {
      *  Une valeur basse isolée ne veut rien dire — c'est l'écart à la
      *  tendance qui informe, cohérent avec la règle du poids en moyenne
      *  mobile. Null si l'historique est trop court pour avoir un sens. */
-    fun ecartHrvEnSigma(checkIns: List<DailyCheckIn>): Double? {
-        // Tri explicite : l'appelant peut avoir ajouté le check-in du jour en
-        // fin de liste sans retrier, et « la dernière valeur » doit rester la
-        // plus récente pour que la comparaison ait un sens.
-        val valeurs = checkIns.sortedBy { it.date }.mapNotNull { it.hrvRmssd }
-        if (valeurs.size < 5) return null
-        val reference = valeurs.takeLast(8).dropLast(1)
+    fun ecartHrvEnSigma(
+        checkIns: List<DailyCheckIn>,
+        date: LocalDate = LocalDate.now(),
+    ): Double? {
+        val dateStr = DateUtils.string(date)
+        val parDate = checkIns.associateBy { it.date }
+        val hrvDuJour = parDate[dateStr]?.hrvRmssd ?: return null
+
+        val historique = checkIns
+            .filter { it.date < dateStr }
+            .sortedBy { it.date }
+            .mapNotNull { it.hrvRmssd }
+        if (historique.size < 4) return null
+
+        val reference = historique.takeLast(7)
         if (reference.size < 4) return null
         val moyenne = reference.average()
         val variance = reference.sumOf { (it - moyenne) * (it - moyenne) } / reference.size
         val ecartType = sqrt(variance)
         if (ecartType <= 0.0) return null
-        return (valeurs.last() - moyenne) / ecartType
+        return (hrvDuJour - moyenne) / ecartType
     }
 
     /** Nombre de jours consécutifs terminant aujourd'hui où le score est

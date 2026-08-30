@@ -86,14 +86,14 @@ object EnergyAvailability {
         val valeur = Formatting.oneDecimal(ea)
         return when (statut) {
             EaStatut.CORRECTE ->
-                "$valeur kcal/kg de masse maigre après l'entraînement — au-dessus du seuil de 30."
+                "$valeur kcal/kg de masse maigre après l'entraînement — au-dessus du repère indicatif de 30 (contexte, pas diagnostic)."
             EaStatut.VIGILANCE ->
-                "$valeur kcal/kg de masse maigre après l'entraînement. " +
+                "$valeur kcal/kg de masse maigre après l'entraînement — sous le repère habituel. " +
                     "Environ ${apportCible - apportKcal} kcal de glucides en plus repasseraient au-dessus de 30."
             EaStatut.BASSE ->
                 "$valeur kcal/kg de masse maigre une fois l'entraînement payé. " +
-                    "C'est le niveau où le sommeil et la performance en salle décrochent en premier. " +
-                    "Viser ~$apportCible kcal aujourd'hui, en ajoutant surtout des glucides."
+                    "Signal de contexte : si la fatigue ou la performance chutent, augmenter l'apport (surtout glucides). " +
+                    "Viser ~$apportCible kcal aujourd'hui. En cas de douleur, maladie ou commotion suspectée, arrêter et consulter."
         }
     }
 }

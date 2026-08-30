@@ -17,6 +17,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
 import java.time.LocalDate
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 data class ChargePoint(val date: LocalDate, val chargeKg: Double)
@@ -124,10 +125,16 @@ class ProgressViewModel(
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
                 meals = mealRepository.fetchSince(since)
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger la progression."
+                    }
+                }
             } finally {
                 isLoading = false
             }

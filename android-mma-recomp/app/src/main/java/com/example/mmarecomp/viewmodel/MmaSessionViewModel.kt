@@ -12,6 +12,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.ParsedWodMovement
 import com.example.mmarecomp.util.WodParser
 import java.time.LocalDate
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class MmaSessionViewModel(
@@ -53,12 +54,18 @@ class MmaSessionViewModel(
         viewModelScope.launch {
             recentSessions = try {
                 repository.fetchRecent()
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
                 emptyList()
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger l'historique des séances MMA."
                 emptyList()
+                    }
+                }
             }
         }
     }
@@ -72,7 +79,8 @@ class MmaSessionViewModel(
             try {
                 repository.delete(session.id)
                 onDeleted()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 recentSessions = previous
                 errorMessage = "Impossible de supprimer cette séance MMA."
             }
@@ -91,7 +99,8 @@ class MmaSessionViewModel(
             try {
                 val saved = repository.log(restored)
                 recentSessions = (recentSessions + saved).sortedByDescending { it.date }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible de restaurer cette séance MMA."
             }
         }
@@ -111,7 +120,8 @@ class MmaSessionViewModel(
             try {
                 repository.log(session)
                 onResult(true)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible d'enregistrer la séance MMA."
                 onResult(false)
             } finally {

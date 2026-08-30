@@ -22,11 +22,11 @@ ENV ANDROID_SDK_ROOT=/opt/android-sdk
 ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH="${PATH}:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools"
 
-# Épinglé : cmdline-tools 11076708, platform android-34, build-tools 34.0.0
-# (aligné sur compileSdk/targetSdk = 34 dans app/build.gradle.kts).
+# Épinglé : cmdline-tools 11076708, platform android-36, build-tools 36.0.0
+# (aligné sur compileSdk/targetSdk = 36 dans app/build.gradle.kts).
 ARG ANDROID_CMDLINE_TOOLS_VERSION=11076708
-ARG ANDROID_PLATFORM=android-34
-ARG ANDROID_BUILD_TOOLS=34.0.0
+ARG ANDROID_PLATFORM=android-36
+ARG ANDROID_BUILD_TOOLS=36.0.0
 RUN mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools" \
     && curl -fsSL -o /tmp/cmdline-tools.zip \
         "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" \

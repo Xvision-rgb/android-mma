@@ -22,6 +22,38 @@ dans le SQL Editor de ton projet Supabase (schéma et RLS déjà écrits, rien �
 changer côté base). Récupère ensuite l'URL du projet et la clé `anon` dans
 **Project Settings > API**.
 
+### Migrations Android (`supabase/`)
+
+Après le schéma de base et les seeds aliments (`002`–`004`), exécute **dans
+l'ordre** dans le SQL Editor Supabase :
+
+| Fichier | Contenu |
+|---------|---------|
+| `005_calorie_mode.sql` | Mode d'objectif calorique (Bulk / Recomposition / Coupe) sur `profiles` |
+| `006_daily_checkin.sql` | Table `daily_checkins` (readiness, modulation de séance) |
+| `007_nutrition_target_macros.sql` | Colonnes glucides/lipides cibles sur `nutrition_targets` |
+| `008_workout_type_course.sql` | Type de séance `course` (sorties running, distinct du MMA) |
+
+Chaque fichier est idempotent ou documenté comme ré-exécutable — relis l'en-tête
+SQL avant d'appliquer sur une base déjà partiellement migrée.
+
+### Installation demain matin (checklist rapide)
+
+1. **Supabase** : schéma + migrations `005`–`008` appliquées, URL + clé `anon`
+   copiées dans `SupabaseConfig.kt`.
+2. **Android Studio** : ouvrir `android-mma-recomp/`, laisser Gradle synchroniser.
+3. **Téléphone** : débogage USB activé, branché, appareil sélectionné en haut.
+4. **Run** ▶️ : première install ~1–2 min ; les suivantes sont plus rapides.
+5. **Premier lancement** : créer un compte ou se connecter, faire une pesée
+   matin + un repas pour valider la synchro Supabase.
+
+### Mode hors-ligne (TODO)
+
+Pas encore implémenté : file d'attente locale (outbox) pour repas/séances/pesées
+quand le réseau est coupé, avec rejeu automatique au retour en ligne. L'app
+affiche aujourd'hui une erreur réseau explicite et propose de réessayer — pas de
+fausse confirmation d'enregistrement hors ligne.
+
 ## 2. Setup du projet Android
 
 1. Installe [Android Studio](https://developer.android.com/studio) (Windows
@@ -102,13 +134,18 @@ moyenne mobile 7 jours (jamais le poids brut), `PlateauDetector` transforme
 un plateau + performances en hausse en message positif, et
 `TargetVsActualBar` ne culpabilise jamais sur un déficit calorique.
 
+Les indicateurs de charge (ACWR), de disponibilité énergétique et d'autorégulation
+sont présentés comme **signaux de contexte**, pas comme diagnostics médicaux.
+Voir `docs/references_metier.md` pour les sources et limites.
+
 ## 6. Limitations connues de ce scaffold
 
 - Les ViewModels d'écran sont instanciés directement (pas via
   `ViewModelProvider.Factory`) pour rester simple : une rotation d'écran
   réinitialise le formulaire en cours. À corriger si ça gêne à l'usage.
-- Pas de compilation possible dans cet environnement (pas d'Android SDK/Gradle
-  ici) — le code est écrit avec soin mais pas vérifié par le compilateur.
+- Pas de compilation possible dans certains environnements CI sans Android SDK —
+  en local : `ANDROID_SDK_ROOT=/opt/android-sdk ./gradlew testDebugUnitTest`.
+  CI : voir `.github/workflows/android-ci.yml`.
 - `LoggedExercise` (exercices d'une séance) n'a pas d'identifiant stable côté
   client : la liste `itemsIndexed` de `WorkoutLogScreen` recompose donc par
   index plutôt que par clé stable. Ajouter un id générerait un champ qui

@@ -3,6 +3,7 @@ package com.example.mmarecomp.util
 import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.LoggedSet
+import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.PlanDayType
@@ -239,6 +240,79 @@ class NutritionTargetDraftTest {
         assertTrue(draft.glucidesCibleG != null && draft.glucidesCibleG!! > 0)
         assertTrue(draft.lipidesCibleG != null && draft.lipidesCibleG!! > 0)
         assertEquals(goal.targetCalories, draft.caloriesCible)
+    }
+}
+
+class InterferenceCheckerMmaIntenseTest {
+
+    private val jour = LocalDate.of(2026, 8, 24)
+
+    private fun workout(type: WorkoutType) = Workout(
+        id = type.name,
+        userId = "u",
+        date = DateUtils.string(jour),
+        type = type,
+        exercices = emptyList(),
+    )
+
+    private fun mma(date: LocalDate, ressenti: Int) = MmaSession(
+        id = "$date-$ressenti",
+        userId = "u",
+        date = DateUtils.string(date),
+        wodContent = "sparring",
+        ressenti = ressenti,
+    )
+
+    @Test
+    fun `sparring tres difficile adjacent au bas du corps lourd declenche un conflit`() {
+        val conflits = InterferenceChecker.conflits(
+            date = jour,
+            workouts = listOf(workout(WorkoutType.JambesForce)),
+            mmaSessions = listOf(mma(jour, ressenti = 1)),
+        )
+        assertTrue(conflits.any { it.contains("sparring intense") })
+    }
+
+    @Test
+    fun `sparring facile adjacent au bas du corps lourd ne declenche pas de conflit`() {
+        val conflits = InterferenceChecker.conflits(
+            date = jour,
+            workouts = listOf(workout(WorkoutType.JambesForce)),
+            mmaSessions = listOf(mma(jour, ressenti = 5)),
+        )
+        assertTrue(conflits.none { it.contains("sparring intense") })
+    }
+}
+
+class RirCalibrationSignTest {
+
+    @Test
+    fun `une marge surestimee produit un biais positif`() {
+        val ecart = 4 - 1 // rir estimé haut, peu de reps en plus
+        assertTrue(ecart > 0)
+    }
+
+    @Test
+    fun `une marge sous estimee produit un biais negatif`() {
+        val ecart = 1 - 4 // rir estimé bas, beaucoup de reps en plus
+        assertTrue(ecart < 0)
+    }
+}
+
+class RirTargetsZeroTest {
+
+    private fun exerciseWithRirs(vararg rirs: Int) = LoggedExercise(
+        nom = "Rowing barre",
+        series = rirs.size,
+        reps = 8,
+        sets = rirs.mapIndexed { i, rir ->
+            LoggedSet(index = i + 1, reps = 8, chargeKg = 80.0, rir = rir)
+        },
+    )
+
+    @Test
+    fun `toute serie rir 0 produit une note`() {
+        assertNotNull(RirTargets.note(exerciseWithRirs(0, 4)))
     }
 }
 

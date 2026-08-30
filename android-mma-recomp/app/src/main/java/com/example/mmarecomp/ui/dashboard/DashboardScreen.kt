@@ -36,13 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.R
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.AppCard
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.RelativeStrengthCard
 import com.example.mmarecomp.ui.components.VolumeDistributionCard
 import com.example.mmarecomp.ui.components.NextWorkoutCard
@@ -62,6 +65,7 @@ fun DashboardScreen(
     phase: Phase,
     onEditPlanDay: (Int) -> Unit = {},
     onStartWorkout: () -> Unit = {},
+    onOpenWeeklyProgram: () -> Unit = {},
 ) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
@@ -72,9 +76,9 @@ fun DashboardScreen(
 
     val hour = java.time.LocalTime.now().hour
     val greeting = when {
-        hour < 12 -> "Bonjour"
-        hour < 18 -> "Bon après-midi"
-        else -> "Bonsoir"
+        hour < 12 -> stringResource(R.string.dashboard_greeting_morning)
+        hour < 18 -> stringResource(R.string.dashboard_greeting_afternoon)
+        else -> stringResource(R.string.dashboard_greeting_evening)
     }
 
     AppScaffold(
@@ -84,7 +88,7 @@ fun DashboardScreen(
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(Dimens.iconSm))
                 } else {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
+                    Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.dashboard_refresh))
                 }
             }
         },
@@ -162,8 +166,20 @@ fun DashboardScreen(
                 )
             }
         }
-        viewModel.errorMessage?.let { error ->
-            item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
+        viewModel.screenError?.let { error ->
+            item {
+                ErrorBanner(
+                    error = error,
+                    onRetry = {
+                        when (error.operation) {
+                            ErrorOperation.LOAD -> viewModel.load(phase)
+                            ErrorOperation.SAVE -> viewModel.load(phase)
+                            ErrorOperation.UPDATE -> viewModel.load(phase)
+                            ErrorOperation.DELETE -> viewModel.load(phase)
+                        }
+                    },
+                )
+            }
         }
         val activityStreakDays = viewModel.activityStreakDays
         if (activityStreakDays >= 2) {
@@ -172,12 +188,12 @@ fun DashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                         Icon(
                             Icons.Filled.LocalFireDepartment,
-                            contentDescription = "Série d'activité",
+                            contentDescription = stringResource(R.string.dashboard_activity_streak_cd),
                             tint = MaterialTheme.colorScheme.secondary,
                         )
                         Text("$activityStreakDays", style = MaterialTheme.typography.displayLarge)
                         Text(
-                            "jours d'affilée avec au moins une activité loggée",
+                            stringResource(R.string.dashboard_activity_streak),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f, fill = false),
                         )
@@ -187,11 +203,14 @@ fun DashboardScreen(
         }
         item {
             DashCard {
-                Text("Cette semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.dashboard_this_week), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
-                    Text("${viewModel.seancesFaitesCount}", style = MaterialTheme.typography.displayLarge)
                     Text(
-                        "séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
+                        stringResource(
+                            R.string.dashboard_sessions_done,
+                            viewModel.seancesFaitesCount,
+                            viewModel.seancesPlanifieesCount,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -199,7 +218,7 @@ fun DashboardScreen(
                 // Nutrition ci-dessous — les répéter ici affichait deux fois
                 // la même valeur sur le même écran.
                 Text(
-                    "${viewModel.daysWithMealsLast7Days} jour(s) sur 7 avec au moins un repas loggé",
+                    stringResource(R.string.dashboard_meals_logged_days, viewModel.daysWithMealsLast7Days),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -254,51 +273,8 @@ fun DashboardScreen(
                     }
                 }
                 if (viewModel.planThisWeek.isNotEmpty()) {
-                    var showProgram by remember { mutableStateOf(false) }
-                    TextButton(onClick = { showProgram = !showProgram }) {
-                        Text(if (showProgram) "Masquer le programme" else "Voir le programme de la semaine")
-                    }
-                    if (showProgram) {
-                        viewModel.planThisWeek.sortedBy { it.jourSemaine }.forEach { day ->
-                            var expanded by remember(day.id) { mutableStateOf(false) }
-                            Box {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .defaultMinSize(minHeight = Dimens.minTouchTarget)
-                                        .clickable { expanded = true },
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(day.type.label, style = MaterialTheme.typography.bodySmall)
-                                        IconButton(onClick = { onEditPlanDay(day.jourSemaine) }) {
-                                            Icon(
-                                                Icons.Filled.Edit,
-                                                contentDescription = "Modifier les exercices du ${com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "jour"}",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                    }
-                                }
-                                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                    com.example.mmarecomp.model.PlanDayType.entries.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = { Text(option.label) },
-                                            onClick = {
-                                                viewModel.updatePlanDayType(day, option)
-                                                expanded = false
-                                            },
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    TextButton(onClick = onOpenWeeklyProgram) {
+                        Text(stringResource(R.string.dashboard_open_weekly_program))
                     }
                 }
             }

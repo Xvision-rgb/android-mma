@@ -18,6 +18,9 @@ import com.example.mmarecomp.util.TrendPoint
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class WeighInViewModel(
@@ -35,6 +38,13 @@ class WeighInViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
+    private var pendingDelete: WeighIn? = null
 
     var history by mutableStateOf<List<WeighIn>>(emptyList())
         private set
@@ -64,10 +74,17 @@ class WeighInViewModel(
         viewModelScope.launch {
             try {
                 history = repository.fetch(DateUtils.daysAgo(days))
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                errorOperation = ErrorOperation.LOAD
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger l'historique des pesées."
+                    }
+                }
             }
         }
     }
@@ -94,15 +111,24 @@ class WeighInViewModel(
     fun deleteFromHistory(weighIn: WeighIn, onDeleted: () -> Unit) {
         val previous = history
         history = history.filterNot { it.id == weighIn.id }
+        pendingDelete = weighIn
         viewModelScope.launch {
             try {
                 repository.delete(weighIn.id)
+                pendingDelete = null
                 onDeleted()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 history = previous
+                errorOperation = ErrorOperation.DELETE
                 errorMessage = "Impossible de supprimer cette pesée."
             }
         }
+    }
+
+    fun retryPendingDelete() {
+        val entry = pendingDelete ?: return
+        deleteFromHistory(entry) { pendingDelete = null }
     }
 
     /** Réenregistre une pesée supprimée par erreur (action "Annuler" du snackbar). */
@@ -119,7 +145,9 @@ class WeighInViewModel(
             try {
                 val saved = repository.log(restored)
                 history = (history.filterNot { it.date == saved.date && it.type == saved.type }) + saved
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                errorOperation = ErrorOperation.SAVE
                 errorMessage = "Impossible de restaurer cette pesée."
             }
         }
@@ -128,6 +156,7 @@ class WeighInViewModel(
     fun save(onResult: (Boolean) -> Unit) {
         val poids = poidsKg.replace(",", ".").toDoubleOrNull()
         if (poids == null) {
+            errorOperation = ErrorOperation.SAVE
             errorMessage = "Poids invalide."
             onResult(false)
             return
@@ -151,7 +180,9 @@ class WeighInViewModel(
                 val saved = repository.log(newWeighIn)
                 history = history.filterNot { it.date == saved.date && it.type == saved.type } + saved
                 onResult(true)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                errorOperation = ErrorOperation.SAVE
                 errorMessage = "Impossible d'enregistrer la pesée."
                 onResult(false)
             } finally {

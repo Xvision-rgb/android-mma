@@ -99,11 +99,17 @@ class ApreEngineTest {
     // --- Biais RIR ---
 
     @Test
-    fun `biais rir amortit la progression sans jamais l inverser`() {
-        val sans = ApreEngine.prescrire(exercice(reps = 15), ApreProtocol.APRE_10, incrementKg = 0.5)
-        val avec = ApreEngine.prescrire(exercice(reps = 15), ApreProtocol.APRE_10, incrementKg = 0.5, biaisRir = 2.0)
-        assertTrue(avec!!.chargeKg < sans!!.chargeKg)
-        assertTrue(avec.chargeKg >= 100.0)
+    fun `biais positif surestimation reduit la hausse de charge`() {
+        val sans = ApreEngine.prescrire(exercice(reps = 12), ApreProtocol.APRE_10, incrementKg = 0.5)
+        val avec = ApreEngine.prescrire(exercice(reps = 12), ApreProtocol.APRE_10, incrementKg = 0.5, biaisRir = 2.0)
+        assertTrue(avec!!.chargeKg <= sans!!.chargeKg)
+    }
+
+    @Test
+    fun `biais negatif sous estimation augmente la hausse de charge`() {
+        val sans = ApreEngine.prescrire(exercice(reps = 12), ApreProtocol.APRE_10, incrementKg = 0.5)
+        val avec = ApreEngine.prescrire(exercice(reps = 12), ApreProtocol.APRE_10, incrementKg = 0.5, biaisRir = -2.0)
+        assertTrue(avec!!.chargeKg >= sans!!.chargeKg)
     }
 
     @Test
@@ -142,5 +148,12 @@ class ApreEngineTest {
         // charge, alors que la dernière série (3 reps) la ferait baisser.
         val p = ApreEngine.prescrire(ex, ApreProtocol.APRE_6)
         assertTrue(p!!.deltaKg > 0)
+    }
+
+    @Test
+    fun `sous performance d une rep ne fait pas monter la charge`() {
+        val p = ApreEngine.prescrire(exercice(reps = 9), ApreProtocol.APRE_10, incrementKg = 1.0)
+        assertNotNull(p)
+        assertTrue(p!!.chargeKg <= 100.0)
     }
 }

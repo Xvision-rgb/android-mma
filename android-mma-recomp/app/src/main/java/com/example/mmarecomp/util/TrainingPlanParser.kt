@@ -5,12 +5,17 @@ import kotlin.math.roundToInt
 
 data class ParsedPlanDay(val jourSemaine: Int, val exercices: List<PlannedExercise>)
 
+data class PlanParseResult(
+    val days: List<ParsedPlanDay>,
+    val ignoredLines: List<String>,
+)
+
 /** Parsing best-effort d'un programme d'entraînement collé en texte libre
  *  (ex. généré par Claude) — même esprit que WodParser : ne bloque jamais,
- *  une ligne non reconnue est simplement ignorée plutôt que de faire
- *  échouer l'import. Le résultat est toujours présenté dans un aperçu
- *  éditable avant tout enregistrement (jamais écrit en base directement
- *  depuis le parsing). */
+ *  une ligne non reconnue est signalée dans [PlanParseResult.ignoredLines]
+ *  plutôt que de faire échouer l'import. Le résultat est toujours présenté
+ *  dans un aperçu éditable avant tout enregistrement (jamais écrit en base
+ *  directement depuis le parsing). */
 object TrainingPlanParser {
     private val dayNames = linkedMapOf(
         "lundi" to 1, "lun" to 1,
@@ -22,14 +27,8 @@ object TrainingPlanParser {
         "dimanche" to 7, "dim" to 7,
     )
 
-    /** Capture : (1) nom, (2) séries, (3) reps (borne basse), (4) reps borne
-     *  haute optionnelle ("8-12" -> moyenne arrondie), (5) charge cible
-     *  (valeur), (6) unité (kg ou lb/lbs, convertie en kg). Un préfixe de
-     *  liste ("-", "•", "1.", "2)") avant le nom est ignoré. Exemples
-     *  reconnus : "Squat 4x8 @80kg", "1. Développé couché 3x10",
-     *  "- Tractions 3 séries de 8-10", "Fentes 4x12 185lbs". */
     private val exerciseRegex = Regex(
-        """^\s*(?:[-•*]|\d{1,2}[.):])?\s*([\p{L}][\p{L}0-9'’\-. ]{1,40}?)\s*[:\-]?\s*(\d{1,2})\s*(?:x|X|séries?\s*(?:de|x)?)\s*(\d{1,3})(?:\s*-\s*(\d{1,3}))?\s*(?:reps?)?(?:\s*(?:@|à|a)?\s*(\d{1,3}(?:[.,]\d+)?)\s*(kg|lbs?))?\s*$""",
+        """^\s*(?:[-•*]|\d{1,2}[.):])?\s*([\p{L}][\p{L}0-9''\-. ]{1,40}?)\s*[:\-]?\s*(\d{1,2})\s*(?:x|X|séries?\s*(?:de|x)?)\s*(\d{1,3})(?:\s*-\s*(\d{1,3}))?\s*(?:reps?)?(?:\s*(?:@|à|a)?\s*(\d{1,3}(?:[.,]\d+)?)\s*(kg|lbs?))?\s*$""",
     )
 
     private fun matchDay(line: String): Int? {
@@ -52,15 +51,38 @@ object TrainingPlanParser {
         }
     }
 
-    /** Une ligne peut contenir plusieurs exercices séparés par une virgule
-     *  ou un point-virgule (Claude compacte parfois plusieurs mouvements sur
-     *  une même ligne) — chaque segment est tenté indépendamment. */
+    /** Ne découpe sur virgule/point-virgule que si ce n'est pas une virgule
+     *  décimale entre chiffres (ex. 82,5 kg). */
+    private fun splitSegments(line: String): List<String> {
+        val segments = mutableListOf<String>()
+        var current = StringBuilder()
+        var i = 0
+        while (i < line.length) {
+            val c = line[i]
+            if (c == ',' || c == ';') {
+                val prev = if (i > 0) line[i - 1] else ' '
+                val next = if (i + 1 < line.length) line[i + 1] else ' '
+                val betweenDigits = prev.isDigit() && next.isDigit()
+                if (!betweenDigits) {
+                    val segment = current.toString().trim()
+                    if (segment.isNotEmpty()) segments += segment
+                    current = StringBuilder()
+                    i++
+                    continue
+                }
+            }
+            current.append(c)
+            i++
+        }
+        val last = current.toString().trim()
+        if (last.isNotEmpty()) segments += last
+        return segments
+    }
+
     private fun parseExerciseLine(line: String): List<PlannedExercise> {
         val results = mutableListOf<PlannedExercise>()
-        for (segment in line.split(",", ";")) {
-            val trimmedSegment = segment.trim()
-            if (trimmedSegment.isEmpty()) continue
-            val match = exerciseRegex.find(trimmedSegment) ?: continue
+        for (segment in splitSegments(line)) {
+            val match = exerciseRegex.find(segment) ?: continue
             val (nameRaw, seriesRaw, repsLowRaw, repsHighRaw, weightRaw, unitRaw) = match.destructured
             val series = seriesRaw.toIntOrNull() ?: continue
             val repsLow = repsLowRaw.toIntOrNull() ?: continue
@@ -75,9 +97,10 @@ object TrainingPlanParser {
         return results
     }
 
-    fun parse(text: String): List<ParsedPlanDay> {
-        if (text.isBlank()) return emptyList()
+    fun parse(text: String): PlanParseResult {
+        if (text.isBlank()) return PlanParseResult(emptyList(), emptyList())
         val result = linkedMapOf<Int, MutableList<PlannedExercise>>()
+        val ignored = mutableListOf<String>()
         var currentDay: Int? = null
 
         for (rawLine in text.lines()) {
@@ -91,12 +114,21 @@ object TrainingPlanParser {
                 continue
             }
 
-            val jour = currentDay ?: continue
+            val jour = currentDay
+            if (jour == null) {
+                ignored += line
+                continue
+            }
+
             val exercices = parseExerciseLine(line)
-            if (exercices.isEmpty()) continue
+            if (exercices.isEmpty()) {
+                ignored += line
+                continue
+            }
             result.getOrPut(jour) { mutableListOf() }.addAll(exercices)
         }
 
-        return result.entries.sortedBy { it.key }.map { (jour, exos) -> ParsedPlanDay(jour, exos) }
+        val days = result.entries.sortedBy { it.key }.map { (jour, exos) -> ParsedPlanDay(jour, exos) }
+        return PlanParseResult(days, ignored)
     }
 }

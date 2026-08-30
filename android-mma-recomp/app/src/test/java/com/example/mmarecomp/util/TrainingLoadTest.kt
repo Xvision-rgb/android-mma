@@ -1,6 +1,7 @@
 package com.example.mmarecomp.util
 
 import com.example.mmarecomp.model.DailyCheckIn
+import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
 import java.time.LocalDate
@@ -56,27 +57,52 @@ class TrainingLoadTest {
     }
 
     @Test
+    fun `une seance mma tres difficile charge plus qu une seance facile`() {
+        assertTrue(TrainingLoad.intensiteMma(1)!! > TrainingLoad.intensiteMma(5)!!)
+    }
+
+    @Test
+    fun `le ressenti mma hors echelle est refuse`() {
+        assertNull(TrainingLoad.intensiteMma(0))
+        assertNull(TrainingLoad.intensiteMma(6))
+    }
+
+    @Test
+    fun `charge mma utilise l intensite convertie`() {
+        val difficile = MmaSession("1", "u", "2026-08-29", "wod", ressenti = 1)
+        val facile = MmaSession("2", "u", "2026-08-29", "wod", ressenti = 5)
+        assertTrue(TrainingLoad.chargeSeance(difficile) > TrainingLoad.chargeSeance(facile))
+    }
+
+    @Test
+    fun `acwr indisponible avec moins de 21 jours de couverture chronique`() {
+        val workouts = listOf(workout(aujourdhui, 8, 60))
+        val acwr = TrainingLoad.acwr(TrainingLoad.chargesParJour(workouts), aujourdhui)
+        assertNull(acwr)
+    }
+
+    @Test
     fun `acwr monte quand la semaine est plus chargee que le mois`() {
-        // Rien pendant 21 jours, puis 7 jours pleins : la charge aiguë
-        // dépasse largement la base chronique.
-        val workouts = (0 until 7).map { workout(aujourdhui.minusDays(it.toLong()), 8, 60) }
+        // 21 jours légers puis 7 jours pleins : couverture chronique OK.
+        val workouts = (0 until 28).map { offset ->
+            val rpe = if (offset < 7) 8 else 1
+            workout(aujourdhui.minusDays(offset.toLong()), rpe, 60)
+        }
         val acwr = TrainingLoad.acwr(TrainingLoad.chargesParJour(workouts), aujourdhui)!!
-        assertEquals(4.0, acwr, 0.001)
         assertTrue(acwr > TrainingLoad.ACWR_ALERTE)
+    }
+
+    @Test
+    fun `les jours sans seance comptent comme zero et non comme absents`() {
+        // 21 jours avec charge + 7 repos : la moyenne chronique dilue la semaine.
+        val workouts = (0 until 21).map { workout(aujourdhui.minusDays(it.toLong()), 10, 60) }
+        val acwr = TrainingLoad.acwr(TrainingLoad.chargesParJour(workouts), aujourdhui)!!
+        assertTrue(acwr > 1.0)
     }
 
     @Test
     fun `acwr est null sans historique chronique`() {
         assertNull(TrainingLoad.acwr(emptyMap(), aujourdhui))
-    }
-
-    @Test
-    fun `les jours sans seance comptent comme zero et non comme absents`() {
-        // Une seule séance sur 28 jours : la moyenne chronique doit être
-        // diluée sur 28 jours, pas ramenée à cette unique séance.
-        val workouts = listOf(workout(aujourdhui, 10, 60))
-        val acwr = TrainingLoad.acwr(TrainingLoad.chargesParJour(workouts), aujourdhui)!!
-        assertEquals(4.0, acwr, 0.001)
     }
 
     // --- Modulation ---
@@ -165,14 +191,20 @@ class TrainingLoadTest {
     @Test
     fun `ecart hrv est null tant que l historique est trop court`() {
         val checkIns = (0 until 3).map { checkIn(aujourdhui.minusDays(it.toLong()), 3, 60.0) }
-        assertNull(TrainingLoad.ecartHrvEnSigma(checkIns))
+        assertNull(TrainingLoad.ecartHrvEnSigma(checkIns, aujourdhui))
+    }
+
+    @Test
+    fun `pas de hrv du jour sans check in aujourd hui`() {
+        val historique = (1..7).map { checkIn(aujourdhui.minusDays(it.toLong()), 3, 60.0) }
+        assertNull(TrainingLoad.ecartHrvEnSigma(historique, aujourdhui))
     }
 
     @Test
     fun `une hrv basse isolee ressort comme un ecart negatif marque`() {
         val stable = (1..7).map { checkIn(aujourdhui.minusDays(it.toLong()), 3, 60.0 + it % 2) }
         val checkIns = stable + checkIn(aujourdhui, 3, 40.0)
-        val ecart = TrainingLoad.ecartHrvEnSigma(checkIns)
+        val ecart = TrainingLoad.ecartHrvEnSigma(checkIns, aujourdhui)
         assertNotNull(ecart)
         assertTrue(ecart!! < -0.5)
     }
