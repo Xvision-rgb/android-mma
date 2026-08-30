@@ -3,7 +3,7 @@
 Repo : `android-mma` — module `android-mma-recomp/`
 Stack : Kotlin + Jetpack Compose (Material3), MVVM, Supabase (Postgres + RLS),
 SharedPreferences pour le local.
-Branche : `claude/ux-visual-redesign-iieorn`. Commit + push à chaque lot.
+Branche : `claude/ux-visual-redesign-analysis-iieorn`. Commit + push à chaque lot.
 
 Sources et références : voir `refonte_visuelle_sources.md`.
 Briefs liés : `brief_coach_autoregulation.md` (règles métier), `coach_prompt.md`.
@@ -34,6 +34,77 @@ Reprises de `brief_coach_autoregulation.md`, toujours valides :
 > **Note sur la règle 4** : elle est aujourd'hui violée dans le code lui-même
 > (voir défaut D8). Le lot 1 la rend applicable ; les lots suivants
 > l'appliquent. Elle n'est pas assouplie, elle est enfin outillée.
+
+---
+
+# ÉTAT D'AVANCEMENT — mis à jour le 30 août 2026
+
+Ce brief a été partiellement exécuté sur la branche
+`claude/ux-visual-redesign-analysis-iieorn`. Ce qui suit décrit l'écart entre
+le plan ci-dessous et le code réel.
+
+## Fait
+
+| Lot | État | Commit |
+|---|---|---|
+| 5a — retirer l'UI factice et le bouton mort | fait | `c5d0088` |
+| 5b — dédupliquer les données du dashboard | fait | `c5d0088` |
+| 2 — `AppScaffold`, `TopAppBar`, retour sur écrans empilés | fait | `8bee582` |
+| 3 — cinq onglets + barres de titre partout | fait | `6ff4d7a` |
+| 1 — tokens (typo 15 styles, `Dimens`, `SemanticColors`) | fait | `ccbc274` |
+| 4 — `AppCard`, système de cartes unique | fait | `ccbc274` |
+| 5c — hiérarchie du dashboard en 3 niveaux | fait | `89ab274` |
+| 6 — action principale ancrée en bas | partiel | `89ab274` |
+
+En plus du brief : suppression de `SessionShareCard`, `MacroTimingBanner` et
+`IntensityIndicator`, trois composants qui n'étaient référencés nulle part
+(`SessionShareCard` était lui-même documenté comme « Lot 13 — Share Session
+mock modal »).
+
+## Pas fait, et pourquoi
+
+**Lot 0 — montée de version : NON FAIT, délibérément.**
+`dl.google.com` est refusé par la politique réseau de la session
+(403 sur le CONNECT, confirmé par le journal du proxy). Sans lui : pas de SDK
+Android, pas d'artefacts AndroidX, pas d'AGP — **aucun build Gradle possible**.
+Choisir à l'aveugle des coordonnées de BOM et migrer material3 1.2.1 → 1.4.0
+sans pouvoir résoudre ni compiler était le moyen le plus sûr de livrer une
+branche cassée. **Tout le code écrit ici cible donc material3 1.2.1**, la
+version réellement présente dans `app/build.gradle.kts`.
+
+Le lot 0 reste à faire, dans Android Studio, où Gradle peut résoudre. Il n'est
+bloquant que pour le lot 8 ; les lots 1 à 7 tournent sur la version actuelle.
+
+**Lot 6, reste à faire** : `MealLogScreen` et `WeighInScreen` gardent leur
+bouton d'enregistrement dans le flux (il y est en `Row` avec une action
+secondaire). Cibles de 48dp dans `ExerciseRow`/`SetRow` non revues.
+
+**Lot 5d** (sortir les accordéons vers de vraies destinations), **lot 7**
+(alignement de Repas/Pesée/Progression/Réglages) et **lot 8** (mouvement) :
+non faits.
+
+## Comment ces changements ont été vérifiés
+
+Aucun build Gradle n'étant possible, les sources ont été passées au
+compilateur **Kotlin 2.0.21 seul**, récupéré depuis les releases GitHub. Les
+dépendances Compose/AndroidX étant absentes, les erreurs sémantiques qu'il
+signale (`unresolved reference`, suspend hors coroutine…) sont attendues et
+nombreuses — elles existent déjà sur `master`. Le protocole retenu est donc :
+
+1. **aucune erreur de parsing** — le fichier est syntaxiquement valide ;
+2. **aucune fonction privée avalée** par une accolade mal placée
+   (`private is not applicable to local function`) ;
+3. **le jeu d'erreurs ne doit pas s'élargir** par rapport à une baseline prise
+   sur `master`, hors symboles Compose attendus.
+
+Ce contrôle a rattrapé deux régressions réelles pendant le travail : une
+accolade fermante placée en fin de fichier au lieu de la fin de fonction, qui
+avait transformé `CalorieModeCard` en fonction locale ; et deux `return@Column`
+devenus invalides après le passage à `AppCard`.
+
+**Ce n'est pas un build.** Le typage complet, la résolution des surcharges
+Compose et le rendu réel restent à valider dans Android Studio. À considérer
+comme relu avec soin, pas comme compilé.
 
 ---
 
@@ -361,9 +432,10 @@ Corrige D9 et prépare D4.
   ne suffit pas. Utiliser l'élévation de material3, et/ou une bordure fine à
   faible opacité. `surfaceContainerHigh` est déjà câblé dans `Theme.kt` et
   n'est utilisé nulle part — c'est le moment de s'en servir ou de le retirer.
-- Migrer vers `AppCard` : `DashCard`, `RecoveryReadinessCard`, `StreakBadge`,
-  `RelativeStrengthCard`, `VolumeDistributionCard`, `NextWorkoutCard`,
-  `AskClaudeCard`, `WearablesCard`, `SessionShareCard`.
+- Migrer vers `AppCard` : `DashCard`, `RecoveryReadinessCard`,
+  `RelativeStrengthCard`, `VolumeDistributionCard`, `NextWorkoutCard`.
+  (`StreakBadge`, `AskClaudeCard`, `WearablesCard` et `SessionShareCard` ont
+  été supprimés au lot 5a — il n'y a plus rien à y migrer.)
 - Supprimer `DashCard` de `DashboardScreen.kt`.
 
 Le commentaire de `Theme.kt` qui explique pourquoi `DashCard` n'utilise **pas**
