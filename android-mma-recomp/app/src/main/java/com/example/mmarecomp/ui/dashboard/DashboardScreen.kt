@@ -100,6 +100,21 @@ fun DashboardScreen(
         ),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.spaceMd),
     ) {
+        // NIVEAU 1 — la seule "grande chose" de l'écran.
+        // La force relative est l'indicateur directeur du projet : c'est elle
+        // qui répond à la question posée (être plus fort pour son poids), là
+        // où la balance seule ne tranche dans aucun sens. Elle était affichée
+        // en quatrieme position, au meme poids visuel que le reste ; elle
+        // ouvre desormais l'ecran, en variante Hero.
+        item {
+            RelativeStrengthCard(
+                forces = viewModel.forcesRelatives,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        // NIVEAU 2 — l'état du jour et l'action qui en découle : les deux
+        // seules choses sur lesquelles on agit dans la minute.
         item {
             RecoveryReadinessCard(
                 modulation = viewModel.modulation,
@@ -110,15 +125,17 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        // L'indicateur directeur passe avant le poids : c'est lui qui répond
-        // à la question posée (être plus fort pour son poids), là où la
-        // balance seule ne tranche dans aucun sens.
         item {
-            RelativeStrengthCard(
-                forces = viewModel.forcesRelatives,
+            val suggestion = viewModel.suggestedExercise
+            NextWorkoutCard(
+                exerciseName = suggestion?.first,
+                muscleGroup = suggestion?.second,
+                onStartClick = onStartWorkout,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+
+        // NIVEAU 3 — le contexte, consultable mais jamais dominant.
         item {
             VolumeDistributionCard(
                 repartition = viewModel.repartitionVolume,
@@ -134,15 +151,6 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-        }
-        item {
-            val suggestion = viewModel.suggestedExercise
-            NextWorkoutCard(
-                exerciseName = suggestion?.first,
-                muscleGroup = suggestion?.second,
-                onStartClick = onStartWorkout,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }

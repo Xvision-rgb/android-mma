@@ -63,6 +63,7 @@ import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
@@ -111,7 +112,24 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
     LaunchedEffect(Unit) { viewModel.loadRecent() }
 
-    AppScaffold(title = "Log séance") { padding ->
+    AppScaffold(
+        title = "Log séance",
+        bottomBar = {
+            PrimaryActionBar(
+                label = if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance",
+                enabled = !viewModel.isSaving,
+                onClick = {
+                    viewModel.save { saved ->
+                        showSavedMessage = saved
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.loadRecent()
+                        }
+                    }
+                },
+            )
+        },
+    ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -397,24 +415,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.loadPlan(phase) }) }
-        }
-
-        item {
-            Button(
-                onClick = {
-                    viewModel.save { saved ->
-                        showSavedMessage = saved
-                        if (saved) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.loadRecent()
-                        }
-                    }
-                },
-                enabled = !viewModel.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance")
-            }
         }
 
         item {
