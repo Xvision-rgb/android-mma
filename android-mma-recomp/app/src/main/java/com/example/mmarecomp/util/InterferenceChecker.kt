@@ -53,7 +53,10 @@ object InterferenceChecker {
         return messages
     }
 
-    private val cardioTypes = setOf(WorkoutType.Hiit, WorkoutType.MmaWod)
+    /** Aligné sur [EnduranceInterference] : Course + HIIT. MmaWod n'est
+     *  pas du cardio d'endurance — le compter ici faisait rater les
+     *  sorties course et confondait un WOD combat avec une sortie. */
+    private val cardioTypes = setOf(WorkoutType.Hiit, WorkoutType.Course)
 
     /** Signale un travail de poigne programmé avant du tirage : la poigne
      *  fatiguée redevient le facteur limitant du dos, exactement le problème

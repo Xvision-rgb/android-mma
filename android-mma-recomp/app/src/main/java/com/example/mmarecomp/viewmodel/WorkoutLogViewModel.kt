@@ -17,6 +17,7 @@ import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
 import com.example.mmarecomp.util.ApreEngine
 import com.example.mmarecomp.util.ApreProtocol
+import com.example.mmarecomp.util.ChargeHistory
 import com.example.mmarecomp.util.DateUtils
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -193,14 +194,8 @@ class WorkoutLogViewModel(
      *  chargé (recentWorkouts). Distinct de lastKnownCharge qui ne renvoie
      *  que la dernière séance — sert à détecter un nouveau record quand la
      *  charge saisie aujourd'hui le dépasse. */
-    fun personalRecordCharge(exerciseName: String): Double? {
-        if (exerciseName.isBlank()) return null
-        return recentWorkouts
-            .flatMap { it.exercices }
-            .filter { it.nom.equals(exerciseName, ignoreCase = true) }
-            .mapNotNull { it.chargeReelleKg }
-            .maxOrNull()
-    }
+    fun personalRecordCharge(exerciseName: String): Double? =
+        ChargeHistory.personalRecordKg(recentWorkouts, exerciseName)
 
     /** Duplique un exercice juste après lui — pratique pour les supersets
      *  ou une variante de la même série de mouvements. */
@@ -251,14 +246,8 @@ class WorkoutLogViewModel(
             return previous.exercices.sumOf { it.volumeTotal }
         }
 
-    fun lastKnownCharge(exerciseName: String): Double? {
-        if (exerciseName.isBlank()) return null
-        return recentWorkouts
-            .sortedByDescending { it.date }
-            .flatMap { it.exercices }
-            .firstOrNull { it.nom.equals(exerciseName, ignoreCase = true) && it.chargeReelleKg != null }
-            ?.chargeReelleKg
-    }
+    fun lastKnownCharge(exerciseName: String): Double? =
+        ChargeHistory.lastKnownChargeKg(recentWorkouts, exerciseName)
 
     fun save(onResult: (Boolean) -> Unit) {
         errorMessage = null
@@ -273,7 +262,10 @@ class WorkoutLogViewModel(
                 notes = notes.ifBlank { null },
             )
             try {
-                lastSaved = workoutRepository.log(newWorkout)
+                val saved = workoutRepository.log(newWorkout)
+                lastSaved = saved
+                recentWorkouts = (listOf(saved) + recentWorkouts.filterNot { it.id == saved.id })
+                    .sortedByDescending { it.date }
                 onResult(true)
             } catch (e: Exception) {
                 errorMessage = "Impossible d'enregistrer la séance."

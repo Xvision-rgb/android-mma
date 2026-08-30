@@ -37,6 +37,7 @@ object SetStopAdvisor {
         if (sets.size < 2) return null
 
         val reference = sets.first()
+        if (reference.reps <= 0 || reference.chargeKg <= 0.0) return null
         // Une série faite à une charge nettement différente ne mesure pas la
         // même chose : on ne compare qu'à ±5 % de la charge de référence.
         val comparables = sets.drop(1).filter {
