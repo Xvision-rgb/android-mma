@@ -79,6 +79,9 @@ class TrainingPlanEditViewModel(
     }
 
     fun updateExercise(index: Int, updated: PlannedExercise) {
+        // Garde de bornes : un index périmé (recomposition Compose après un
+        // retrait/réordonnancement) ne doit jamais faire crasher l'édition.
+        if (index !in exercices.indices) return
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
 
