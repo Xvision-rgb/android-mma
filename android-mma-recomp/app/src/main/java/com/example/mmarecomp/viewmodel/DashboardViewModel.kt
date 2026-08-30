@@ -29,9 +29,11 @@ import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.util.ActivityStreak
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
+import com.example.mmarecomp.util.TodayPlanResolver
 import com.example.mmarecomp.util.AchievementManager
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakManager
@@ -81,6 +83,9 @@ class DashboardViewModel(
         private set
     var morningWeighIns by mutableStateOf<List<WeighIn>>(emptyList())
         private set
+    /** Dates d'activité sur la fenêtre longue (28j+), pour que la série
+     *  ne soit pas plafonnée à 7 jours par le seul historique hebdo. */
+    private var activityDates: Set<String> = emptySet()
     var todayTarget by mutableStateOf<NutritionTarget?>(null)
         private set
     var recentTargets by mutableStateOf<List<NutritionTarget>>(emptyList())
@@ -143,21 +148,7 @@ class DashboardViewModel(
      *  activité loggée (repas, séance ou pesée). Purement positif — ne
      *  redescend jamais à un nombre négatif ni n'affiche de message de
      *  "série brisée" : on compte juste ce qui est là. */
-    val activityStreakDays: Int
-        get() {
-            val loggedDates = buildSet {
-                addAll(mealsLast7Days.map { it.date })
-                addAll(workoutsThisWeek.map { it.date })
-                addAll(morningWeighIns.map { it.date })
-            }
-            var streak = 0
-            var cursor = java.time.LocalDate.now()
-            while (loggedDates.contains(DateUtils.string(cursor))) {
-                streak++
-                cursor = cursor.minusDays(1)
-            }
-            return streak
-        }
+    val activityStreakDays: Int get() = ActivityStreak.days(activityDates)
 
     /** Volume total d'entraînement (Σ reps × charge, série par série) cumulé
      *  sur les séances de la semaine — vue synthèse, jamais une comparaison
@@ -302,28 +293,10 @@ class DashboardViewModel(
             return (cleanWorkouts * 100) / workoutsThisWeek.size
         }
 
-    val daysSinceLastRest: Int
-        get() {
-            val allLoggedDates = buildSet {
-                addAll(mealsLast7Days.map { it.date })
-                addAll(workoutsThisWeek.map { it.date })
-                addAll(morningWeighIns.map { it.date })
-            }
-            var cursor = java.time.LocalDate.now()
-            var days = 0
-            while (allLoggedDates.contains(DateUtils.string(cursor))) {
-                days++
-                cursor = cursor.minusDays(1)
-            }
-            return days
-        }
+    val daysSinceLastRest: Int get() = ActivityStreak.days(activityDates)
 
     val suggestedExercise: Pair<String, String>?
-        get() {
-            if (planThisWeek.isEmpty()) return null
-            val exercises = planThisWeek.flatMap { day -> day.exercices.map { it.nom to day.type.label } }
-            return exercises.randomOrNull()
-        }
+        get() = TodayPlanResolver.suggestedExercise(planThisWeek, workoutsThisWeek)
 
     /** Cible calorique moyenne sur les jours où une cible a été définie
      *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans
@@ -346,12 +319,7 @@ class DashboardViewModel(
     /** Séance prévue aujourd'hui d'après le split programmé, si elle
      *  n'a pas déjà été loguée. */
     val todayPlan: com.example.mmarecomp.model.TrainingPlanDay?
-        get() {
-            val jourAujourdhui = DateUtils.weekdayIso(DateUtils.today())
-            val plan = planThisWeek.firstOrNull { it.jourSemaine == jourAujourdhui } ?: return null
-            val dejaLoguee = workoutsThisWeek.any { it.date == DateUtils.today() }
-            return if (dejaLoguee) null else plan
-        }
+        get() = TodayPlanResolver.unresolvedToday(planThisWeek, workoutsThisWeek)
 
     /** Repas nettement en dessous de la cible trois jours d'affilée — signal
      *  doux (jamais culpabilisant), utile pour repérer une sous-alimentation
@@ -405,32 +373,47 @@ class DashboardViewModel(
         viewModelScope.launch {
             try {
                 val mondayOfWeek = DateUtils.startOfWeek()
-                val sevenDaysAgo = DateUtils.daysAgo(7)
+                val fenetre7j = DateUtils.inclusiveStart(7)
+                val fenetre28j = DateUtils.inclusiveStart(28)
+                val fenetre60j = DateUtils.inclusiveStart(60)
                 val today = DateUtils.today()
 
                 planThisWeek = trainingPlanRepository.fetchWeek(phase)
                 workoutsThisWeek = workoutRepository.fetchWeek(mondayOfWeek)
-                mealsLast7Days = mealRepository.fetchSince(sevenDaysAgo)
-                morningWeighIns = weighInRepository.fetch(sevenDaysAgo).filter { it.type == WeighInType.MatinJeun }
+                val meals28j = mealRepository.fetchSince(fenetre28j)
+                mealsLast7Days = meals28j.filter { it.date >= fenetre7j }
+                // 60 jours : la moyenne mobile 7j des premiers points de la
+                // semaine a besoin des pesées de la semaine précédente,
+                // sinon le premier point est essentiellement le poids brut.
+                morningWeighIns = weighInRepository.fetch(fenetre60j)
+                    .filter { it.type == WeighInType.MatinJeun }
                 todayTarget = nutritionTargetRepository.fetch(today)
-                recentTargets = nutritionTargetRepository.fetchSince(sevenDaysAgo)
+                recentTargets = nutritionTargetRepository.fetchSince(fenetre7j)
 
                 // Fenêtre de 28 jours : c'est la base chronique de l'ACWR.
                 // Une fenêtre plus courte rendrait le ratio instable.
-                val vingtHuitJours = DateUtils.daysAgo(28)
                 workoutsLast28Days = runCatching {
-                    workoutRepository.fetchWeek(vingtHuitJours)
+                    workoutRepository.fetchWeek(fenetre28j)
                 }.getOrDefault(emptyList())
                 checkInsRecents = runCatching {
-                    dailyCheckInRepository.fetchSince(vingtHuitJours)
+                    dailyCheckInRepository.fetchSince(fenetre28j)
                 }.getOrDefault(emptyList())
                 mmaSessions = runCatching {
-                    mmaSessionRepository.fetchSince(vingtHuitJours)
+                    mmaSessionRepository.fetchSince(fenetre28j)
                 }.getOrDefault(emptyList())
                 if (userId.isNotBlank()) {
                     val profile = runCatching { profileRepository.fetch(userId) }.getOrNull()
                     poidsObjectifKg = profile?.poidsObjectifKg
                     bfObjectifPct = profile?.bfObjectifPct
+                }
+
+                activityDates = buildSet {
+                    addAll(meals28j.map { it.date })
+                    addAll(workoutsLast28Days.map { it.date })
+                    addAll(workoutsThisWeek.map { it.date })
+                    addAll(morningWeighIns.map { it.date })
+                    addAll(checkInsRecents.map { it.date })
+                    addAll(mmaSessions.map { it.date })
                 }
 
                 checkAchievements()
@@ -470,6 +453,7 @@ class DashboardViewModel(
             try {
                 val enregistre = dailyCheckInRepository.log(nouveau)
                 checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
+                activityDates = activityDates + enregistre.date
             } catch (e: Exception) {
                 errorMessage = "Impossible d'enregistrer le point du jour."
             }

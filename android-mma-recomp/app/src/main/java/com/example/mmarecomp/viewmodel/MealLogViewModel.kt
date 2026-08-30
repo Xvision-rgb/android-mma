@@ -22,6 +22,8 @@ import com.example.mmarecomp.util.CalorieCalculator
 import com.example.mmarecomp.util.ConfianceSuivi
 import com.example.mmarecomp.util.DailyTarget
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.NutritionTargetDraft
+import com.example.mmarecomp.util.WeighInSelector
 import com.example.mmarecomp.util.DisponibiliteEnergetique
 import com.example.mmarecomp.util.EnergyAvailability
 import com.example.mmarecomp.util.DietBreak
@@ -231,7 +233,11 @@ class MealLogViewModel(
                 glucidesCibleG = computed.glucidesG.takeIf { it > 0 },
                 lipidesCibleG = computed.lipidesG.takeIf { it > 0 },
             )
-            target = runCatching { targetRepository.set(newTarget) }.getOrNull()
+            try {
+                target = targetRepository.set(newTarget)
+            } catch (e: Exception) {
+                errorMessage = "Impossible d'enregistrer la cible du jour."
+            }
         }
     }
 
@@ -243,10 +249,10 @@ class MealLogViewModel(
      *  figées si aucune pesée n'est encore enregistrée — jamais d'erreur
      *  bloquante faute de données. */
     private suspend fun personalizedTarget(typeJour: TypeJour): DailyTarget {
-        val latestWeighIn = runCatching { weighInRepository.fetch(DateUtils.daysAgo(30)) }
-            .getOrDefault(emptyList())
-            .lastOrNull { it.poidsKg > 0 }
-            ?: return NutritionTargetCalculator.target(typeJour)
+        val latestWeighIn = WeighInSelector.latestReference(
+            runCatching { weighInRepository.fetch(DateUtils.daysAgo(30)) }
+                .getOrDefault(emptyList()),
+        ) ?: return NutritionTargetCalculator.target(typeJour)
         val mode = if (userId.isNotBlank()) {
             runCatching { profileRepository.fetch(userId) }.getOrNull()?.objectifCalorieMode
                 ?: CalorieMode.Recomposition
@@ -271,13 +277,17 @@ class MealLogViewModel(
      *  d'ajuster manuellement si besoin. */
     fun setCustomTarget(calories: Int, proteinesG: Double) {
         viewModelScope.launch {
-            val newTarget = NewNutritionTarget(
+            val newTarget = NutritionTargetDraft.custom(
                 date = DateUtils.string(date),
-                typeJour = target?.typeJour ?: TypeJour.Training,
-                caloriesCible = calories,
-                proteinesCibleG = proteinesG,
+                calories = calories,
+                proteinesG = proteinesG,
+                existing = target,
             )
-            target = runCatching { targetRepository.set(newTarget) }.getOrNull()
+            try {
+                target = targetRepository.set(newTarget)
+            } catch (e: Exception) {
+                errorMessage = "Impossible d'enregistrer la cible personnalisée."
+            }
         }
     }
 

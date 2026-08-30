@@ -644,3 +644,31 @@ couleurs par type de séance, dégradé du graphique de poids) ne porte
 jamais de texte directement dessus : aucun changement nécessaire.
 
 Ceci conclut les 15 lots de la passe d'amélioration graphique globale.
+
+## 21. Cinq correctifs d'intégrité (audit transversal)
+
+Passe sur toute l'app, ciblée données plutôt que polish visuel :
+
+1. **Pesée de référence** — les cibles caloriques (Repas + Objectif calorique)
+   prenaient la dernière pesée toutes types confondus. Une pesée du soir
+   (souvent +1–2 kg) gonflait la maintenance. On lit d'abord le matin à jeun
+   (`WeighInSelector`).
+2. **Fenêtres dashboard** — la série d'activité était plafonnée à 7 jours
+   (seules les données de la semaine étaient chargées) ; `daysAgo(7)`
+   incluait 8 jours calendaires ; la moyenne mobile 7j des pesées n'avait
+   pas assez d'historique et le premier point était du poids brut. Fenêtres
+   7/28/60 jours inclusives + tendance sur 7 jours, pas sur 60.
+3. **Cibles nutrition** — un upsert sans glucides/lipides les écrivait à
+   NULL (périodisation glucidique perdue) ; `setTarget` / `setCustomTarget`
+   avalaient l'erreur. Macros conservées ou poussées, erreur visible.
+4. **Séance du jour** — n'importe quel log du jour (ex. un HIIT) masquait
+   la séance de force prévue. On ne la retire que si le type prévu est
+   déjà logué (`TodayPlanResolver`).
+5. **Suggestion + records** — `suggestedExercise` tirait au sort à chaque
+   recomposition ; les records lisaient `chargeReelleKg` (agrégat parfois
+   figé) au lieu de `chargeMaxKg`. Suggestion déterministe (premier
+   exercice du plan) ; charges lues série par série ; la séance venant
+   d'être enregistrée entre dans l'historique tout de suite.
+
+Tests JVM : `app/src/test/.../util/IntegriteAppTest.kt`.
+`./gradlew test` dès qu'un Android SDK est disponible.
