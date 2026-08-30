@@ -1,5 +1,6 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -7,9 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.FoodRepository
 import com.example.mmarecomp.data.MealRepository
+import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.WeighInRepository
+import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
@@ -20,9 +23,11 @@ import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
 import com.example.mmarecomp.util.CalorieCalculator
 import com.example.mmarecomp.util.ConfianceSuivi
+import com.example.mmarecomp.util.ContextePreference
 import com.example.mmarecomp.util.DailyTarget
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.NutritionTargetDraft
+import com.example.mmarecomp.util.TrainingLoad
 import com.example.mmarecomp.util.WeighInSelector
 import com.example.mmarecomp.util.DisponibiliteEnergetique
 import com.example.mmarecomp.util.EnergyAvailability
@@ -43,7 +48,11 @@ class MealLogViewModel(
     private val foodRepository: FoodRepository = FoodRepository(),
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val profileRepository: ProfileRepository = ProfileRepository(),
+    private val workoutRepository: WorkoutRepository = WorkoutRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
+    context: Context? = null,
 ) : ViewModel() {
+    private val contextePreference = context?.let { ContextePreference(it) }
     var date by mutableStateOf(LocalDate.now())
     var mealsForDay by mutableStateOf<List<Meal>>(emptyList())
         private set
@@ -211,6 +220,13 @@ class MealLogViewModel(
             try {
                 mealsForDay = mealRepository.fetchForDate(forDate = dateString)
                 target = targetRepository.fetch(forDate = dateString)
+                val workouts = runCatching { workoutRepository.fetchWeek(dateString) }
+                    .getOrDefault(emptyList())
+                    .filter { it.date == dateString }
+                val mma = runCatching { mmaSessionRepository.fetchSince(dateString) }
+                    .getOrDefault(emptyList())
+                    .filter { it.date == dateString }
+                chargeInterneDuJour = TrainingLoad.chargePourDate(dateString, workouts, mma)
             } catch (e: java.io.IOException) {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             } catch (e: Exception) {
@@ -259,7 +275,9 @@ class MealLogViewModel(
         } else {
             CalorieMode.Recomposition
         }
-        val goal = CalorieCalculator.goal(latestWeighIn.poidsKg, latestWeighIn.bfPct, mode)
+        val multiplier = contextePreference?.let { CalorieCalculator.multiplicateurPour(it.contexte) }
+            ?: CalorieCalculator.ACTIVITY_MULTIPLIER_DEFAULT
+        val goal = CalorieCalculator.goal(latestWeighIn.poidsKg, latestWeighIn.bfPct, mode, multiplier)
         poidsCorpsKg = latestWeighIn.poidsKg
         bfPct = latestWeighIn.bfPct
         return NutritionTargetCalculator.targetFor(

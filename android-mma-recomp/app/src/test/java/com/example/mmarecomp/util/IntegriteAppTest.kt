@@ -241,3 +241,73 @@ class NutritionTargetDraftTest {
         assertEquals(goal.targetCalories, draft.caloriesCible)
     }
 }
+
+class InterferenceCheckerCourseTest {
+
+    private val jour = LocalDate.of(2026, 8, 24)
+
+    private fun workout(type: WorkoutType) = Workout(
+        id = type.name,
+        userId = "u",
+        date = DateUtils.string(jour),
+        type = type,
+        exercices = emptyList(),
+    )
+
+    @Test
+    fun `une sortie course le jour d une seance jambes declenche l alerte cardio`() {
+        val conflits = InterferenceChecker.conflits(
+            date = jour,
+            workouts = listOf(workout(WorkoutType.JambesForce), workout(WorkoutType.Course)),
+            mmaSessions = emptyList(),
+        )
+        assertTrue(conflits.any { it.contains("cardio") })
+    }
+
+    @Test
+    fun `un WOD MMA n est pas compte comme du cardio d endurance`() {
+        val conflits = InterferenceChecker.conflits(
+            date = jour,
+            workouts = listOf(workout(WorkoutType.TorseForce), workout(WorkoutType.MmaWod)),
+            mmaSessions = emptyList(),
+        )
+        assertTrue(conflits.none { it.contains("cardio") })
+    }
+}
+
+class ChargePourDateTest {
+
+    @Test
+    fun `la charge du jour ignore les seances sans rpe ou duree`() {
+        val date = "2026-08-24"
+        val avecCharge = Workout(
+            id = "1",
+            userId = "u",
+            date = date,
+            type = WorkoutType.TorseForce,
+            exercices = emptyList(),
+            dureeMin = 60,
+            rpe = 8,
+        )
+        val sansRpe = avecCharge.copy(id = "2", rpe = null)
+        assertEquals(480.0, TrainingLoad.chargePourDate(date, listOf(avecCharge))!!, 0.001)
+        assertNull(TrainingLoad.chargePourDate(date, listOf(sansRpe)))
+    }
+}
+
+class SetStopAdvisorGuardTest {
+
+    @Test
+    fun `une serie a zero reps ne produit pas de chute`() {
+        val ex = LoggedExercise(
+            nom = "Squat",
+            series = 2,
+            reps = 0,
+            sets = listOf(
+                LoggedSet(index = 1, reps = 0, chargeKg = 100.0),
+                LoggedSet(index = 2, reps = 5, chargeKg = 100.0),
+            ),
+        )
+        assertNull(SetStopAdvisor.chuteRelative(ex))
+    }
+}

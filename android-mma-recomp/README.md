@@ -670,5 +670,17 @@ Passe sur toute l'app, ciblée données plutôt que polish visuel :
    exercice du plan) ; charges lues série par série ; la séance venant
    d'être enregistrée entre dans l'historique tout de suite.
 
+Suite (câblage trouvé à l'audit) :
+
+6. **Charge interne du jour** enfin injectée dans l'écran Repas (EA +
+   périodisation glucidique) — elle n'était jamais écrite.
+7. **Contexte sportif** (1,4 / 1,6) appliqué aux cibles kcal, plus le
+   défaut figé 1,5.
+8. **`Context` passé au Dashboard** — streaks, achievements et règles
+   d'interférence combat/salle n'étaient jamais branchés.
+9. **`Course` dans InterferenceChecker** (plus `MmaWod` comme faux cardio).
+10. **Recalibrage adaptatif** gated par `LoggingConfidence` ; graphiques
+    de progression lus sur `chargeMaxKg`.
+
 Tests JVM : `app/src/test/.../util/IntegriteAppTest.kt`.
 `./gradlew test` dès qu'un Android SDK est disponible.

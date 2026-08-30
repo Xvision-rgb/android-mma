@@ -83,7 +83,7 @@ class ProgressViewModel(
             for (workout in workouts) {
                 val date = DateUtils.date(workout.date) ?: continue
                 for (exercice in workout.exercices) {
-                    val charge = exercice.chargeReelleKg ?: continue
+                    val charge = exercice.chargeMaxKg ?: exercice.chargeReelleKg ?: continue
                     result.getOrPut(exercice.nom) { mutableListOf() }.add(ChargePoint(date, charge))
                 }
             }
