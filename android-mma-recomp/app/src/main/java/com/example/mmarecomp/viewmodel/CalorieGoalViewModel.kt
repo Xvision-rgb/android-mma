@@ -68,7 +68,11 @@ class CalorieGoalViewModel(
     var poidsInputKg by mutableStateOf("")
     var bfInputPct by mutableStateOf("")
 
-    val recommendedMode: CalorieMode get() = CalorieCalculator.recommendedMode(bfInputPct.toDoubleOrNull())
+    val recommendedMode: CalorieMode
+        // Normalise la virgule décimale comme goalFor()/applyMode() : sans ça,
+        // « 12,5 » n'était pas parsé et le mode recommandé retombait à tort sur
+        // Recomposition même au-dessus du seuil de %BF de la coupe.
+        get() = CalorieCalculator.recommendedMode(bfInputPct.replace(",", ".").toDoubleOrNull())
 
     /** Cible complète pour un mode donné, à partir des champs actuellement
      *  saisis — null si le poids n'est pas un nombre valide. */

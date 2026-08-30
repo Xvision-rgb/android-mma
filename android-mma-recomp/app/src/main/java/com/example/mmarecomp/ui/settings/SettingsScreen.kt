@@ -220,8 +220,12 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "Maintenance estimée : ${(87 * 30 * contexte.multiplicateurActivite).toInt()} kcal " +
-                    "pour 87 kg (multiplicateur ${contexte.multiplicateurActivite}).",
+                // Repère illustratif du multiplicateur, pas la maintenance réelle
+                // de l'utilisateur : celle-ci est calculée à partir de son poids
+                // et de son %BF sur l'écran « Objectif calorique ».
+                "Exemple : pour 80 kg, ce multiplicateur (${contexte.multiplicateurActivite}) " +
+                    "donne une maintenance d'environ ${(80 * 30 * contexte.multiplicateurActivite).toInt()} kcal. " +
+                    "Ta maintenance réelle est calculée depuis ton poids sur l'écran Objectif calorique.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
