@@ -215,12 +215,24 @@ class DashboardViewModel(
 
     val scoreReadiness: Int? get() = checkInAujourdhui?.score
 
-    /** Répartition du volume par zone sur les séances de la semaine. */
+    /** Séances des 7 derniers jours glissants (fenêtre inclusive).
+     *
+     *  Les cartes explicitement libellées « 7 jours » (et le brief Lot 5 sur le
+     *  ratio tirage:poussée « sur les 7 derniers jours loggés ») doivent lire
+     *  cette fenêtre, pas [workoutsThisWeek] qui suit la semaine calendaire :
+     *  un lundi, la semaine calendaire ne contiendrait qu'un seul jour. */
+    private val workoutsLast7Days: List<Workout>
+        get() {
+            val debut = DateUtils.inclusiveStart(7)
+            return workoutsFenetreChronique.filter { it.date >= debut }
+        }
+
+    /** Répartition du volume par zone sur les 7 derniers jours glissants. */
     val repartitionVolume: Map<MuscleZone, Double>
-        get() = MuscleZoneClassifier.repartition(workoutsThisWeek.flatMap { it.exercices })
+        get() = MuscleZoneClassifier.repartition(workoutsLast7Days.flatMap { it.exercices })
 
     val ratioTiragePoussee: Double?
-        get() = MuscleZoneClassifier.ratioTiragePoussee(workoutsThisWeek.flatMap { it.exercices })
+        get() = MuscleZoneClassifier.ratioTiragePoussee(workoutsLast7Days.flatMap { it.exercices })
 
     /** Indicateur directeur : 1RM estimé / poids de corps en moyenne mobile
      *  7 jours. Jamais une pesée brute — le ratio hériterait de son bruit. */
@@ -465,7 +477,11 @@ class DashboardViewModel(
         achievementManager?.let {
             if (it.checkAndUnlockFirstWorkout(workoutsThisWeek.isNotEmpty())) {
                 unlockedAchievement = AchievementType.FIRST_WORKOUT
-            } else if (it.checkAndUnlockFiveConsecutiveDays(currentStreak)) {
+                // Le succès « 5 jours consécutifs » doit refléter la série
+                // d'ACTIVITÉ que l'utilisateur voit sur le dashboard
+                // (activityStreakDays), pas la série d'ouvertures de l'app
+                // (StreakManager) qui mesurait autre chose.
+            } else if (it.checkAndUnlockFiveConsecutiveDays(activityStreakDays)) {
                 unlockedAchievement = AchievementType.FIVE_CONSECUTIVE_DAYS
             }
         }
