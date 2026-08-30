@@ -38,17 +38,19 @@ fun AchievementUnlockModal(
     var isVisible by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
+    // Séquence unique : apparition → maintien → disparition → onDismiss.
+    // Découper l'animation en plusieurs LaunchedEffect(isVisible) déclenchait
+    // onDismiss() dès la première composition (isVisible encore à false), donc
+    // le modal de succès disparaissait avant même de s'afficher.
     LaunchedEffect(Unit) {
         delay(300)
         isVisible = true
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-    }
-
-    LaunchedEffect(isVisible) {
-        if (isVisible) {
-            delay(3000)
-            isVisible = false
-        }
+        delay(3000)
+        isVisible = false
+        // Laisse l'animation de sortie se jouer avant de rendre la main.
+        delay(300)
+        onDismiss()
     }
 
     AnimatedVisibility(
@@ -85,12 +87,6 @@ fun AchievementUnlockModal(
                     color = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.7f),
                 )
             }
-        }
-    }
-
-    LaunchedEffect(isVisible) {
-        if (!isVisible) {
-            onDismiss()
         }
     }
 }

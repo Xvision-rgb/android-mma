@@ -1,3 +1,80 @@
 <resources>
     <string name="app_name">Recomp &amp; MMA</string>
+
+    <!-- ErrorBanner -->
+    <string name="error_retry_load">Réessayer le chargement</string>
+    <string name="error_retry_save">Réessayer l\'enregistrement</string>
+    <string name="error_retry_delete">Réessayer la suppression</string>
+    <string name="error_retry_update">Réessayer</string>
+    <string name="error_cd">Erreur : %1$s</string>
+    <string name="error_cd_offline">Hors ligne</string>
+
+    <!-- Auth -->
+    <string name="auth_title">Recomp &amp; MMA</string>
+    <string name="auth_subtitle">Suivi entraînement, nutrition et poids — sans stress.</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_email_invalid">Format d\'email invalide</string>
+    <string name="auth_password">Mot de passe</string>
+    <string name="auth_show_password">Afficher le mot de passe</string>
+    <string name="auth_hide_password">Masquer le mot de passe</string>
+    <string name="auth_sign_in">Se connecter</string>
+    <string name="auth_sign_up">Créer un compte</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_greeting_morning">Bonjour</string>
+    <string name="dashboard_greeting_afternoon">Bon après-midi</string>
+    <string name="dashboard_greeting_evening">Bonsoir</string>
+    <string name="dashboard_refresh">Actualiser le dashboard</string>
+    <string name="dashboard_this_week">Cette semaine</string>
+    <string name="dashboard_sessions_done">%1$d séance(s) faites / %2$d prévues</string>
+    <string name="dashboard_meals_logged_days">%1$d jour(s) sur 7 avec au moins un repas loggé</string>
+    <string name="dashboard_open_weekly_program">Voir le programme de la semaine</string>
+    <string name="dashboard_activity_streak">jours d\'affilée avec au moins une activité loggée</string>
+    <string name="dashboard_activity_streak_cd">Série d\'activité</string>
+    <string name="dashboard_edit_exercises_cd">Modifier les exercices du %1$s</string>
+
+    <!-- Weekly program -->
+    <string name="weekly_program_title">Programme de la semaine</string>
+
+    <!-- Workout log -->
+    <string name="workout_log_title">Log séance</string>
+    <string name="workout_save">Enregistrer la séance</string>
+    <string name="workout_saving">Enregistrement…</string>
+    <string name="workout_undo_exercise">Exercice retiré</string>
+    <string name="workout_undo_session">Séance supprimée</string>
+    <string name="workout_undo">Annuler</string>
+
+    <!-- Meal log -->
+    <string name="meal_log_title">Log repas</string>
+    <string name="meal_save">Enregistrer ce repas</string>
+    <string name="meal_saving">Enregistrement…</string>
+    <string name="meal_clear">Vider</string>
+    <string name="meal_saved">Repas enregistré ✓</string>
+    <string name="meal_undo">Repas supprimé</string>
+    <string name="meal_undo_action">Annuler</string>
+
+    <!-- Weigh-in -->
+    <string name="weigh_in_title">Log pesée</string>
+    <string name="weigh_in_save">Enregistrer la pesée</string>
+    <string name="weigh_in_saving">Enregistrement…</string>
+    <string name="weigh_in_clear">Vider</string>
+    <string name="weigh_in_saved">Pesée enregistrée ✓</string>
+    <string name="weigh_in_undo">Pesée supprimée</string>
+    <string name="weigh_in_undo_action">Annuler</string>
+    <string name="weigh_in_trend_label">Tendance (moyenne 7 jours, matin à jeun)</string>
+    <string name="weigh_in_show_history">Voir l\'historique complet</string>
+    <string name="weigh_in_hide_history">Masquer l\'historique</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Réglages</string>
+    <string name="settings_connected_as">Connecté en tant que %1$s</string>
+    <string name="settings_goals">Objectifs</string>
+    <string name="settings_calorie_goal">Objectif calorique (Bulk / Recomposition / Coupe)</string>
+    <string name="settings_save">Enregistrer</string>
+    <string name="settings_sign_out">Se déconnecter</string>
+
+    <!-- Common -->
+    <string name="action_back">Retour</string>
+    <string name="action_undo">Annuler</string>
+    <string name="cd_delete">Supprimer</string>
 </resources>

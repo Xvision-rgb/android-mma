@@ -21,26 +21,25 @@ class RirCalibration(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    /** Biais moyen glissant, en reps. 0 tant qu'aucun test n'a été fait —
-     *  neutre par défaut, jamais une correction inventée. */
-    val biais: Double get() = prefs.getFloat(KEY_BIAIS, 0f).toDouble()
+    /** Biais moyen sur les six derniers tests, en reps. 0 tant qu'aucun test
+     *  n'a été fait — neutre par défaut, jamais une correction inventée. */
+    val biais: Double
+        get() {
+            val mesures = chargerMesures()
+            return if (mesures.isEmpty()) 0.0 else mesures.average()
+        }
 
-    val nbMesures: Int get() = prefs.getInt(KEY_NB_MESURES, 0)
+    val nbMesures: Int get() = chargerMesures().size
 
     val aEteCalibre: Boolean get() = nbMesures > 0
 
     /** Enregistre un test : RIR estimé avant la série, reps réellement faites
      *  au-delà du point où l'athlète pensait s'arrêter. */
     fun enregistrerTest(rirEstime: Int, repsReellesEnPlus: Int) {
-        val ecart = (repsReellesEnPlus - rirEstime).toDouble()
-        val n = nbMesures
-        // Moyenne glissante simple : chaque test pèse autant, mais on plafonne
-        // la fenêtre à 6 pour que la calibration suive l'athlète qui progresse.
-        val poids = (n + 1).coerceAtMost(FENETRE)
-        val nouveau = (biais * (poids - 1) + ecart) / poids
+        val ecart = (rirEstime - repsReellesEnPlus).toDouble()
+        val mesures = (chargerMesures() + ecart).takeLast(FENETRE)
         prefs.edit()
-            .putFloat(KEY_BIAIS, nouveau.toFloat())
-            .putInt(KEY_NB_MESURES, n + 1)
+            .putString(KEY_MESURES, mesures.joinToString(","))
             .putString(KEY_DERNIER_TEST, LocalDate.now().toString())
             .putInt(KEY_REFUS, 0)
             .apply()
@@ -63,10 +62,15 @@ class RirCalibration(context: Context) {
         return date.plusDays(INTERVALLE_JOURS) <= aujourdhui
     }
 
+    private fun chargerMesures(): List<Double> =
+        prefs.getString(KEY_MESURES, null)
+            ?.split(",")
+            ?.mapNotNull { it.toDoubleOrNull() }
+            ?: emptyList()
+
     private companion object {
         const val PREFS = "rir_calibration"
-        const val KEY_BIAIS = "biais"
-        const val KEY_NB_MESURES = "nb_mesures"
+        const val KEY_MESURES = "mesures"
         const val KEY_DERNIER_TEST = "dernier_test"
         const val KEY_DERNIERE_PROPOSITION = "derniere_proposition"
         const val KEY_REFUS = "refus_consecutifs"

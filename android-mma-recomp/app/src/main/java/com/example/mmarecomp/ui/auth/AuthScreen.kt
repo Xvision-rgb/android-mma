@@ -3,6 +3,7 @@ package com.example.mmarecomp.ui.auth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,7 +31,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.R
 import androidx.compose.runtime.remember
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.AuthViewModel
@@ -47,10 +50,10 @@ fun AuthScreen(viewModel: AuthViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Recomp & MMA", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.auth_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(Dimens.spaceSm))
         Text(
-            "Suivi entraînement, nutrition et poids — sans stress.",
+            stringResource(R.string.auth_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -61,10 +64,10 @@ fun AuthScreen(viewModel: AuthViewModel) {
         OutlinedTextField(
             value = viewModel.email,
             onValueChange = { viewModel.email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email)) },
             isError = emailTouched && !emailValide,
             supportingText = if (emailTouched && !emailValide) {
-                { Text("Format d'email invalide") }
+                { Text(stringResource(R.string.auth_email_invalid)) }
             } else null,
             singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -79,13 +82,17 @@ fun AuthScreen(viewModel: AuthViewModel) {
         OutlinedTextField(
             value = viewModel.password,
             onValueChange = { viewModel.password = it },
-            label = { Text("Mot de passe") },
+            label = { Text(stringResource(R.string.auth_password)) },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (passwordVisible) "Masquer le mot de passe" else "Afficher le mot de passe",
+                        contentDescription = if (passwordVisible) {
+                            stringResource(R.string.auth_hide_password)
+                        } else {
+                            stringResource(R.string.auth_show_password)
+                        },
                     )
                 }
             },
@@ -114,22 +121,22 @@ fun AuthScreen(viewModel: AuthViewModel) {
         Spacer(Modifier.height(20.dp))
         Button(
             onClick = { viewModel.signIn() },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = Dimens.minTouchTarget),
             enabled = !viewModel.isSubmitting && formValide,
         ) {
             if (viewModel.isSubmitting) {
                 CircularProgressIndicator(modifier = Modifier.size(Dimens.iconSm), color = MaterialTheme.colorScheme.onPrimary)
             } else {
-                Text("Se connecter")
+                Text(stringResource(R.string.auth_sign_in))
             }
         }
         Spacer(Modifier.height(Dimens.spaceSm))
         OutlinedButton(
             onClick = { viewModel.signUp() },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = Dimens.minTouchTarget),
             enabled = !viewModel.isSubmitting && formValide,
         ) {
-            Text("Créer un compte")
+            Text(stringResource(R.string.auth_sign_up))
         }
     }
 }

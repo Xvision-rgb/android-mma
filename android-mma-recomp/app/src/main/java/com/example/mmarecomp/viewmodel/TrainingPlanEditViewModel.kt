@@ -10,6 +10,7 @@ import com.example.mmarecomp.model.NewTrainingPlanDay
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 /** Édite les exercices programmés d'un jour du split hebdo (training_plan) —
@@ -64,10 +65,16 @@ class TrainingPlanEditViewModel(
                 exercices = day?.exercices ?: emptyList()
                 notes = day?.notes ?: ""
                 loadedSnapshot = Triple(type, exercices, notes)
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger le programme de ce jour."
+                    }
+                }
             } finally {
                 isLoading = false
             }
@@ -79,6 +86,9 @@ class TrainingPlanEditViewModel(
     }
 
     fun updateExercise(index: Int, updated: PlannedExercise) {
+        // Garde de bornes : un index périmé (recomposition Compose après un
+        // retrait/réordonnancement) ne doit jamais faire crasher l'édition.
+        if (index !in exercices.indices) return
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
 
@@ -131,14 +141,20 @@ class TrainingPlanEditViewModel(
                 trainingPlanRepository.upsert(newDay)
                 loadedSnapshot = Triple(type, exercices, notes)
                 onResult(true)
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
                 errorIsFromSave = true
                 onResult(false)
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible d'enregistrer le programme."
                 errorIsFromSave = true
                 onResult(false)
+                    }
+                }
             } finally {
                 isSaving = false
             }

@@ -39,6 +39,9 @@ import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.NutritionTargetCalculator
 import com.example.mmarecomp.util.SlotTarget
 import java.time.LocalDate
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class MealLogViewModel(
@@ -62,6 +65,18 @@ class MealLogViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
+    private var pendingDeleteMeal: Meal? = null
+
+    private fun reportError(message: String, operation: ErrorOperation) {
+        errorMessage = message
+        errorOperation = operation
+    }
     var recentMeals by mutableStateOf<List<Meal>>(emptyList())
         private set
 
@@ -157,7 +172,8 @@ class MealLogViewModel(
                 recentMeals = mealRepository.fetchSince(DateUtils.daysAgo(13))
                     .filter { it.date != DateUtils.string(date) }
                     .sortedWith(compareByDescending<Meal> { it.date }.thenBy { it.repas })
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 // Historique secondaire : un échec ici n'empêche pas d'utiliser l'écran.
             }
         }
@@ -227,10 +243,16 @@ class MealLogViewModel(
                     .getOrDefault(emptyList())
                     .filter { it.date == dateString }
                 chargeInterneDuJour = TrainingLoad.chargePourDate(dateString, workouts, mma)
-            } catch (e: java.io.IOException) {
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
-                errorMessage = "Impossible de charger les repas du jour."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
+                reportError("Pas de connexion internet — réessaie dès que le réseau revient.", ErrorOperation.LOAD)
+                    }
+                    else -> {
+                reportError("Impossible de charger les repas du jour.", ErrorOperation.LOAD)
+                    }
+                }
             } finally {
                 isLoading = false
             }
@@ -251,8 +273,9 @@ class MealLogViewModel(
             )
             try {
                 target = targetRepository.set(newTarget)
-            } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la cible du jour."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible d'enregistrer la cible du jour.", ErrorOperation.SAVE)
             }
         }
     }
@@ -303,8 +326,9 @@ class MealLogViewModel(
             )
             try {
                 target = targetRepository.set(newTarget)
-            } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la cible personnalisée."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible d'enregistrer la cible personnalisée.", ErrorOperation.SAVE)
             }
         }
     }
@@ -314,15 +338,23 @@ class MealLogViewModel(
     fun deleteMeal(meal: Meal, onDeleted: () -> Unit) {
         val previous = mealsForDay
         mealsForDay = mealsForDay.filterNot { it.id == meal.id }
+        pendingDeleteMeal = meal
         viewModelScope.launch {
             try {
                 mealRepository.delete(meal.id)
+                pendingDeleteMeal = null
                 onDeleted()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 mealsForDay = previous
-                errorMessage = "Impossible de supprimer ce repas."
+                reportError("Impossible de supprimer ce repas.", ErrorOperation.DELETE)
             }
         }
+    }
+
+    fun retryPendingDelete() {
+        val meal = pendingDeleteMeal ?: return
+        deleteMeal(meal) { pendingDeleteMeal = null }
     }
 
     /** Réenregistre un repas supprimé par erreur (action "Annuler" du snackbar). */
@@ -340,7 +372,8 @@ class MealLogViewModel(
             try {
                 val saved = mealRepository.log(restored)
                 mealsForDay = (mealsForDay.filterNot { it.repas == saved.repas } + saved).sortedBy { it.repas }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible de restaurer ce repas."
             }
         }
@@ -357,7 +390,8 @@ class MealLogViewModel(
                 val yesterday = DateUtils.string(date.minusDays(1))
                 val match = mealRepository.fetchForDate(yesterday).firstOrNull { it.repas == slot.value }
                 onResult(match)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible de reprendre le repas d'hier."
                 onResult(null)
             }
@@ -387,8 +421,9 @@ class MealLogViewModel(
                 val saved = mealRepository.log(newMeal)
                 mealsForDay = (mealsForDay.filterNot { it.repas == slot.value } + saved).sortedBy { it.repas }
                 onResult(true)
-            } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer ce repas."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible d'enregistrer ce repas.", ErrorOperation.SAVE)
                 onResult(false)
             }
         }

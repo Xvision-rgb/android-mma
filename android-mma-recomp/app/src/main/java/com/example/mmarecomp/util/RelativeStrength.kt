@@ -90,8 +90,8 @@ object GripBenchmarks {
         deadHangSec < SEUIL_CONFORTABLE_SEC ->
             "Entre 30 et 60 s — dans la norme, à développer. Suspensions et farmer's walks."
         else ->
-            "Au-dessus de 60 s — ce n'est plus la poigne qui limite le tirage. " +
-                "Regarder la prise (magnésie, pouce enroulé, épaisseur de barre)."
+            "Au-dessus de 60 s — la poigne est solide ; si le tirage plafonne encore, " +
+                "regarder la prise (magnésie, pouce enroulé, épaisseur de barre)."
     }
 
     /** Exercices de support grip — les seuls pertinents pour un tirage limité

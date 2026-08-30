@@ -74,15 +74,24 @@ object ApreEngine {
         // Le biais RIR ne s'applique qu'à la hausse : il corrige une
         // surestimation de la marge, qui ne peut que rendre une progression
         // trop optimiste. Il n'a aucune raison d'accélérer une baisse.
-        val pourcentageCorrige =
-            if (pourcentage > 0 && biaisRir > 0) pourcentage * facteurBiais(biaisRir) else pourcentage
+        val pourcentageCorrige = when {
+            pourcentage > 0 && biaisRir > 0 -> pourcentage * facteurBiais(biaisRir)
+            pourcentage > 0 && biaisRir < 0 ->
+                pourcentage * (1.0 - biaisRir / 4.0).coerceIn(1.0, 1.25)
+            else -> pourcentage
+        }
 
         val brut = serie.chargeKg * (1 + pourcentageCorrige)
-        val arrondie = arrondir(brut, incrementKg).coerceAtLeast(incrementKg)
-        val delta = arrondie - serie.chargeKg
+        val arrondie = arrondir(brut, incrementKg)
+        val chargeFinale = if (ecart <= 0) {
+            minOf(arrondie, serie.chargeKg)
+        } else {
+            arrondie
+        }
+        val delta = chargeFinale - serie.chargeKg
 
         return ApreProchaineSeance(
-            chargeKg = arrondie,
+            chargeKg = chargeFinale,
             deltaKg = delta,
             justification = justifier(ecart, delta, protocole),
         )

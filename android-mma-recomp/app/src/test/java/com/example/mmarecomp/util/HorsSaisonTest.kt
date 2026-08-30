@@ -6,6 +6,7 @@ import com.example.mmarecomp.model.LoggedSet
 import com.example.mmarecomp.model.MuscleZone
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.model.toWorkoutTypeOrNull
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

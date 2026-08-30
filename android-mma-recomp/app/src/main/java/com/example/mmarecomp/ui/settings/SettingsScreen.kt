@@ -43,12 +43,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.mmarecomp.R
 import com.example.mmarecomp.model.ContexteSportif
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.ThemeMode
 import com.example.mmarecomp.util.ContextePreference
@@ -90,7 +92,7 @@ fun SettingsScreen(
         pendingReminder = null
     }
 
-    AppScaffold(title = "Réglages") { padding ->
+    AppScaffold(title = stringResource(R.string.settings_title)) { padding ->
     LazyColumn(
         modifier = Modifier.fillMaxWidth().padding(padding),
         contentPadding = PaddingValues(Dimens.spaceMd),
@@ -99,17 +101,17 @@ fun SettingsScreen(
         if (userEmail.isNotBlank()) {
             item {
                 Text(
-                    "Connecté en tant que $userEmail",
+                    stringResource(R.string.settings_connected_as, userEmail),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        item { Text("Objectifs", style = MaterialTheme.typography.titleMedium) }
+        item { Text(stringResource(R.string.settings_goals), style = MaterialTheme.typography.titleMedium) }
 
         item {
             OutlinedButton(onClick = onOpenCalorieGoal, modifier = Modifier.fillMaxWidth()) {
-                Text("Objectif calorique (Bulk / Recomposition / Coupe)")
+                Text(stringResource(R.string.settings_calorie_goal))
             }
         }
         item {
@@ -167,16 +169,27 @@ fun SettingsScreen(
             }
         }
 
-        viewModel.errorMessage?.let { error ->
-            item { ErrorBanner(error, onRetry = { viewModel.load() }) }
+        viewModel.screenError?.let { error ->
+            item {
+                ErrorBanner(
+                    error = error,
+                    onRetry = {
+                        when (error.operation) {
+                            ErrorOperation.LOAD -> viewModel.load()
+                            ErrorOperation.SAVE -> viewModel.retrySave()
+                            else -> viewModel.load()
+                        }
+                    },
+                )
+            }
         }
 
         item {
             Button(
                 onClick = { viewModel.save(onPhaseSaved) },
                 enabled = !viewModel.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Enregistrer") }
+                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = Dimens.minTouchTarget),
+            ) { Text(stringResource(R.string.settings_save)) }
         }
 
         item { HorizontalDivider() }
@@ -220,8 +233,12 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "Maintenance estimée : ${(87 * 30 * contexte.multiplicateurActivite).toInt()} kcal " +
-                    "pour 87 kg (multiplicateur ${contexte.multiplicateurActivite}).",
+                // Repère illustratif du multiplicateur, pas la maintenance réelle
+                // de l'utilisateur : celle-ci est calculée à partir de son poids
+                // et de son %BF sur l'écran « Objectif calorique ».
+                "Exemple : pour 80 kg, ce multiplicateur (${contexte.multiplicateurActivite}) " +
+                    "donne une maintenance d'environ ${(80 * 30 * contexte.multiplicateurActivite).toInt()} kcal. " +
+                    "Ta maintenance réelle est calculée depuis ton poids sur l'écran Objectif calorique.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -370,7 +387,7 @@ fun SettingsScreen(
         item {
             var showSignOutConfirm by remember { mutableStateOf(false) }
             OutlinedButton(onClick = { showSignOutConfirm = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Se déconnecter", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.settings_sign_out), color = MaterialTheme.colorScheme.error)
             }
             if (showSignOutConfirm) {
                 AlertDialog(

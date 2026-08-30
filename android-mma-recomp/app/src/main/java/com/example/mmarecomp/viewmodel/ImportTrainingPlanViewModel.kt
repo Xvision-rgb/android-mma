@@ -13,6 +13,7 @@ import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.util.TrainingPlanParser
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 /** Brouillon d'import pour un jour détecté dans le texte collé — jamais
@@ -67,10 +68,16 @@ class ImportTrainingPlanViewModel(
         viewModelScope.launch {
             try {
                 existingDays = trainingPlanRepository.fetchWeek(phase).associateBy { it.jourSemaine }
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger le programme existant."
+                    }
+                }
             } finally {
                 isLoading = false
             }
@@ -88,7 +95,7 @@ class ImportTrainingPlanViewModel(
         hasParsed = true
         val parsed = TrainingPlanParser.parse(rawText)
         val alreadySaved = drafts.filter { it.saved }.associateBy { it.jourSemaine }
-        val fromNewParse = parsed
+        val fromNewParse = parsed.days
             .filterNot { alreadySaved.containsKey(it.jourSemaine) }
             .map { day ->
                 val hasExisting = existingDays[day.jourSemaine]?.exercices?.isNotEmpty() == true
@@ -140,7 +147,7 @@ class ImportTrainingPlanViewModel(
             trainingPlanRepository.upsert(
                 NewTrainingPlanDay(
                     jourSemaine = jourSemaine,
-                    type = existing?.type ?: PlanDayType.Repos,
+                    type = existing?.type ?: PlanDayType.TorseForce,
                     exercices = finalExercices,
                     phase = phase,
                     notes = existing?.notes,
@@ -148,12 +155,18 @@ class ImportTrainingPlanViewModel(
             )
             drafts = drafts.map { if (it.jourSemaine == jourSemaine) it.copy(saved = true) else it }
             SaveOutcome.SUCCESS
-        } catch (e: java.io.IOException) {
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            when (e) {
+                is java.io.IOException -> {
             errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
             SaveOutcome.NETWORK_ERROR
-        } catch (e: Exception) {
+                }
+                else -> {
             errorMessage = "Impossible d'enregistrer ce jour."
             SaveOutcome.OTHER_ERROR
+                }
+            }
         }
     }
 

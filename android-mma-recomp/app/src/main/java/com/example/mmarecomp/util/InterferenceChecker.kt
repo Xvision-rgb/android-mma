@@ -37,7 +37,9 @@ object InterferenceChecker {
         val basDuCorps = musculationDuJour.any { it.type in basDuCorpsLourd }
 
         val mmaIntense = { d: String ->
-            mmaSessions.any { it.date == d && (it.ressenti ?: 0) >= SEUIL_MMA_INTENSE }
+            mmaSessions.any {
+                it.date == d && (TrainingLoad.intensiteMma(it.ressenti ?: return@any false) ?: 0) >= SEUIL_MMA_INTENSE
+            }
         }
 
         if (basDuCorps && (mmaIntense(jour) || mmaIntense(veille) || mmaIntense(lendemain))) {

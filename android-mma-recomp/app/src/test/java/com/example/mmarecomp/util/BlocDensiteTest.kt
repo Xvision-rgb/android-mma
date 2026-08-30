@@ -52,7 +52,7 @@ class BlocDensiteTest {
         - Course à pied 1x25
     """.trimIndent()
 
-    private val jours = TrainingPlanParser.parse(programme)
+    private val jours = TrainingPlanParser.parse(programme).days
 
     @Test
     fun `les six seances sont reconnues et le dimanche reste libre`() {

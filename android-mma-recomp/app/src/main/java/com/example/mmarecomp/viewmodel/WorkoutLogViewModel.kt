@@ -13,6 +13,8 @@ import com.example.mmarecomp.model.NewWorkout
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
 import com.example.mmarecomp.util.ExerciseName
@@ -21,6 +23,7 @@ import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.ChargeHistory
 import com.example.mmarecomp.util.DateUtils
 import java.time.LocalDate
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class WorkoutLogViewModel(
@@ -54,6 +57,18 @@ class WorkoutLogViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
+    private var pendingDeleteWorkout: Workout? = null
+
+    private fun reportError(message: String, operation: ErrorOperation) {
+        errorMessage = message
+        errorOperation = operation
+    }
     var lastSaved by mutableStateOf<Workout?>(null)
         private set
     var recentWorkouts by mutableStateOf<List<Workout>>(emptyList())
@@ -66,12 +81,18 @@ class WorkoutLogViewModel(
         viewModelScope.launch {
             recentWorkouts = try {
                 workoutRepository.fetchRecent()
-            } catch (e: java.io.IOException) {
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
+                reportError("Pas de connexion internet — réessaie dès que le réseau revient.", ErrorOperation.LOAD)
                 emptyList()
-            } catch (e: Exception) {
-                errorMessage = "Impossible de charger l'historique des séances."
+                    }
+                    else -> {
+                reportError("Impossible de charger l'historique des séances.", ErrorOperation.LOAD)
                 emptyList()
+                    }
+                }
             }
         }
     }
@@ -81,15 +102,23 @@ class WorkoutLogViewModel(
     fun deleteFromHistory(workout: Workout, onDeleted: () -> Unit) {
         val previous = recentWorkouts
         recentWorkouts = recentWorkouts.filterNot { it.id == workout.id }
+        pendingDeleteWorkout = workout
         viewModelScope.launch {
             try {
                 workoutRepository.delete(workout.id)
+                pendingDeleteWorkout = null
                 onDeleted()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 recentWorkouts = previous
-                errorMessage = "Impossible de supprimer cette séance."
+                reportError("Impossible de supprimer cette séance.", ErrorOperation.DELETE)
             }
         }
+    }
+
+    fun retryPendingDelete() {
+        val workout = pendingDeleteWorkout ?: return
+        deleteFromHistory(workout) { pendingDeleteWorkout = null }
     }
 
     /** Réenregistre une séance supprimée par erreur (action "Annuler" du snackbar). */
@@ -106,7 +135,8 @@ class WorkoutLogViewModel(
             try {
                 val saved = workoutRepository.log(restored)
                 recentWorkouts = (recentWorkouts + saved).sortedByDescending { it.date }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible de restaurer cette séance."
             }
         }
@@ -141,7 +171,8 @@ class WorkoutLogViewModel(
                 if (dureeMin.isBlank()) dureeMin = match.dureeMin?.toString() ?: ""
                 prefilledFromPlan = false
                 onResult(true)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible de reprendre la séance d'hier."
                 onResult(false)
             }
@@ -155,12 +186,18 @@ class WorkoutLogViewModel(
             val jour = DateUtils.weekdayIso(DateUtils.string(date))
             val plan = try {
                 trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
-            } catch (e: java.io.IOException) {
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
+                reportError("Pas de connexion internet — réessaie dès que le réseau revient.", ErrorOperation.LOAD)
                 return@launch
-            } catch (e: Exception) {
-                errorMessage = "Impossible de charger le plan de séance."
+                    }
+                    else -> {
+                reportError("Impossible de charger le plan de séance.", ErrorOperation.LOAD)
                 return@launch
+                    }
+                }
             } ?: return@launch
 
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
@@ -231,6 +268,9 @@ class WorkoutLogViewModel(
     }
 
     fun updateExercise(index: Int, updated: LoggedExercise) {
+        // Garde de bornes : un index périmé (recomposition Compose après un
+        // retrait/réordonnancement) ne doit jamais faire crasher la saisie.
+        if (index !in exercices.indices) return
         exercices = exercices.toMutableList().also { it[index] = updated }
     }
 
@@ -271,8 +311,9 @@ class WorkoutLogViewModel(
                 recentWorkouts = (listOf(saved) + recentWorkouts.filterNot { it.id == saved.id })
                     .sortedByDescending { it.date }
                 onResult(true)
-            } catch (e: Exception) {
-                errorMessage = "Impossible d'enregistrer la séance."
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                reportError("Impossible d'enregistrer la séance.", ErrorOperation.SAVE)
                 onResult(false)
             } finally {
                 isSaving = false

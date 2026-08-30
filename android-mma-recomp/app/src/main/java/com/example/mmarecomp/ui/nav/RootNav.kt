@@ -47,6 +47,7 @@ import androidx.navigation.navArgument
 import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.dashboard.DashboardScreen
+import com.example.mmarecomp.ui.dashboard.WeeklyProgramScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
 import com.example.mmarecomp.ui.plan.ImportTrainingPlanScreen
 import com.example.mmarecomp.ui.plan.TrainingPlanEditScreen
@@ -66,6 +67,7 @@ import com.example.mmarecomp.viewmodel.ProfileViewModel
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 import com.example.mmarecomp.viewmodel.TrainingPlanEditViewModel
 import com.example.mmarecomp.viewmodel.WeighInViewModel
+import com.example.mmarecomp.viewmodel.WeeklyProgramViewModel
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
 import kotlinx.coroutines.launch
 
@@ -179,6 +181,16 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     currentPhase,
                     onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
                     onStartWorkout = { navController.navigate("workout") },
+                    onOpenWeeklyProgram = { navController.navigate("weekly_program") },
+                )
+            }
+            composable("weekly_program") {
+                val vm = remember { WeeklyProgramViewModel() }
+                WeeklyProgramScreen(
+                    vm,
+                    phase = currentPhase,
+                    onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(

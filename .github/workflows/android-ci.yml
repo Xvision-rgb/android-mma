@@ -1,0 +1,46 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main, master, "cursor/**"]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        working-directory: android-mma-recomp
+        run: chmod +x gradlew
+
+      - name: Bootstrap project config
+        working-directory: android-mma-recomp
+        run: |
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" > /dev/null
+          mkdir -p app/src/main/java/com/example/mmarecomp
+          cat > app/src/main/java/com/example/mmarecomp/SupabaseConfig.kt <<'EOF'
+          package com.example.mmarecomp
+          object SupabaseConfig {
+              const val URL = "https://YOUR-PROJECT.supabase.co"
+              const val ANON_KEY = "YOUR-SUPABASE-ANON-KEY"
+          }
+          EOF
+
+      - name: Lint and unit tests
+        working-directory: android-mma-recomp
+        run: ./gradlew lintDebug testDebugUnitTest
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}

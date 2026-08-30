@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,12 +49,16 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.R
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
@@ -80,11 +85,13 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
 
     fun deleteWithUndo(entry: WeighIn) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        val undoMessage = context.getString(R.string.weigh_in_undo)
+        val undoAction = context.getString(R.string.weigh_in_undo_action)
         viewModel.deleteFromHistory(entry) {
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
-                    message = "Pesée supprimée",
-                    actionLabel = "Annuler",
+                    message = undoMessage,
+                    actionLabel = undoAction,
                     duration = SnackbarDuration.Long,
                 )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreToHistory(entry)
@@ -92,7 +99,41 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
         }
     }
 
-    AppScaffold(title = "Log pesée", onBack = onBack) { padding ->
+    fun performSave() {
+        val savedType = viewModel.type
+        val savedDate = viewModel.date
+        viewModel.save { saved ->
+            showSaved = saved
+            if (saved) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                viewModel.poidsKg = ""
+                viewModel.bfPct = ""
+                if (savedType == WeighInType.MatinJeun && savedDate == java.time.LocalDate.now()) {
+                    com.example.mmarecomp.notification.WeighInReminder.markLoggedToday(
+                        context,
+                        com.example.mmarecomp.util.DateUtils.string(savedDate),
+                    )
+                }
+            }
+        }
+    }
+
+    AppScaffold(
+        title = stringResource(R.string.weigh_in_title),
+        onBack = onBack,
+        bottomBar = {
+            PrimaryActionBar(
+                label = if (viewModel.isSaving) {
+                    stringResource(R.string.weigh_in_saving)
+                } else {
+                    stringResource(R.string.weigh_in_save)
+                },
+                enabled = !viewModel.isSaving &&
+                    (viewModel.poidsKg.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it in 20.0..400.0 },
+                onClick = { performSave() },
+            )
+        },
+    ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -102,7 +143,7 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
 
         item {
             Text(
-                "Tendance (moyenne 7 jours, matin à jeun)",
+                stringResource(R.string.weigh_in_trend_label),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -141,7 +182,13 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
                 var showHistory by remember { mutableStateOf(false) }
                 Column {
                     TextButton(onClick = { showHistory = !showHistory }) {
-                        Text(if (showHistory) "Masquer l'historique" else "Voir l'historique complet")
+                        Text(
+                            if (showHistory) {
+                                stringResource(R.string.weigh_in_hide_history)
+                            } else {
+                                stringResource(R.string.weigh_in_show_history)
+                            },
+                        )
                     }
                     if (showHistory) {
                         viewModel.history.sortedByDescending { it.date }.take(20).forEach { entry ->
@@ -265,35 +312,30 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
             ToggleRow("Juste après une séance intense", viewModel.postTraining) { viewModel.postTraining = it }
         }
 
-        viewModel.errorMessage?.let { error ->
-            item { ErrorBanner(error, onRetry = { viewModel.loadHistory() }) }
+        viewModel.screenError?.let { error ->
+            item {
+                ErrorBanner(
+                    error = error,
+                    onRetry = {
+                        when (error.operation) {
+                            ErrorOperation.LOAD -> viewModel.loadHistory()
+                            ErrorOperation.SAVE -> performSave()
+                            ErrorOperation.DELETE -> viewModel.retryPendingDelete()
+                            ErrorOperation.UPDATE -> viewModel.loadHistory()
+                        }
+                    },
+                )
+            }
         }
 
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
-                Button(
-                    onClick = {
-                        val savedType = viewModel.type
-                        val savedDate = viewModel.date
-                        viewModel.save { saved ->
-                            showSaved = saved
-                            if (saved) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.poidsKg = ""; viewModel.bfPct = ""
-                                if (savedType == WeighInType.MatinJeun && savedDate == java.time.LocalDate.now()) {
-                                    com.example.mmarecomp.notification.WeighInReminder.markLoggedToday(
-                                        context,
-                                        com.example.mmarecomp.util.DateUtils.string(savedDate),
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    enabled = !viewModel.isSaving &&
-                        (viewModel.poidsKg.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it in 20.0..400.0 },
-                    modifier = Modifier.weight(1f),
-                ) { Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la pesée") }
-                TextButton(onClick = { viewModel.resetForm() }) { Text("Vider") }
+                TextButton(
+                    onClick = { viewModel.resetForm() },
+                    modifier = Modifier.defaultMinSize(minHeight = Dimens.minTouchTarget),
+                ) {
+                    Text(stringResource(R.string.weigh_in_clear))
+                }
             }
         }
 
@@ -303,7 +345,7 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
                 enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
                 exit = fadeOut(tween(200)),
             ) {
-                Text("Pesée enregistrée ✓", color = MaterialTheme.colorScheme.tertiary)
+                Text(stringResource(R.string.weigh_in_saved), color = MaterialTheme.colorScheme.tertiary)
             }
         }
     }

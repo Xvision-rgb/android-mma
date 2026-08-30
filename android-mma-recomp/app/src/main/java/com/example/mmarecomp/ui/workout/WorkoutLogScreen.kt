@@ -55,7 +55,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.R
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
@@ -63,6 +65,7 @@ import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -91,13 +94,17 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     fun removeWithUndo(index: Int, exercice: LoggedExercise) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         viewModel.removeExercise(index)
+        val undoMessage = context.getString(R.string.workout_undo_exercise)
+        val undoAction = context.getString(R.string.workout_undo)
         scope.launch {
             val result = snackbarHostState.showSnackbar(
-                message = "Exercice retiré",
-                actionLabel = "Annuler",
+                message = undoMessage,
+                actionLabel = undoAction,
                 duration = SnackbarDuration.Long,
             )
             if (result == SnackbarResult.ActionPerformed) viewModel.restoreExercise(index, exercice)
@@ -106,14 +113,26 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
 
     fun deleteWorkoutWithUndo(workout: com.example.mmarecomp.model.Workout) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        val undoMessage = context.getString(R.string.workout_undo_session)
+        val undoAction = context.getString(R.string.workout_undo)
         viewModel.deleteFromHistory(workout) {
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
-                    message = "Séance supprimée",
-                    actionLabel = "Annuler",
+                    message = undoMessage,
+                    actionLabel = undoAction,
                     duration = SnackbarDuration.Long,
                 )
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreToHistory(workout)
+            }
+        }
+    }
+
+    fun performSave() {
+        viewModel.save { saved ->
+            showSavedMessage = saved
+            if (saved) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                viewModel.loadRecent()
             }
         }
     }
@@ -122,20 +141,16 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(Unit) { viewModel.loadRecent() }
 
     AppScaffold(
-        title = "Log séance",
+        title = stringResource(R.string.workout_log_title),
         bottomBar = {
             PrimaryActionBar(
-                label = if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance",
-                enabled = !viewModel.isSaving,
-                onClick = {
-                    viewModel.save { saved ->
-                        showSavedMessage = saved
-                        if (saved) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.loadRecent()
-                        }
-                    }
+                label = if (viewModel.isSaving) {
+                    stringResource(R.string.workout_saving)
+                } else {
+                    stringResource(R.string.workout_save)
                 },
+                enabled = !viewModel.isSaving,
+                onClick = { performSave() },
             )
         },
     ) { padding ->
@@ -438,8 +453,23 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
 
-        viewModel.errorMessage?.let { error ->
-            item { ErrorBanner(error, onRetry = { viewModel.loadPlan(phase) }) }
+        viewModel.screenError?.let { error ->
+            item {
+                ErrorBanner(
+                    error = error,
+                    onRetry = {
+                        when (error.operation) {
+                            ErrorOperation.LOAD -> {
+                                viewModel.loadPlan(phase)
+                                viewModel.loadRecent()
+                            }
+                            ErrorOperation.SAVE -> performSave()
+                            ErrorOperation.DELETE -> viewModel.retryPendingDelete()
+                            ErrorOperation.UPDATE -> viewModel.loadPlan(phase)
+                        }
+                    },
+                )
+            }
         }
 
         item {

@@ -1,5 +1,6 @@
 package com.example.mmarecomp.util
 
+import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
@@ -207,6 +208,31 @@ class NutritionTargetCalculatorTest {
         assertNull(NutritionTargetCalculator.notePriseProteique(25.0))
         assertNotNull(NutritionTargetCalculator.notePriseProteique(90.0))
     }
+
+    @Test
+    fun `les modes caloriques respectent l ordre bulk recomp coupe`() {
+        val poids = 75.0
+        val bf = 12.0
+        val bulk = CalorieCalculator.goal(poids, bf, CalorieMode.Bulk)
+        val recomp = CalorieCalculator.goal(poids, bf, CalorieMode.Recomposition)
+        val cut = CalorieCalculator.goal(poids, bf, CalorieMode.Coupe)
+        assertTrue(bulk.targetCalories > recomp.targetCalories)
+        assertTrue(recomp.targetCalories > cut.targetCalories)
+    }
+
+    @Test
+    fun `targetFor preserve l energie de baseCalories a 75 kg`() {
+        val baseCalories = 2800
+        val result = NutritionTargetCalculator.targetFor(
+            TypeJour.Repos,
+            baseCalories = baseCalories,
+            proteinesG = 150,
+            lipidesG = 75,
+            poidsKg = 75.0,
+            chargeInterne = 0.0,
+        )
+        assertEquals(baseCalories.toDouble(), result.calories.toDouble(), 20.0)
+    }
 }
 
 class LoggingConfidenceTest {
@@ -259,6 +285,22 @@ class LoggingConfidenceTest {
         )
         assertNotNull(complet)
         assertNull(partiel)
+    }
+
+    @Test
+    fun `14 jours de fenetre avec moins de 67 pourcent de prises bloque le recalibrage`() {
+        val repas = (1..14).map { j -> repas("2026-08-%02d".format(j), 1) }
+        val confiance = LoggingConfidence.evaluer(repas, jours = 14)
+        assertFalse(confiance.autoriseRecalibrage)
+        assertNull(
+            CalorieCalculator.adaptiveRecalibration(
+                weightChangeKg = -0.3,
+                periodDays = 14,
+                avgLoggedCalories = 2500.0,
+                staticMaintenanceCalories = 2700,
+                completudeSuivi = confiance.completude,
+            ),
+        )
     }
 
     @Test

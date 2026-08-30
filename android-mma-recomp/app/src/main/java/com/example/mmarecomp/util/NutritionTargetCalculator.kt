@@ -9,6 +9,7 @@ data class DailyTarget(
     val proteinesG: Double,
     val glucidesG: Double = 0.0,
     val lipidesG: Double = 0.0,
+    val macroCorrections: List<String> = emptyList(),
 )
 
 data class SlotTarget(val calories: Int, val proteinesG: Double)
@@ -58,8 +59,7 @@ object NutritionTargetCalculator {
             return DailyTarget(calories, proteinesG.toDouble())
         }
 
-        val glucidesParKg = glucidesParKgPour(typeJour, chargeInterne)
-        val glucidesBruts = (poidsKg * glucidesParKg).roundToInt()
+        val glucidesBruts = (poidsKg * glucidesParKgPour(typeJour, chargeInterne)).roundToInt()
 
         val ajustees = MacroFloors.appliquer(
             poidsKg = poidsKg,
@@ -68,11 +68,27 @@ object NutritionTargetCalculator {
             lipidesG = lipidesG,
         )
 
+        val energieAvantPlanchers = proteinesG * 4 + glucidesBruts * 4 + lipidesG * 9
+        val macroCorrections = buildList {
+            addAll(ajustees.corrections)
+            if (ajustees.caloriesTotales > energieAvantPlanchers) {
+                add(
+                    "Calories relevées à ${ajustees.caloriesTotales} kcal " +
+                        "(planchers macro — +${ajustees.caloriesTotales - energieAvantPlanchers} kcal).",
+                )
+            }
+            val caloriesMacro = proteinesG * 4 + ajustees.glucidesG * 4 + ajustees.lipidesG * 9
+            if (caloriesMacro < baseCalories && ajustees.caloriesTotales <= baseCalories) {
+                add("Cible énergétique maintenue à ${baseCalories} kcal malgré un jour léger en glucides.")
+            }
+        }
+
         return DailyTarget(
-            calories = ajustees.caloriesTotales,
+            calories = maxOf(baseCalories, ajustees.caloriesTotales),
             proteinesG = ajustees.proteinesG.toDouble(),
             glucidesG = ajustees.glucidesG.toDouble(),
             lipidesG = ajustees.lipidesG.toDouble(),
+            macroCorrections = macroCorrections,
         )
     }
 

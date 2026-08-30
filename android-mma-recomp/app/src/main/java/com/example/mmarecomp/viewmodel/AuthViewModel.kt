@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.AuthRepository
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class AuthViewModel(private val authRepository: AuthRepository = AuthRepository()) : ViewModel() {
@@ -25,10 +26,16 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
         viewModelScope.launch {
             try {
                 authRepository.signIn(email, password)
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — vérifie ton réseau et réessaie."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Connexion impossible. Vérifie ton email et mot de passe."
+                    }
+                }
             } finally {
                 isSubmitting = false
             }
@@ -43,10 +50,16 @@ class AuthViewModel(private val authRepository: AuthRepository = AuthRepository(
             try {
                 authRepository.signUp(email, password)
                 signUpSuccessMessage = "Compte créé — vérifie tes emails si une confirmation est demandée, sinon connecte-toi directement."
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — vérifie ton réseau et réessaie."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Inscription impossible. Réessaie."
+                    }
+                }
             } finally {
                 isSubmitting = false
             }

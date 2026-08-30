@@ -26,6 +26,7 @@ import com.example.mmarecomp.util.NutritionTargetDraft
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.WeighInSelector
 import java.time.temporal.ChronoUnit
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
 class CalorieGoalViewModel(
@@ -68,7 +69,11 @@ class CalorieGoalViewModel(
     var poidsInputKg by mutableStateOf("")
     var bfInputPct by mutableStateOf("")
 
-    val recommendedMode: CalorieMode get() = CalorieCalculator.recommendedMode(bfInputPct.toDoubleOrNull())
+    val recommendedMode: CalorieMode
+        // Normalise la virgule décimale comme goalFor()/applyMode() : sans ça,
+        // « 12,5 » n'était pas parsé et le mode recommandé retombait à tort sur
+        // Recomposition même au-dessus du seuil de %BF de la coupe.
+        get() = CalorieCalculator.recommendedMode(bfInputPct.replace(",", ".").toDoubleOrNull())
 
     /** Cible complète pour un mode donné, à partir des champs actuellement
      *  saisis — null si le poids n'est pas un nombre valide. */
@@ -93,10 +98,16 @@ class CalorieGoalViewModel(
                     appliedMode = runCatching { profileRepository.fetch(userId) }.getOrNull()?.objectifCalorieMode
                 }
                 latest?.poidsKg?.let { poids -> loadRecalibration(poids, recent) }
-            } catch (e: java.io.IOException) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                when (e) {
+                    is java.io.IOException -> {
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-            } catch (e: Exception) {
+                    }
+                    else -> {
                 errorMessage = "Impossible de charger tes dernières mesures."
+                    }
+                }
             } finally {
                 isLoading = false
             }
@@ -121,7 +132,12 @@ class CalorieGoalViewModel(
         val periodDays = ChronoUnit.DAYS.between(first.date, last.date).toInt()
         if (periodDays < 14) return
 
-        val meals = runCatching { mealRepository.fetchSince(DateUtils.string(first.date)) }.getOrDefault(emptyList())
+        val meals = runCatching { mealRepository.fetchSince(DateUtils.string(first.date)) }
+            .getOrDefault(emptyList())
+            .filter { meal ->
+                val d = DateUtils.date(meal.date) ?: return@filter false
+                !d.isBefore(first.date) && !d.isAfter(last.date)
+            }
         val caloriesByDate = meals.groupBy { it.date }.mapValues { (_, dayMeals) -> dayMeals.sumOf { it.calories } }
         if (caloriesByDate.isEmpty()) return
         val avgLoggedCalories = caloriesByDate.values.average()
@@ -159,7 +175,8 @@ class CalorieGoalViewModel(
                 )
                 recalibration = null
                 savedConfirmation = true
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible d'appliquer le recalibrage — réessaie."
             } finally {
                 isSaving = false
@@ -185,7 +202,8 @@ class CalorieGoalViewModel(
                 )
                 appliedMode = mode
                 savedConfirmation = true
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
                 errorMessage = "Impossible d'enregistrer ce mode — réessaie."
             } finally {
                 isSaving = false
