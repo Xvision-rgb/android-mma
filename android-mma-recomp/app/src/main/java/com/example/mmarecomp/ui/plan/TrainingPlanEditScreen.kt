@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.joursLabels
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
@@ -57,6 +59,7 @@ fun TrainingPlanEditScreen(
     jourSemaine: Int,
     phase: Phase,
     onSaved: () -> Unit,
+    onBack: () -> Unit = {},
 ) {
     LaunchedEffect(jourSemaine, phase) { viewModel.load(jourSemaine, phase) }
     val scope = rememberCoroutineScope()
@@ -72,7 +75,11 @@ fun TrainingPlanEditScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(
+        title = "Programme — ${joursLabels[jourSemaine] ?: ""}",
+        onBack = onBack,
+    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
         if (viewModel.isLoading && viewModel.exercices.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -85,12 +92,6 @@ fun TrainingPlanEditScreen(
             contentPadding = PaddingValues(Dimens.spaceMd),
             verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
         ) {
-            item {
-                Text(
-                    "Programme — ${joursLabels[jourSemaine] ?: ""}",
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
 
             item {
                 var expanded by remember { mutableStateOf(false) }
@@ -225,5 +226,6 @@ fun TrainingPlanEditScreen(
                 }
             }
         }
+    }
     }
 }

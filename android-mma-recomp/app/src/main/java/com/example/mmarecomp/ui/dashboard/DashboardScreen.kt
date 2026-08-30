@@ -39,7 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
-import com.example.mmarecomp.ui.components.AskClaudeCard
+import com.example.mmarecomp.ui.components.AppCard
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.RelativeStrengthCard
@@ -47,8 +48,6 @@ import com.example.mmarecomp.ui.components.VolumeDistributionCard
 import com.example.mmarecomp.ui.components.NextWorkoutCard
 import com.example.mmarecomp.ui.components.RecoveryReadinessCard
 import com.example.mmarecomp.ui.components.SoftAlertBanner
-import com.example.mmarecomp.ui.components.StreakBadge
-import com.example.mmarecomp.ui.components.WearablesCard
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
@@ -58,7 +57,12 @@ import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: (Int) -> Unit = {}) {
+fun DashboardScreen(
+    viewModel: DashboardViewModel,
+    phase: Phase,
+    onEditPlanDay: (Int) -> Unit = {},
+    onStartWorkout: () -> Unit = {},
+) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
     var showCheckIn by remember { mutableStateOf(false) }
@@ -66,46 +70,51 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val hour = java.time.LocalTime.now().hour
+    val greeting = when {
+        hour < 12 -> "Bonjour"
+        hour < 18 -> "Bon après-midi"
+        else -> "Bonsoir"
+    }
+
+    AppScaffold(
+        title = greeting,
+        actions = {
+            IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(Dimens.iconSm))
+                } else {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
+                }
+            }
+        },
+    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
         if (viewModel.isLoading && !hasData) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
             LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = 96.dp,
+            start = Dimens.spaceMd, end = Dimens.spaceMd, top = Dimens.spaceMd, bottom = Dimens.scrollBottomInset,
         ),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.spaceMd),
     ) {
+        // NIVEAU 1 — la seule "grande chose" de l'écran.
+        // La force relative est l'indicateur directeur du projet : c'est elle
+        // qui répond à la question posée (être plus fort pour son poids), là
+        // où la balance seule ne tranche dans aucun sens. Elle était affichée
+        // en quatrieme position, au meme poids visuel que le reste ; elle
+        // ouvre desormais l'ecran, en variante Hero.
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val hour = java.time.LocalTime.now().hour
-                val greeting = when {
-                    hour < 12 -> "Bonjour"
-                    hour < 18 -> "Bon après-midi"
-                    else -> "Bonsoir"
-                }
-                Text(greeting, style = MaterialTheme.typography.titleLarge)
-                IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
-                    if (viewModel.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                    } else {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
-                    }
-                }
-            }
-        }
-        item {
-            StreakBadge(
-                currentStreak = viewModel.currentStreak,
-                bestStreak = viewModel.bestStreak,
+            RelativeStrengthCard(
+                forces = viewModel.forcesRelatives,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+
+        // NIVEAU 2 — l'état du jour et l'action qui en découle : les deux
+        // seules choses sur lesquelles on agit dans la minute.
         item {
             RecoveryReadinessCard(
                 modulation = viewModel.modulation,
@@ -116,15 +125,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        // L'indicateur directeur passe avant le poids : c'est lui qui répond
-        // à la question posée (être plus fort pour son poids), là où la
-        // balance seule ne tranche dans aucun sens.
         item {
-            RelativeStrengthCard(
-                forces = viewModel.forcesRelatives,
+            val suggestion = viewModel.suggestedExercise
+            NextWorkoutCard(
+                exerciseName = suggestion?.first,
+                muscleGroup = suggestion?.second,
+                onStartClick = onStartWorkout,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+
+        // NIVEAU 3 — le contexte, consultable mais jamais dominant.
         item {
             com.example.mmarecomp.ui.components.VolumeLandmarksCard(
                 bilan = viewModel.bilanVolume,
@@ -150,24 +161,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-        }
-        item {
-            WearablesCard(modifier = Modifier.fillMaxWidth())
-        }
-        item {
-            val suggestion = viewModel.suggestedExercise
-            NextWorkoutCard(
-                exerciseName = suggestion?.first,
-                muscleGroup = suggestion?.second,
-                onStartClick = {},
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        item {
-            AskClaudeCard(
-                mockSummary = "Tu as loggé ${viewModel.workoutsThisWeek.size} séances cette semaine. Charge max: 80kg. Continue comme ça 💪",
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load(phase) }) }
@@ -195,23 +188,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
         item {
             DashCard {
                 Text("Cette semaine", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     Text("${viewModel.seancesFaitesCount}", style = MaterialTheme.typography.displayLarge)
                     Text(
                         "séance(s) faites / ${viewModel.seancesPlanifieesCount} prévues",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                val avgTarget = viewModel.avgTargetCaloriesLast7Days
-                Text(
-                    if (avgTarget != null) {
-                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne (cible ~$avgTarget kcal)"
-                    } else {
-                        "${viewModel.avgCaloriesLast7Days} kcal/jour en moyenne"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Les calories moyennes 7j vivent uniquement dans la carte
+                // Nutrition ci-dessous — les répéter ici affichait deux fois
+                // la même valeur sur le même écran.
                 Text(
                     "${viewModel.daysWithMealsLast7Days} jour(s) sur 7 avec au moins un repas loggé",
                     style = MaterialTheme.typography.bodySmall,
@@ -248,14 +234,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                 val typeBreakdown = viewModel.workoutTypeBreakdown
                 if (typeBreakdown.isNotEmpty()) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                     ) {
                         typeBreakdown.entries.forEach { (type, count) ->
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs)) {
                                 Box(
                                     modifier = Modifier
-                                        .size(8.dp)
+                                        .size(Dimens.dotSm)
                                         .background(workoutTypeColor(type), androidx.compose.foundation.shape.CircleShape),
                                 )
                                 Text(
@@ -324,7 +310,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(140.dp))
+                WeightTrendChart(points = viewModel.weightTrend7Day, modifier = Modifier.fillMaxWidth().height(Dimens.chartHeight))
                 if (viewModel.plateauStatus == PlateauStatus.RECOMPOSITION_EN_COURS) {
                     SoftAlertBanner("Poids stable mais tes séances progressent — recomposition en cours 💪")
                 }
@@ -350,6 +336,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             DashCard {
                 Text("Nutrition", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${viewModel.avgCaloriesLast7Days} kcal/jour (moy. 7j)", style = MaterialTheme.typography.titleMedium)
+                viewModel.avgTargetCaloriesLast7Days?.let { avgTarget ->
+                    Text(
+                        "Cible moyenne sur la même période : ~$avgTarget kcal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     "${viewModel.mealsLoggedToday} repas loggé(s) aujourd'hui",
                     style = MaterialTheme.typography.bodySmall,
@@ -412,16 +405,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, phase: Phase, onEditPlanDay: 
             }
         }
     }
+    }
 }
 
+/** Délègue à `AppCard` : les ~10 appels du dashboard restent inchangés, mais
+ *  la carte prend l'élévation, la bordure et les tokens partagés au lieu du
+ *  `Column` + `.background()` recopié qu'elle portait. */
 @Composable
 private fun DashCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
-        content = content,
-    )
+    AppCard(content = content)
 }

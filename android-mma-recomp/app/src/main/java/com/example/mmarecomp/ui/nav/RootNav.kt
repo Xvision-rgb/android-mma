@@ -70,12 +70,17 @@ import kotlinx.coroutines.launch
 
 private data class Tab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
+// Cinq onglets : Material 3 en recommande 3 a 5. Le sixieme forcait a
+// abreger "Progression" en "Progr." pour tenir dans la largeur — le libelle
+// avait ete sacrifie a la structure. La pesee sort de la barre : c'est une
+// saisie ponctuelle (une fois le matin, ~15 s), pas une section. Elle reste
+// atteignable par le FAB du dashboard et par le rappel de notification,
+// desormais comme destination empilee avec un retour visible.
 private val tabs = listOf(
     Tab("dashboard", "Accueil", Icons.Filled.GridView),
     Tab("workout", "Séance", Icons.Filled.FitnessCenter),
     Tab("meals", "Repas", Icons.Filled.Restaurant),
-    Tab("weighin", "Pesée", Icons.Filled.MonitorWeight),
-    Tab("progress", "Progr.", Icons.Filled.BarChart),
+    Tab("progress", "Progression", Icons.Filled.BarChart),
     Tab("settings", "Réglages", Icons.Filled.Settings),
 )
 
@@ -121,6 +126,15 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
         bottomBar = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
+            // La barre d'onglets n'appartient qu'aux destinations de premier
+            // niveau. Sur un écran empilé (édition de plan, WOD MMA, import,
+            // objectif calorique) elle restait affichée sans être pertinente,
+            // alors même qu'aucun retour n'y était proposé — c'est la
+            // TopAppBar de l'écran qui porte désormais la sortie.
+            val isTopLevel = currentDestination?.hierarchy?.any { destination ->
+                tabs.any { it.route == destination.route }
+            } == true
+            if (isTopLevel) {
             NavigationBar {
                 tabs.forEach { tab ->
                     NavigationBarItem(
@@ -146,6 +160,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     )
                 }
             }
+            }
         },
     ) { padding ->
         NavHost(
@@ -161,6 +176,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     vm,
                     currentPhase,
                     onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                    onStartWorkout = { navController.navigate("workout") },
                 )
             }
             composable(
@@ -174,6 +190,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                     jourSemaine = jourSemaine,
                     phase = currentPhase,
                     onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable("workout") {
@@ -182,7 +199,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("workout/mma") {
                 val vm = remember { MmaSessionViewModel() }
-                MmaSessionScreen(vm, onSaved = { navController.popBackStack() })
+                MmaSessionScreen(
+                    vm,
+                    onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
+                )
             }
             composable("meals") {
                 val vm = remember(userId) { MealLogViewModel(userId = userId) }
@@ -190,7 +211,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("weighin") {
                 val vm = remember { WeighInViewModel() }
-                WeighInScreen(vm)
+                WeighInScreen(vm, onBack = { navController.popBackStack() })
             }
             composable("progress") {
                 val vm = remember { ProgressViewModel() }
@@ -212,11 +233,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("plan_import") {
                 val vm = remember { ImportTrainingPlanViewModel() }
-                ImportTrainingPlanScreen(vm, currentPhase)
+                ImportTrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
             composable("calorie_goal") {
                 val vm = remember(userId) { CalorieGoalViewModel(userId = userId) }
-                CalorieGoalScreen(vm)
+                CalorieGoalScreen(vm, onBack = { navController.popBackStack() })
             }
         }
     }

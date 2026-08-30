@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
@@ -37,13 +38,12 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
     LaunchedEffect(viewModel.windowWeeks) { viewModel.load() }
     val context = LocalContext.current
 
+    AppScaffold(title = "Progression") { padding ->
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(padding),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Progression", style = MaterialTheme.typography.titleLarge) }
-
         viewModel.errorMessage?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
@@ -223,6 +223,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -230,9 +231,9 @@ private fun ProgressCard(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd))
+            .padding(Dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
     ) {
         Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         content()

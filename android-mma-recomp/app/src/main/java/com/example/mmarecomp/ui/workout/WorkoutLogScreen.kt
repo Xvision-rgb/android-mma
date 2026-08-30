@@ -59,9 +59,11 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
@@ -119,14 +121,30 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
     LaunchedEffect(Unit) { viewModel.loadRecent() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(
+        title = "Log séance",
+        bottomBar = {
+            PrimaryActionBar(
+                label = if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance",
+                enabled = !viewModel.isSaving,
+                onClick = {
+                    viewModel.save { saved ->
+                        showSavedMessage = saved
+                        if (saved) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.loadRecent()
+                        }
+                    }
+                },
+            )
+        },
+    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Log séance", style = MaterialTheme.typography.titleLarge) }
-
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
@@ -146,7 +164,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                             leadingIcon = {
                                 Box(
                                     modifier = Modifier
-                                        .size(10.dp)
+                                        .size(Dimens.dotMd)
                                         .background(workoutTypeColor(option), androidx.compose.foundation.shape.CircleShape),
                                 )
                             },
@@ -363,9 +381,9 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                         val availableTypes = viewModel.recentWorkouts.map { it.type }.distinct()
                         if (availableTypes.size > 1) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
                                 modifier = Modifier
-                                    .padding(bottom = 8.dp)
+                                    .padding(bottom = Dimens.spaceSm)
                                     .horizontalScroll(rememberScrollState()),
                             ) {
                                 availableTypes.forEach { availableType ->
@@ -388,10 +406,10 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                                     Box(
                                         modifier = Modifier
-                                            .size(8.dp)
+                                            .size(Dimens.dotSm)
                                             .background(workoutTypeColor(workout.type), androidx.compose.foundation.shape.CircleShape),
                                     )
                                     Text(
@@ -425,24 +443,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
 
         item {
-            Button(
-                onClick = {
-                    viewModel.save { saved ->
-                        showSavedMessage = saved
-                        if (saved) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.loadRecent()
-                        }
-                    }
-                },
-                enabled = !viewModel.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (viewModel.isSaving) "Enregistrement…" else "Enregistrer la séance")
-            }
-        }
-
-        item {
             AnimatedVisibility(
                 visible = showSavedMessage,
                 enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
@@ -453,5 +453,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
     }
 }

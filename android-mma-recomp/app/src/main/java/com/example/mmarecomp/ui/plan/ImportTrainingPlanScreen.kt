@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.joursLabels
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
@@ -39,18 +41,22 @@ import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
  *  jour détecté, où corriger ce qui a été mal reconnu avant de valider —
  *  jour par jour ou en un clic pour tous les jours détectés. */
 @Composable
-fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phase) {
+fun ImportTrainingPlanScreen(
+    viewModel: ImportTrainingPlanViewModel,
+    phase: Phase,
+    onBack: () -> Unit = {},
+) {
     LaunchedEffect(phase) {
         viewModel.updatePhase(phase)
         viewModel.loadExisting()
     }
 
+    AppScaffold(title = "Importer un programme", onBack = onBack) { padding ->
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(padding),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Importer un programme", style = MaterialTheme.typography.titleLarge) }
         item {
             Text(
                 "Colle un programme (par exemple généré par Claude) : un jour de la " +
@@ -239,5 +245,6 @@ fun ImportTrainingPlanScreen(viewModel: ImportTrainingPlanViewModel, phase: Phas
                 }
             }
         }
+    }
     }
 }

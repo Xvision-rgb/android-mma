@@ -26,12 +26,7 @@ fun RelativeStrengthCard(
     forces: List<ForceRelative>,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Dimens.cornerMd))
-            .padding(Dimens.spaceMd),
-        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
-    ) {
+    AppCard(modifier = modifier, tone = AppCardTone.HERO) {
         Text(
             "Force relative — 1RM estimé / poids de corps",
             style = MaterialTheme.typography.labelSmall,
@@ -44,7 +39,7 @@ fun RelativeStrengthCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            return@Column
+            return@AppCard
         }
 
         forces.take(4).forEach { force ->

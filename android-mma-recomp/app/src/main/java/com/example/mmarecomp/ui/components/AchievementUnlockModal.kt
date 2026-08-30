@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.AchievementType
 import kotlinx.coroutines.delay
+import com.example.mmarecomp.ui.theme.Dimens
 
 @Composable
 fun AchievementUnlockModal(
@@ -59,13 +60,13 @@ fun AchievementUnlockModal(
             modifier = Modifier
                 .size(200.dp)
                 .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(24.dp))
-                .padding(16.dp),
+                .padding(Dimens.spaceMd),
             contentAlignment = Alignment.Center,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
+                modifier = Modifier.padding(Dimens.spaceMd),
             ) {
                 Icon(
                     achievementType.icon,

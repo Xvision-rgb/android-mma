@@ -26,14 +26,7 @@ fun NextWorkoutCard(
 ) {
     if (exerciseName == null) return
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.Start,
-    ) {
+    AppCard(modifier = modifier) {
         Text("Ton prochain workout", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(exerciseName, style = MaterialTheme.typography.titleMedium)
         Text(

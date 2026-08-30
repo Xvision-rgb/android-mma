@@ -29,7 +29,7 @@ fun StatusBadge(text: String, modifier: Modifier = Modifier, color: Color = Mate
         style = MaterialTheme.typography.labelSmall,
         color = color,
         modifier = modifier
-            .background(color.copy(alpha = 0.06f), RoundedCornerShape(999.dp))
+            .background(color.copy(alpha = 0.06f), RoundedCornerShape(Dimens.cornerPill))
             .padding(horizontal = Dimens.spaceSm, vertical = 2.dp),
     )
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.CalorieMode
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
 import com.example.mmarecomp.ui.components.SoftAlertTone
@@ -32,15 +33,15 @@ import com.example.mmarecomp.util.CalorieGoal
 import com.example.mmarecomp.viewmodel.CalorieGoalViewModel
 
 @Composable
-fun CalorieGoalScreen(viewModel: CalorieGoalViewModel) {
+fun CalorieGoalScreen(viewModel: CalorieGoalViewModel, onBack: () -> Unit = {}) {
     LaunchedEffect(Unit) { viewModel.load() }
 
+    AppScaffold(title = "Objectif calorique", onBack = onBack) { padding ->
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(padding),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Objectif calorique", style = MaterialTheme.typography.titleLarge) }
         item {
             Text(
                 "Calculé à partir de ton poids réel plutôt que d'une formule générique — " +
@@ -90,7 +91,7 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                     Text("${goalRecomposition.maintenanceCalories}", style = MaterialTheme.typography.displayLarge)
                     Text(
                         "kcal/jour",
@@ -203,6 +204,7 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
     }
 }
 

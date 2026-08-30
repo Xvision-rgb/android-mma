@@ -60,6 +60,7 @@ import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.TypeJour
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.CalorieProgressRing
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
@@ -200,15 +201,14 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         scope.launch { listState.animateScrollToItem(0) }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(title = "Log repas") { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Log repas", style = MaterialTheme.typography.titleLarge) }
-
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
@@ -759,5 +759,6 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
     }
 }
