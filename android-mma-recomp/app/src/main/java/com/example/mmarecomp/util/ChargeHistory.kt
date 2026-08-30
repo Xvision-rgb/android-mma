@@ -6,6 +6,10 @@ import com.example.mmarecomp.model.Workout
  * Historique de charge lu sur les séries réelles ([LoggedExercise.chargeMaxKg]),
  * pas sur l'agrégat [LoggedExercise.chargeReelleKg] qui peut rester figé
  * après une saisie série par série.
+ *
+ * La comparaison des noms passe par [ExerciseName] : `equals(ignoreCase)` seul
+ * laissait un espace en trop ou un accent composé différemment casser la
+ * correspondance, et le record comme le préremplissage échouaient en silence.
  */
 object ChargeHistory {
 
@@ -13,7 +17,7 @@ object ChargeHistory {
         if (exerciseName.isBlank()) return null
         return workouts
             .flatMap { it.exercices }
-            .filter { it.nom.equals(exerciseName, ignoreCase = true) }
+            .filter { ExerciseName.memeExercice(it.nom, exerciseName) }
             .mapNotNull { it.chargeMaxKg }
             .maxOrNull()
     }
@@ -23,7 +27,7 @@ object ChargeHistory {
         return workouts
             .sortedByDescending { it.date }
             .flatMap { it.exercices }
-            .firstOrNull { it.nom.equals(exerciseName, ignoreCase = true) }
+            .firstOrNull { ExerciseName.memeExercice(it.nom, exerciseName) }
             ?.chargeMaxKg
     }
 }

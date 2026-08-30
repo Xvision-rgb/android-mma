@@ -30,6 +30,7 @@ import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.util.ActivityStreak
+import com.example.mmarecomp.util.ExerciseName
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
@@ -279,7 +280,7 @@ class DashboardViewModel(
         get() = workoutsFenetreChronique
             .flatMap { it.exercices }
             .filter { it.nom.isNotBlank() }
-            .groupBy { it.nom.lowercase() }
+            .groupBy { ExerciseName.cle(it.nom) }
             .mapNotNull { (_, exercices) ->
                 val charges = exercices.mapNotNull { it.chargeMaxKg }
                 OverreachingDetector.alerte(exercices.first().nom, charges)

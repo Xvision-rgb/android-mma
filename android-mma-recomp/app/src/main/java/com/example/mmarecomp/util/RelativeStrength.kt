@@ -35,7 +35,7 @@ object RelativeStrength {
     fun meilleur1Rm(exerciseName: String, workouts: List<Workout>): Double? =
         workouts
             .flatMap { it.exercices }
-            .filter { it.nom.equals(exerciseName, ignoreCase = true) }
+            .filter { ExerciseName.memeExercice(it.nom, exerciseName) }
             .flatMap { it.effectiveSets }
             .mapNotNull { unRmEpley(it.chargeKg, it.reps) }
             .maxOrNull()
@@ -51,10 +51,10 @@ object RelativeStrength {
         return workouts
             .flatMap { it.exercices }
             .filter { it.nom.isNotBlank() && MuscleZoneClassifier.estPolyarticulaire(it.nom) }
-            .groupBy { it.nom.lowercase() }
+            .groupBy { ExerciseName.cle(it.nom) }
             .filterValues { it.size >= minSeances }
             .mapNotNull { (_, exercices) ->
-                val nom = exercices.first().nom
+                val nom = ExerciseName.propre(exercices.first().nom)
                 val unRm = exercices
                     .flatMap { it.effectiveSets }
                     .mapNotNull { unRmEpley(it.chargeKg, it.reps) }
