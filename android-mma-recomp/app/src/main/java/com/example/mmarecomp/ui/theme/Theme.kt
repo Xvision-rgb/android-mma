@@ -39,10 +39,36 @@ private val OnPrimaryContainerDark = SteelDark
 private val SecondaryContainerDark = ClayDark.copy(alpha = 0.14f).compositeOver(SurfaceDark)
 private val OnSecondaryContainerDark = ClayDark
 
+// Les rôles "on*" de base (onPrimary, onSecondary, onTertiary, onError) n'ont
+// longtemps été fournis nulle part : Material 3 retombait donc sur ses valeurs
+// par défaut, qui sont VIOLETTES et hors palette. Le symptôme était visible à
+// l'œil sur le bouton "Lancer la séance" du dashboard — icône et texte en
+// violet foncé (0xFF371E73, le onPrimary par défaut du thème sombre) sur du
+// turquoise. Même classe d'oubli que celle déjà corrigée plus haut pour
+// primaryContainer/secondaryContainer, restée sur les rôles de base.
+//
+// Steel/Clay/Moss sont des teintes moyennes à foncées : il faut du clair
+// dessus en thème clair, et de l'encre sombre dessus en thème sombre (où les
+// variantes *Dark sont nettement plus claires).
+//
+// Ratios mesurés (luminance relative WCAG), seuil AA texte 4.5:1 :
+//   clair  — SurfaceLight sur Steel 5.78:1 · Clay 4.84:1 · Moss 4.90:1
+//   sombre — PaperDark   sur SteelDark 6.35:1 · ClayDark 6.24:1 · MossDark 7.66:1
+//
+// PaperLight (#F5F2EA) avait été essayé d'abord, pour rester sur la palette
+// plutôt que d'introduire du blanc pur : il tombe à 4.33:1 sur Clay et 4.38:1
+// sur Moss, sous le seuil AA. SurfaceLight, déjà dans la palette et déjà le
+// fond des cartes, fait passer les trois couples au-dessus de 4.5:1.
+private val OnAccentLight = SurfaceLight
+private val OnAccentDark = PaperDark
+
 private val LightColors = lightColorScheme(
     primary = Steel,
+    onPrimary = OnAccentLight,
     secondary = Clay,
+    onSecondary = OnAccentLight,
     tertiary = Moss,
+    onTertiary = OnAccentLight,
     background = PaperLight,
     surface = SurfaceLight,
     onBackground = InkLight,
@@ -69,8 +95,11 @@ private val LightColors = lightColorScheme(
 
 private val DarkColors = darkColorScheme(
     primary = SteelDark,
+    onPrimary = OnAccentDark,
     secondary = ClayDark,
+    onSecondary = OnAccentDark,
     tertiary = MossDark,
+    onTertiary = OnAccentDark,
     background = PaperDark,
     surface = SurfaceDark,
     onBackground = InkDark,

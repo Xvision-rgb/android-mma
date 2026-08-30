@@ -42,7 +42,33 @@ fun RelativeStrengthCard(
             return@AppCard
         }
 
-        forces.take(4).forEach { force ->
+        // UN chiffre domine, celui du meilleur mouvement. Une carte "Hero"
+        // qui aligne quatre lignes de même taille est prioritaire sans être
+        // dominante — le pire des deux mondes. Le détail reste dessous, en
+        // retrait, pour qui veut comparer.
+        val meilleur = forces.first()
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
+            Text(
+                "×${Formatting.oneDecimal(meilleur.ratio)}",
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                meilleur.exercice,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = Dimens.spaceXs).weight(1f, fill = false),
+            )
+        }
+        Text(
+            "1RM estimé ${Formatting.oneDecimal(meilleur.unRmEstimeKg)}kg " +
+                "· poids ${Formatting.oneDecimal(meilleur.poidsCorpsKg)}kg (moyenne 7j)",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Les autres mouvements : une ligne compacte chacun, sans le détail
+        // 1RM/poids qui triplait la hauteur de la carte.
+        forces.drop(1).take(3).forEach { force ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -50,20 +76,15 @@ fun RelativeStrengthCard(
             ) {
                 Text(
                     force.exercice,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Text(
                     "×${Formatting.oneDecimal(force.ratio)}",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Text(
-                "1RM estimé ${Formatting.oneDecimal(force.unRmEstimeKg)}kg " +
-                    "· poids ${Formatting.oneDecimal(force.poidsCorpsKg)}kg (moyenne 7j)",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
 
         Text(

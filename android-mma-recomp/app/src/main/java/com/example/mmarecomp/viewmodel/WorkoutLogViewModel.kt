@@ -15,6 +15,7 @@ import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.model.toLogged
 import com.example.mmarecomp.model.toWorkoutTypeOrNull
+import com.example.mmarecomp.util.ExerciseName
 import com.example.mmarecomp.util.ApreEngine
 import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.DateUtils
@@ -197,7 +198,7 @@ class WorkoutLogViewModel(
         if (exerciseName.isBlank()) return null
         return recentWorkouts
             .flatMap { it.exercices }
-            .filter { it.nom.equals(exerciseName, ignoreCase = true) }
+            .filter { ExerciseName.memeExercice(it.nom, exerciseName) }
             .mapNotNull { it.chargeReelleKg }
             .maxOrNull()
     }
@@ -256,7 +257,7 @@ class WorkoutLogViewModel(
         return recentWorkouts
             .sortedByDescending { it.date }
             .flatMap { it.exercices }
-            .firstOrNull { it.nom.equals(exerciseName, ignoreCase = true) && it.chargeReelleKg != null }
+            .firstOrNull { ExerciseName.memeExercice(it.nom, exerciseName) && it.chargeReelleKg != null }
             ?.chargeReelleKg
     }
 
@@ -267,7 +268,10 @@ class WorkoutLogViewModel(
             val newWorkout = NewWorkout(
                 date = DateUtils.string(date),
                 type = type,
-                exercices = exercices,
+                // Nettoyé à l'enregistrement, pas à la frappe : couper les
+                // espaces pendant que l'utilisateur tape l'empêcherait d'en
+                // saisir un entre deux mots.
+                exercices = exercices.map { it.copy(nom = ExerciseName.propre(it.nom)) },
                 dureeMin = dureeMin.toIntOrNull()?.coerceAtLeast(0),
                 rpe = rpe.toIntOrNull()?.coerceIn(1, 10),
                 notes = notes.ifBlank { null },

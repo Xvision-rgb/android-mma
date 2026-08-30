@@ -149,7 +149,10 @@ object TrainingLoad {
         val scoreBas = score != null && score < 15
         if (scoreBas || acwrEleve) {
             val cause = if (acwrEleve) {
-                "Charge des 7 derniers jours nettement au-dessus de ta moyenne (ACWR ${Formatting.oneDecimal(acwr!!)})"
+                // La valeur chiffrée de l'ACWR n'est pas répétée ici : la carte
+                // l'affiche déjà en pied, avec la zone qui lui donne son sens
+                // ("dans ta zone habituelle", "montée de charge marquée"…).
+                "Charge des 7 derniers jours nettement au-dessus de ta moyenne"
             } else {
                 "Score de forme bas ($score/25)"
             }
