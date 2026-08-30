@@ -77,6 +77,30 @@ fun ImportTrainingPlanScreen(
             )
         }
         item {
+            // Le Bloc Densité vit dans les assets plutôt que d'être écrit en
+            // base directement : il passe par le même aperçu éditable que
+            // n'importe quel programme collé, donc rien n'est enregistré sans
+            // que l'utilisateur l'ait vu et ajusté.
+            val context = androidx.compose.ui.platform.LocalContext.current
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    viewModel.rawText = runCatching {
+                        context.assets.open("bloc_densite.txt").bufferedReader().use { it.readText() }
+                    }.getOrDefault("")
+                    if (viewModel.rawText.isNotBlank()) viewModel.parse()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Charger le Bloc Densité (6 séances + 2 sorties)")
+            }
+            Text(
+                "Semaine 1 du bloc : tirage 15 séries, chaîne postérieure 9, poussée 10. " +
+                    "Les charges sont des points de départ — l'autorégulation les ajuste dès la première séance.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
             Button(
                 onClick = { viewModel.parse() },
                 enabled = viewModel.rawText.isNotBlank(),

@@ -73,7 +73,18 @@ import kotlinx.coroutines.launch
 
 /** Un aliment ajouté au repas en cours de composition, avant enregistrement
  *  — plusieurs peuvent s'accumuler pour un même créneau. */
+private var mealFoodItemSeq = 0L
+
+private fun nextMealFoodItemId(): Long = ++mealFoodItemSeq
+
 private data class MealFoodItem(
+    /** Identité stable de la ligne, indépendante de sa position.
+     *
+     *  Sans elle, LazyColumn se rabat sur l'index : supprimer un aliment au
+     *  milieu de la liste décale tous les suivants et Compose réutilise les
+     *  mauvaises lignes. Passer `key = index` explicitement ne change rien —
+     *  c'est déjà le comportement par défaut. */
+    val id: Long = nextMealFoodItemId(),
     val label: String,
     val calories: Int,
     val proteinesG: Double,
@@ -86,6 +97,9 @@ private data class MealFoodItem(
 fun MealLogScreen(viewModel: MealLogViewModel) {
     LaunchedEffect(viewModel.date) { viewModel.load() }
     LaunchedEffect(viewModel.date) { viewModel.loadRecentHistory() }
+    LaunchedEffect(viewModel.target?.caloriesCible) {
+        viewModel.loadSignauxNutrition(viewModel.target?.caloriesCible)
+    }
     LaunchedEffect(Unit) { viewModel.loadFoods() }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -197,6 +211,34 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
     ) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
+        item {
+            com.example.mmarecomp.ui.components.EnergyAvailabilityCard(
+                ea = viewModel.disponibiliteEnergetique,
+                confiance = viewModel.confianceSuivi,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        viewModel.alerteRythmePerte?.let { alerte ->
+            item {
+                com.example.mmarecomp.ui.components.SoftAlertBanner(
+                    message = alerte,
+                    tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        viewModel.suggestionPause?.let { pause ->
+            item {
+                com.example.mmarecomp.ui.components.SoftAlertBanner(
+                    message = pause,
+                    tone = com.example.mmarecomp.ui.components.SoftAlertTone.NEUTRAL,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         val target = viewModel.target
         if (target != null) {
             item {
@@ -284,6 +326,15 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    com.example.mmarecomp.util.NutritionTargetCalculator
+                        .notePriseProteique(viewModel.indicativeSplit.values.firstOrNull()?.proteinesG ?: 0.0)
+                        ?.let { note ->
+                            Text(
+                                note,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     viewModel.indicativeSplit.forEach { (slot, slotTarget) ->
                         Column {
                             Text(slot.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -581,7 +632,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            itemsIndexed(mealItems) { index, mealItem ->
+            itemsIndexed(mealItems, key = { _, item -> item.id }) { index, mealItem ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

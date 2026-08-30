@@ -37,7 +37,13 @@ import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakManager
 import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.util.ForceRelative
+import com.example.mmarecomp.util.BilanVolume
+import com.example.mmarecomp.util.ContextePreference
+import com.example.mmarecomp.util.EnduranceInterference
+import com.example.mmarecomp.util.GripBenchmarks
 import com.example.mmarecomp.util.InterferenceChecker
+import com.example.mmarecomp.util.OverreachingDetector
+import com.example.mmarecomp.util.VolumeLandmarks
 import com.example.mmarecomp.util.ModulationSeance
 import com.example.mmarecomp.util.MuscleZoneClassifier
 import com.example.mmarecomp.util.RelativeStrength
@@ -59,6 +65,14 @@ class DashboardViewModel(
 ) : ViewModel() {
     private val streakManager = context?.let { StreakManager(it) }
     private val achievementManager = context?.let { AchievementManager(it) }
+    private val contextePreference = context?.let { ContextePreference(it) }
+
+    /** Contexte de pratique. Sans sport de combat, les règles d'interférence
+     *  changent de cible (la course remplace le sparring) et la fenêtre de
+     *  construction de force s'ouvre. */
+    val contexteSportif: com.example.mmarecomp.model.ContexteSportif
+        get() = contextePreference?.contexte
+            ?: com.example.mmarecomp.model.ContexteSportif.SalleUniquement
     var planThisWeek by mutableStateOf<List<TrainingPlanDay>>(emptyList())
         private set
     var workoutsThisWeek by mutableStateOf<List<Workout>>(emptyList())
@@ -224,12 +238,61 @@ class DashboardViewModel(
             poidsCorpsKg = weightTrend7Day.lastOrNull()?.value,
         )
 
-    val conflitsMma: List<String>
-        get() = InterferenceChecker.conflits(
-            date = java.time.LocalDate.now(),
-            workouts = workoutsThisWeek,
-            mmaSessions = mmaSessions,
-        )
+    /** Conflits de programmation du jour. La source change avec le contexte :
+     *  sans sport de combat, c'est la course qui interfère avec la force du
+     *  bas du corps, pas le sparring. */
+    val conflitsProgrammation: List<String>
+        get() = if (contexteSportif.sansCombat) {
+            EnduranceInterference.conflits(java.time.LocalDate.now(), workoutsThisWeek) +
+                listOfNotNull(EnduranceInterference.noteVolumeCourse(sortiesEnduranceCetteSemaine))
+        } else {
+            InterferenceChecker.conflits(
+                date = java.time.LocalDate.now(),
+                workouts = workoutsThisWeek,
+                mmaSessions = mmaSessions,
+            )
+        }
+
+    private val sortiesEnduranceCetteSemaine: Int
+        get() = workoutsThisWeek.count {
+            it.type == WorkoutType.Course || it.type == WorkoutType.Hiit
+        }
+
+    /** Séries par zone face aux repères de volume — le moteur réel de
+     *  l'adaptation, que le tonnage en kg ne mesurait pas. */
+    val bilanVolume: List<BilanVolume>
+        get() = VolumeLandmarks.bilan(workoutsFenetreChronique)
+
+    val zonesADevelopper: List<BilanVolume>
+        get() = VolumeLandmarks.zonesADevelopper(workoutsThisWeek)
+
+    /** Dernier dead hang mesuré et sa lecture. La poigne étant le facteur
+     *  limitant du tirage, c'est une métrique de première classe : elle était
+     *  stockée depuis le check-in mais jamais relue. */
+    val deadHangSec: Int?
+        get() = checkInsRecents.sortedBy { it.date }.lastOrNull { it.deadHangSec != null }?.deadHangSec
+
+    val lecturePoigne: String? get() = deadHangSec?.let { GripBenchmarks.lecture(it) }
+
+    /** Progression du dead hang entre la première et la dernière mesure. */
+    val progressionDeadHangSec: Int?
+        get() {
+            val mesures = checkInsRecents.sortedBy { it.date }.mapNotNull { it.deadHangSec }
+            if (mesures.size < 2) return null
+            return mesures.last() - mesures.first()
+        }
+
+    /** Exercices dont la charge recule plusieurs séances de suite : signe que
+     *  le volume dépasse ce qui est récupérable. */
+    val alertesSurcharge: List<String>
+        get() = workoutsFenetreChronique
+            .flatMap { it.exercices }
+            .filter { it.nom.isNotBlank() }
+            .groupBy { it.nom.lowercase() }
+            .mapNotNull { (_, exercices) ->
+                val charges = exercices.mapNotNull { it.chargeMaxKg }
+                OverreachingDetector.alerte(exercices.first().nom, charges)
+            }
 
     val weightTrendingDown: Boolean get() = weightTrendDirection == TrendDirection.BAISSE
     val activeIntensityPercent: Int

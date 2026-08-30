@@ -137,13 +137,23 @@ fun DashboardScreen(
 
         // NIVEAU 3 — le contexte, consultable mais jamais dominant.
         item {
+            com.example.mmarecomp.ui.components.VolumeLandmarksCard(
+                bilan = viewModel.bilanVolume,
+                alertes = viewModel.alertesSurcharge,
+                deadHangSec = viewModel.deadHangSec,
+                lecturePoigne = viewModel.lecturePoigne,
+                progressionDeadHangSec = viewModel.progressionDeadHangSec,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
             VolumeDistributionCard(
                 repartition = viewModel.repartitionVolume,
                 ratioTiragePoussee = viewModel.ratioTiragePoussee,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        viewModel.conflitsMma.forEach { conflit ->
+        viewModel.conflitsProgrammation.forEach { conflit ->
             item {
                 SoftAlertBanner(
                     message = conflit,

@@ -20,5 +20,6 @@ fun workoutTypeColor(type: WorkoutType): Color {
         WorkoutType.JambesHypertrophie -> scheme.primary.copy(alpha = 0.6f)
         WorkoutType.TorseHypertrophie -> scheme.secondary.copy(alpha = 0.6f)
         WorkoutType.MmaWod -> scheme.tertiary.copy(alpha = 0.6f)
+        WorkoutType.Course -> scheme.tertiary.copy(alpha = 0.85f)
     }
 }
