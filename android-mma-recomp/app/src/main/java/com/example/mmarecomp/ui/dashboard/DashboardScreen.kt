@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DailyCheckInSheet
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.RelativeStrengthCard
@@ -68,7 +69,26 @@ fun DashboardScreen(
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val hour = java.time.LocalTime.now().hour
+    val greeting = when {
+        hour < 12 -> "Bonjour"
+        hour < 18 -> "Bon après-midi"
+        else -> "Bonsoir"
+    }
+
+    AppScaffold(
+        title = greeting,
+        actions = {
+            IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
+                }
+            }
+        },
+    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
         if (viewModel.isLoading && !hasData) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
@@ -79,28 +99,6 @@ fun DashboardScreen(
         ),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val hour = java.time.LocalTime.now().hour
-                val greeting = when {
-                    hour < 12 -> "Bonjour"
-                    hour < 18 -> "Bon après-midi"
-                    else -> "Bonsoir"
-                }
-                Text(greeting, style = MaterialTheme.typography.titleLarge)
-                IconButton(onClick = { viewModel.load(phase) }, enabled = !viewModel.isLoading) {
-                    if (viewModel.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                    } else {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le dashboard")
-                    }
-                }
-            }
-        }
         item {
             RecoveryReadinessCard(
                 modulation = viewModel.modulation,
@@ -387,6 +385,7 @@ fun DashboardScreen(
                 )
             }
         }
+    }
     }
 }
 

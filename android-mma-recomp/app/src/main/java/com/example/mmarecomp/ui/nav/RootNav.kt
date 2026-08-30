@@ -70,12 +70,17 @@ import kotlinx.coroutines.launch
 
 private data class Tab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
+// Cinq onglets : Material 3 en recommande 3 a 5. Le sixieme forcait a
+// abreger "Progression" en "Progr." pour tenir dans la largeur — le libelle
+// avait ete sacrifie a la structure. La pesee sort de la barre : c'est une
+// saisie ponctuelle (une fois le matin, ~15 s), pas une section. Elle reste
+// atteignable par le FAB du dashboard et par le rappel de notification,
+// desormais comme destination empilee avec un retour visible.
 private val tabs = listOf(
     Tab("dashboard", "Accueil", Icons.Filled.GridView),
     Tab("workout", "Séance", Icons.Filled.FitnessCenter),
     Tab("meals", "Repas", Icons.Filled.Restaurant),
-    Tab("weighin", "Pesée", Icons.Filled.MonitorWeight),
-    Tab("progress", "Progr.", Icons.Filled.BarChart),
+    Tab("progress", "Progression", Icons.Filled.BarChart),
     Tab("settings", "Réglages", Icons.Filled.Settings),
 )
 
@@ -206,7 +211,7 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             }
             composable("weighin") {
                 val vm = remember { WeighInViewModel() }
-                WeighInScreen(vm)
+                WeighInScreen(vm, onBack = { navController.popBackStack() })
             }
             composable("progress") {
                 val vm = remember { ProgressViewModel() }

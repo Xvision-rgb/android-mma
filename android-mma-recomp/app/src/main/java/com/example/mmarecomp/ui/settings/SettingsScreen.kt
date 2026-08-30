@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.notification.WeighInReminder
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.ThemeMode
@@ -81,12 +83,12 @@ fun SettingsScreen(
         pendingReminder = null
     }
 
+    AppScaffold(title = "Réglages") { padding ->
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(padding),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Réglages", style = MaterialTheme.typography.titleLarge) }
         if (userEmail.isNotBlank()) {
             item {
                 Text(
@@ -330,5 +332,6 @@ fun SettingsScreen(
                 )
             }
         }
+    }
     }
 }

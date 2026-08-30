@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.selection.toggleable
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.SoftAlertBanner
@@ -61,7 +63,7 @@ import com.example.mmarecomp.viewmodel.WeighInViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun WeighInScreen(viewModel: WeighInViewModel) {
+fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
     var showSaved by remember { mutableStateOf(false) }
@@ -90,13 +92,13 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(title = "Log pesée", onBack = onBack) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Log pesée", style = MaterialTheme.typography.titleLarge) }
 
         item {
             Text(
@@ -306,6 +308,7 @@ fun WeighInScreen(viewModel: WeighInViewModel) {
         }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
     }
 }
 

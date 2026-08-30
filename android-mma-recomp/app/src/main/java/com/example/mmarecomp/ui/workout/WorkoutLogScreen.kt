@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.DateField
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
@@ -110,14 +111,13 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
     LaunchedEffect(Unit) { viewModel.loadRecent() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(title = "Log séance") { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        item { Text("Log séance", style = MaterialTheme.typography.titleLarge) }
-
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
@@ -428,5 +428,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
     }
 }
