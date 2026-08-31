@@ -53,10 +53,23 @@ fun RecentExerciseChipsRow(
                         Text(
                             buildString {
                                 append(entry.nom)
-                                entry.derniereChargeKg?.let {
-                                    append(" · ")
-                                    append(Formatting.oneDecimal(it))
-                                    append(" kg")
+                                if (entry.modality == com.example.mmarecomp.model.ExerciseModality.Cardio) {
+                                    entry.derniereDureeMin?.let {
+                                        append(" · ")
+                                        append(it)
+                                        append(" min")
+                                    }
+                                    entry.derniereDistanceKm?.let {
+                                        append(" · ")
+                                        append(Formatting.oneDecimal(it))
+                                        append(" km")
+                                    }
+                                } else {
+                                    entry.derniereChargeKg?.let {
+                                        append(" · ")
+                                        append(Formatting.oneDecimal(it))
+                                        append(" kg")
+                                    }
                                 }
                             },
                         )
@@ -106,8 +119,18 @@ fun ExercisePickerSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(entry.nom, style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                "${entry.nbSeries} séries" +
-                                    (entry.derniereChargeKg?.let { " · ${Formatting.oneDecimal(it)} kg" } ?: ""),
+                                if (entry.modality == com.example.mmarecomp.model.ExerciseModality.Cardio) {
+                                    buildString {
+                                        append("Cardio")
+                                        entry.derniereDureeMin?.let { append(" · ${it} min") }
+                                        entry.derniereDistanceKm?.let {
+                                            append(" · ${Formatting.oneDecimal(it)} km")
+                                        }
+                                    }
+                                } else {
+                                    "${entry.nbSeries} séries" +
+                                        (entry.derniereChargeKg?.let { " · ${Formatting.oneDecimal(it)} kg" } ?: "")
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

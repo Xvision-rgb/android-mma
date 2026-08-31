@@ -32,6 +32,9 @@ import com.example.mmarecomp.util.ReadinessCalculator
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.RecentExerciseCatalog
 import com.example.mmarecomp.util.RecentExerciseEntry
+import com.example.mmarecomp.util.CardioEnergy
+import com.example.mmarecomp.model.asCardio
+import com.example.mmarecomp.model.ExerciseModality
 import com.example.mmarecomp.util.isMissingDailyCheckInTable
 import com.example.mmarecomp.util.isNetworkError
 import com.example.mmarecomp.util.isOfflineEnqueueable
@@ -420,7 +423,25 @@ class WorkoutLogViewModel(
         val sets = (1..3).map { i ->
             LoggedSet(index = i, reps = 10, chargeKg = 0.0, estAmrap = i == 3)
         }
-        exercices = exercices + LoggedExercise(nom = "", series = 3, reps = 10, sets = sets)
+        exercices = exercices + LoggedExercise(
+            nom = "",
+            series = 3,
+            reps = 10,
+            sets = sets,
+            modality = ExerciseModality.Strength,
+        )
+    }
+
+    fun addCardioPreset(nom: String) {
+        val preset = CardioEnergy.PRESETS.firstOrNull { it.nom == nom } ?: return
+        exercices = exercices + CardioEnergy.fromPreset(preset)
+    }
+
+    /** Minutes cardio + kcal estimées (sans poids = estimation intensité). */
+    fun cardioSummary(poidsKg: Double? = null): Pair<Int, Int> {
+        val minutes = exercices.filter { it.isCardio }.sumOf { it.dureeMin ?: 0 }
+        val kcal = CardioEnergy.kcalForExercises(exercices, poidsKg)
+        return minutes to kcal
     }
 
     /** Charge cible pré-remplie avec la dernière charge réelle connue pour ce
@@ -430,6 +451,7 @@ class WorkoutLogViewModel(
      *  moment où le nom change et que chargeCibleKg est encore vide. */
     fun prefillChargeFromLastKnown(index: Int, exerciseName: String) {
         val exercice = exercices.getOrNull(index) ?: return
+        if (exercice.isCardio) return
         if (exercice.chargeCibleKg != null) return
         val charge = lastKnownCharge(exerciseName) ?: return
         updateExercise(index, exercice.copy(chargeCibleKg = charge))
@@ -479,14 +501,10 @@ class WorkoutLogViewModel(
         // Garde de bornes : un index périmé (recomposition Compose après un
         // retrait/réordonnancement) ne doit jamais faire crasher la saisie.
         if (index !in exercices.indices) return
-        exercices = exercices.toMutableList().also { it[index] = updated }
+        exercices = exercices.toMutableList().also { it[index] = CardioEnergy.maybeAutodetect(updated) }
     }
 
-    /** Dernière charge réelle loguée pour un exercice du même nom, dans
-     *  l'historique déjà chargé — simple repère, jamais imposé. */
-    /** Volume total (séries × reps × charge réelle) de la dernière séance du
-     *  même type que celle en cours (hors séance du jour) — repère de
-     *  comparaison factuel, jamais un jugement sur la progression. */
+    /** Volume total force (séries × reps × charge) — les blocs cardio sont exclus. */
     val previousSessionVolume: Double?
         get() {
             val previous = recentWorkouts

@@ -267,6 +267,47 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                 }
             }
         }
+
+        item { Text("Cardio — durée et distance", style = MaterialTheme.typography.titleMedium) }
+        val cardio = viewModel.cardioProgressionByExercise
+        if (cardio.isEmpty()) {
+            item {
+                Text(
+                    "Ajoute marche, course ou vélo en mode Cardio dans une séance pour suivre l'évolution ici.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        cardio.toSortedMap().forEach { (name, series) ->
+            item {
+                ProgressCard(title = name) {
+                    WeightTrendChart(
+                        points = series.map {
+                            com.example.mmarecomp.util.TrendPoint(it.date, it.dureeMin.toDouble())
+                        },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        lineColor = MaterialTheme.colorScheme.secondary,
+                    )
+                    val last = series.lastOrNull()
+                    last?.let {
+                        Text(
+                            buildString {
+                                append("Dernier : ${it.dureeMin} min")
+                                it.distanceKm?.let { km ->
+                                    append(" · ${com.example.mmarecomp.util.Formatting.oneDecimal(km)} km")
+                                }
+                                it.allureMinParKm?.let { allure ->
+                                    append(" · ${com.example.mmarecomp.util.Formatting.oneDecimal(allure)} min/km")
+                                }
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
     }
     }

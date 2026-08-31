@@ -37,8 +37,16 @@ object ModulationApplier {
         if (exercices.isEmpty()) {
             return Result(exercices, modulation.rirSupplementaire, listOf("Ajoute d'abord des exercices à ta séance."))
         }
+        val strength = exercices.filterNot { it.isCardio }
+        if (strength.isEmpty()) {
+            return Result(
+                exercices,
+                0,
+                listOf("Séance cardio uniquement — la modulation de volume force ne s'applique pas."),
+            )
+        }
         val resume = mutableListOf<String>()
-        var updated = exercices
+        var updatedStrength = strength
         var rirBonus = modulation.rirSupplementaire
 
         when (modulation.action) {
@@ -46,8 +54,8 @@ object ModulationApplier {
                 resume += "Aucun ajustement nécessaire."
             }
             ReadinessAction.VOLUME_REDUIT -> {
-                val (ex, count) = retirerDerniereSerieAccessoires(updated)
-                updated = ex
+                val (ex, count) = retirerDerniereSerieAccessoires(updatedStrength)
+                updatedStrength = ex
                 resume += if (count > 0) {
                     "$count accessoire(s) allégé(s) — dernière série retirée"
                 } else {
@@ -55,23 +63,23 @@ object ModulationApplier {
                 }
             }
             ReadinessAction.ALLEGEE -> {
-                val (ex1, countAccessoires) = retirerDerniereSerieAccessoires(updated)
+                val (ex1, countAccessoires) = retirerDerniereSerieAccessoires(updatedStrength)
                 val (ex2, countPoly) = retirerDerniereSeriePolyarticulaires(ex1, minSetsAvant = 2)
-                updated = appliquerFacteurCharge(ex2, modulation.facteurCharge)
+                updatedStrength = appliquerFacteurCharge(ex2, modulation.facteurCharge)
                 val total = countAccessoires + countPoly
                 if (total > 0) resume += "$total exercice(s) allégé(s) — série(s) retirée(s)"
                 if (modulation.facteurCharge < 1.0) resume += "Charges baissées d'environ 10 %"
                 if (rirBonus > 0) resume += "RIR +$rirBonus sur chaque série"
             }
             ReadinessAction.DELOAD -> {
-                updated = reduireVolumeMoitie(updated)
+                updatedStrength = reduireVolumeMoitie(updatedStrength)
                 resume += "Volume réduit à ~50 % — charges maintenues"
                 rirBonus = 0
             }
         }
 
         if (rirBonus > 0) {
-            updated = updated.map { ex ->
+            updatedStrength = updatedStrength.map { ex ->
                 ex.withSets(
                     ex.effectiveSets.map { set ->
                         set.copy(rir = (set.rir ?: 0) + rirBonus)
@@ -80,7 +88,12 @@ object ModulationApplier {
             }
         }
 
-        return Result(updated, rirBonus, resume)
+        // Réinjecte les blocs cardio à leur index d'origine.
+        val strengthQueue = ArrayDeque(updatedStrength)
+        val merged = exercices.map { original ->
+            if (original.isCardio) original else strengthQueue.removeFirst()
+        }
+        return Result(merged, rirBonus, resume)
     }
 
     private fun retirerDerniereSerieAccessoires(

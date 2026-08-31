@@ -3,6 +3,13 @@ package com.example.mmarecomp.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** Mode de saisie d'un mouvement : force (séries/reps/kg) ou cardio (durée/distance). */
+@Serializable
+enum class ExerciseModality {
+    @SerialName("strength") Strength,
+    @SerialName("cardio") Cardio,
+}
+
 /** Exercice tel que programmé dans le split hebdo (training_plan.exercices). */
 @Serializable
 data class PlannedExercise(
@@ -46,7 +53,10 @@ data class LoggedSet(
  *  conservés : la colonne Postgres `exercices` est du JSONB et contient tout
  *  l'historique antérieur, qui n'a pas de `sets`. Ne jamais lire ces champs
  *  directement pour un calcul — passer par [effectiveSets], qui les dérive
- *  quand `sets` est vide. */
+ *  quand `sets` est vide.
+ *
+ *  [modality] = Cardio bascule vers durée/distance : le volume force vaut alors 0
+ *  et les outils APRE/RIR ne s'appliquent pas. */
 @Serializable
 data class LoggedExercise(
     val nom: String,
@@ -58,17 +68,19 @@ data class LoggedExercise(
     /** Toutes les reps faites proprement. */
     val propre: Boolean = false,
     val sets: List<LoggedSet> = emptyList(),
+    val modality: ExerciseModality = ExerciseModality.Strength,
+    /** Durée du bloc cardio, en minutes. */
+    @SerialName("duree_min") val dureeMin: Int? = null,
+    /** Distance parcourue (km), optionnelle. */
+    @SerialName("distance_km") val distanceKm: Double? = null,
+    /** Intensité ressentie du bloc cardio (1–10). Défaut métier : 5. */
+    val intensite: Int? = null,
 ) {
-    /** Séries réelles de cet exercice, quelle que soit l'époque du log.
-     *
-     *  Si [sets] est renseigné, c'est lui qui fait foi. Sinon on reconstruit
-     *  [series] séries identiques à partir des champs agrégés — une
-     *  approximation assumée de l'historique pré-Lot 0, marquée comme telle
-     *  par [setsSontDerives]. La dernière série reconstruite est marquée AMRAP
-     *  faute de mieux : c'est la convention la plus proche de la réalité d'une
-     *  séance où seule la charge finale était loguée. */
+    val isCardio: Boolean get() = modality == ExerciseModality.Cardio
+
     val effectiveSets: List<LoggedSet>
         get() {
+            if (isCardio) return emptyList()
             if (sets.isNotEmpty()) return sets
             if (series < 1) return emptyList()
             val charge = chargeReelleKg ?: chargeCibleKg ?: return emptyList()
@@ -83,25 +95,24 @@ data class LoggedExercise(
             }
         }
 
-    /** True quand les séries affichées viennent de la dérivation historique et
-     *  non d'une saisie réelle — l'UI doit alors éviter de présenter le RIR ou
-     *  le flag poigne comme des données mesurées. */
-    val setsSontDerives: Boolean get() = sets.isEmpty()
+    val setsSontDerives: Boolean get() = !isCardio && sets.isEmpty()
 
-    /** Volume de l'exercice (Σ reps × charge sur les séries réelles). */
-    val volumeTotal: Double get() = effectiveSets.sumOf { it.volume }
+    /** Volume force uniquement — 0 pour un bloc cardio. */
+    val volumeTotal: Double get() = if (isCardio) 0.0 else effectiveSets.sumOf { it.volume }
 
-    /** Charge de travail la plus lourde effectivement soulevée. */
-    val chargeMaxKg: Double? get() = effectiveSets.maxOfOrNull { it.chargeKg }
+    val chargeMaxKg: Double? get() = if (isCardio) null else effectiveSets.maxOfOrNull { it.chargeKg }
+
+    /** Allure min/km si distance et durée connues. */
+    val allureMinParKm: Double? get() {
+        val km = distanceKm ?: return null
+        val min = dureeMin ?: return null
+        if (km <= 0.0 || min <= 0) return null
+        return min / km
+    }
 }
 
-/** Remplace les séries et resynchronise les champs agrégés.
- *
- *  Les agrégats ne sont plus la source de vérité, mais ils restent lus par le
- *  code antérieur au logging par série (et par toute requête SQL existante) :
- *  les laisser dériver produirait des volumes faux. Toujours passer par ici
- *  plutôt que par `copy(sets = ...)`. */
 fun LoggedExercise.withSets(nouvelles: List<LoggedSet>): LoggedExercise {
+    if (isCardio) return this
     val renumerotees = nouvelles.mapIndexed { i, s -> s.copy(index = i + 1) }
     return copy(
         sets = renumerotees,
@@ -109,6 +120,42 @@ fun LoggedExercise.withSets(nouvelles: List<LoggedSet>): LoggedExercise {
         reps = renumerotees.firstOrNull()?.reps ?: reps,
         repsReelles = renumerotees.maxOfOrNull { it.reps } ?: repsReelles,
         chargeReelleKg = renumerotees.maxOfOrNull { it.chargeKg } ?: chargeReelleKg,
+    )
+}
+
+/** Passe en mode cardio en nettoyant les séries force. */
+fun LoggedExercise.asCardio(
+    dureeMin: Int? = this.dureeMin ?: 30,
+    distanceKm: Double? = this.distanceKm,
+    intensite: Int? = this.intensite ?: 5,
+): LoggedExercise = copy(
+    modality = ExerciseModality.Cardio,
+    sets = emptyList(),
+    series = 0,
+    reps = 0,
+    chargeCibleKg = null,
+    chargeReelleKg = null,
+    repsReelles = null,
+    propre = false,
+    dureeMin = dureeMin,
+    distanceKm = distanceKm,
+    intensite = intensite?.coerceIn(1, 10),
+)
+
+/** Passe en mode force avec 3 séries vides si besoin. */
+fun LoggedExercise.asStrength(): LoggedExercise {
+    if (!isCardio && sets.isNotEmpty()) return copy(modality = ExerciseModality.Strength)
+    val baseSets = (1..3).map { i ->
+        LoggedSet(index = i, reps = 10, chargeKg = chargeCibleKg ?: 0.0, estAmrap = i == 3)
+    }
+    return copy(
+        modality = ExerciseModality.Strength,
+        dureeMin = null,
+        distanceKm = null,
+        intensite = null,
+        series = 3,
+        reps = 10,
+        sets = baseSets,
     )
 }
 

@@ -46,9 +46,42 @@ object TrainingLoad {
     private const val DUREE_MMA_DEFAUT_MIN = 90
 
     fun chargeSeance(workout: Workout): Double {
-        val rpe = workout.rpe ?: return 0.0
-        val duree = workout.dureeMin ?: return 0.0
-        return rpe.toDouble() * duree
+        val session = run {
+            val rpe = workout.rpe ?: return@run 0.0
+            val duree = workout.dureeMin ?: return@run 0.0
+            rpe.toDouble() * duree
+        }
+        val cardio = CardioEnergy.chargeInterneTotale(workout.exercices)
+        // max : évite de double-compter une course loggée à la fois en
+        // durée de séance et en bloc cardio. min non-nul : une séance sans
+        // RPE mais avec marche/vélo compte quand même dans l'ACWR.
+        return maxOf(session, cardio)
+    }
+
+    /** Dépense kcal estimée d'une séance (EA) : session-RPE et/ou MET cardio. */
+    fun depenseKcal(workout: Workout, poidsKg: Double?): Int {
+        val sessionKcal = EnergyAvailability.depuisChargeInterne(
+            run {
+                val rpe = workout.rpe ?: return@run 0.0
+                val duree = workout.dureeMin ?: return@run 0.0
+                rpe.toDouble() * duree
+            },
+        )
+        val cardioKcal = CardioEnergy.kcalForExercises(workout.exercices, poidsKg)
+        return maxOf(sessionKcal, cardioKcal)
+    }
+
+    fun depenseKcalPourDate(
+        date: String,
+        workouts: List<Workout>,
+        mmaSessions: List<MmaSession> = emptyList(),
+        poidsKg: Double? = null,
+    ): Int {
+        val fromWorkouts = workouts.filter { it.date == date }.sumOf { depenseKcal(it, poidsKg) }
+        val fromMma = mmaSessions.filter { it.date == date }.sumOf {
+            EnergyAvailability.depuisChargeInterne(chargeSeance(it))
+        }
+        return fromWorkouts + fromMma
     }
 
     /** Convertit le ressenti MMA (1 = très difficile, 5 = facile) en intensité
