@@ -18,6 +18,7 @@ import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.MmaSession
+import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.model.MuscleZone
 import com.example.mmarecomp.model.NewDailyCheckIn
 import com.example.mmarecomp.model.NewTrainingPlanDay
@@ -35,6 +36,7 @@ import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.PlateauDetector
 import com.example.mmarecomp.util.TodayPlanResolver
+import com.example.mmarecomp.util.WorkoutSuggestion
 import com.example.mmarecomp.util.AchievementManager
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.StreakManager
@@ -148,6 +150,13 @@ class DashboardViewModel(
         }
 
     val mealsLoggedToday: Int get() = mealsLast7Days.count { it.date == DateUtils.today() }
+
+    /** Repas loggés aujourd'hui par créneau — pour la carte Nutrition détaillée. */
+    val mealsTodayBySlot: Map<RepasSlot, Meal>
+        get() = mealsLast7Days
+            .filter { it.date == DateUtils.today() }
+            .mapNotNull { meal -> meal.repasSlot?.let { slot -> slot to meal } }
+            .toMap()
 
     /** Total calorique d'hier — repère de contexte, jamais une comparaison
      *  culpabilisante. Null si rien n'a été loggé hier. */
@@ -323,6 +332,9 @@ class DashboardViewModel(
 
     val suggestedExercise: Pair<String, String>?
         get() = TodayPlanResolver.suggestedExercise(planThisWeek, workoutsThisWeek)
+
+    val suggestedWorkout: WorkoutSuggestion?
+        get() = TodayPlanResolver.suggestedExercises(planThisWeek, workoutsThisWeek)
 
     /** Cible calorique moyenne sur les jours où une cible a été définie
      *  cette semaine — repère de comparaison pour avgCaloriesLast7Days dans

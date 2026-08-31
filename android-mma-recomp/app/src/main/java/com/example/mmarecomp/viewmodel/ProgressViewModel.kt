@@ -1,5 +1,6 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +17,7 @@ import com.example.mmarecomp.model.WorkoutType
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.util.UiPreferences
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -26,7 +28,9 @@ class ProgressViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val mealRepository: MealRepository = MealRepository(),
+    context: Context? = null,
 ) : ViewModel() {
+    private val uiPreferences = context?.let { UiPreferences(it) }
     var weighIns by mutableStateOf<List<WeighIn>>(emptyList())
         private set
     var workouts by mutableStateOf<List<Workout>>(emptyList())
@@ -38,6 +42,28 @@ class ProgressViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
     var windowWeeks by mutableStateOf(4)
+
+    fun applyWindowWeeks(weeks: Int) {
+        windowWeeks = weeks
+        uiPreferences?.progressWindowWeeks = weeks
+        load()
+    }
+
+    fun markExport(exportKey: String) {
+        uiPreferences?.markExport(exportKey)
+    }
+
+    fun lastExportLabel(exportKey: String): String? {
+        val millis = uiPreferences?.lastExportMillis(exportKey) ?: return null
+        val instant = java.time.Instant.ofEpochMilli(millis)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDateTime()
+        return "Dernier export : ${instant.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm"))}"
+    }
+
+    init {
+        uiPreferences?.let { windowWeeks = it.progressWindowWeeks }
+    }
 
     val weightTrend: List<TrendPoint>
         get() {

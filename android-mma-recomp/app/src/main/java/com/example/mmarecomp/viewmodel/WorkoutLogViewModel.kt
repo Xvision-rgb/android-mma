@@ -75,6 +75,48 @@ class WorkoutLogViewModel(
         private set
     var prefilledFromPlan by mutableStateOf(false)
         private set
+    var workoutsForDate by mutableStateOf<List<Workout>>(emptyList())
+        private set
+
+    /** Séance déjà enregistrée pour la date et le type sélectionnés. */
+    val existingWorkoutForType: Workout?
+        get() = workoutsForDate.firstOrNull { it.type == type }
+
+    /** Types de séance déjà logués pour la date sélectionnée. */
+    val loggedTypesForDate: Set<WorkoutType>
+        get() = workoutsForDate.map { it.type }.toSet()
+
+    /** Charge les séances de la date sélectionnée (pour chips ✓ et édition). */
+    fun loadWorkoutsForDate() {
+        viewModelScope.launch {
+            val dateStr = DateUtils.string(date)
+            workoutsForDate = try {
+                workoutRepository.fetchWeek(dateStr).filter { it.date == dateStr }
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+                emptyList()
+            }
+        }
+    }
+
+    /** Charge une séance de l'historique dans le formulaire. */
+    fun loadWorkoutIntoForm(workout: Workout) {
+        DateUtils.date(workout.date)?.let { date = it }
+        type = workout.type
+        exercices = workout.exercices
+        dureeMin = workout.dureeMin?.toString() ?: ""
+        rpe = workout.rpe?.toString() ?: ""
+        notes = workout.notes.orEmpty()
+        prefilledFromPlan = false
+        viewModelScope.launch { loadWorkoutsForDate() }
+    }
+
+    /** Change de type en chargeant la séance existante ou en vidant le brouillon. */
+    fun selectType(newType: WorkoutType) {
+        if (newType == type) return
+        type = newType
+        workoutsForDate.firstOrNull { it.type == newType }?.let { loadWorkoutIntoForm(it) } ?: resetForm()
+    }
 
     /** Charge les dernières séances loguées, pour l'historique dépliable. */
     fun loadRecent() {
@@ -306,8 +348,13 @@ class WorkoutLogViewModel(
                 notes = notes.ifBlank { null },
             )
             try {
+                val existing = workoutsForDate.firstOrNull { it.type == type }
+                if (existing != null) {
+                    workoutRepository.delete(existing.id)
+                }
                 val saved = workoutRepository.log(newWorkout)
                 lastSaved = saved
+                workoutsForDate = (workoutsForDate.filterNot { it.type == type } + saved)
                 recentWorkouts = (listOf(saved) + recentWorkouts.filterNot { it.id == saved.id })
                     .sortedByDescending { it.date }
                 onResult(true)

@@ -1,5 +1,6 @@
 package com.example.mmarecomp.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,6 +14,7 @@ import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.util.TrainingPlanParser
+import com.example.mmarecomp.util.UiPreferences
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
@@ -37,8 +39,22 @@ data class ImportDayDraft(
  *  remplacer, avant de valider jour par jour ou en un clic pour tous. */
 class ImportTrainingPlanViewModel(
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
+    context: Context? = null,
 ) : ViewModel() {
-    var rawText by mutableStateOf("")
+    private val uiPreferences = context?.let { UiPreferences(it) }
+    var rawText by mutableStateOf(uiPreferences?.importPlanDraftText.orEmpty())
+        private set
+
+    init {
+        if (rawText.isBlank()) {
+            uiPreferences?.importPlanDraftText?.takeIf { it.isNotBlank() }?.let { rawText = it }
+        }
+    }
+
+    fun updateRawText(value: String) {
+        rawText = value
+        uiPreferences?.importPlanDraftText = value
+    }
     var phase by mutableStateOf(Phase.Ete)
         private set
     var isLoading by mutableStateOf(false)

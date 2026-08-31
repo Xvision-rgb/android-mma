@@ -70,7 +70,7 @@ fun ImportTrainingPlanScreen(
         item {
             OutlinedTextField(
                 value = viewModel.rawText,
-                onValueChange = { viewModel.rawText = it },
+                onValueChange = { viewModel.updateRawText(it) },
                 label = { Text("Programme collé") },
                 minLines = 6,
                 modifier = Modifier.fillMaxWidth(),
@@ -84,10 +84,11 @@ fun ImportTrainingPlanScreen(
             val context = androidx.compose.ui.platform.LocalContext.current
             androidx.compose.material3.OutlinedButton(
                 onClick = {
-                    viewModel.rawText = runCatching {
+                    val text = runCatching {
                         context.assets.open("bloc_densite.txt").bufferedReader().use { it.readText() }
                     }.getOrDefault("")
-                    if (viewModel.rawText.isNotBlank()) viewModel.parse()
+                    viewModel.updateRawText(text)
+                    if (text.isNotBlank()) viewModel.parse()
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,11 +20,15 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,17 +76,35 @@ import kotlinx.coroutines.launch
 fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
     LaunchedEffect(Unit) { viewModel.loadHistory() }
 
-    var showSaved by remember { mutableStateOf(false) }
-    LaunchedEffect(showSaved) {
-        if (showSaved) {
-            kotlinx.coroutines.delay(4000)
-            showSaved = false
-        }
-    }
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
+    var showResetConfirm by remember { mutableStateOf(false) }
+    val existingEntry = viewModel.existingEntryForSelection
+
+    LaunchedEffect(viewModel.date, viewModel.type, viewModel.history) {
+        viewModel.loadEntryForCurrentSelection()
+    }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text(stringResource(R.string.weigh_in_reset_confirm_title)) },
+            text = { Text(stringResource(R.string.weigh_in_reset_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetForm()
+                    showResetConfirm = false
+                }) { Text(stringResource(R.string.weigh_in_reset_confirm_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) {
+                    Text(stringResource(R.string.weigh_in_reset_confirm_cancel))
+                }
+            },
+        )
+    }
 
     fun deleteWithUndo(entry: WeighIn) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -103,11 +126,16 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
         val savedType = viewModel.type
         val savedDate = viewModel.date
         viewModel.save { saved ->
-            showSaved = saved
             if (saved) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                viewModel.poidsKg = ""
-                viewModel.bfPct = ""
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            if (existingEntry != null) R.string.weigh_in_saved_update else R.string.weigh_in_saved,
+                        ),
+                        duration = SnackbarDuration.Short,
+                    )
+                }
                 if (savedType == WeighInType.MatinJeun && savedDate == java.time.LocalDate.now()) {
                     com.example.mmarecomp.notification.WeighInReminder.markLoggedToday(
                         context,
@@ -126,7 +154,9 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
                 label = if (viewModel.isSaving) {
                     stringResource(R.string.weigh_in_saving)
                 } else {
-                    stringResource(R.string.weigh_in_save)
+                    stringResource(
+                        if (existingEntry != null) R.string.weigh_in_save_update else R.string.weigh_in_save,
+                    )
                 },
                 enabled = !viewModel.isSaving &&
                     (viewModel.poidsKg.replace(",", ".").toDoubleOrNull() ?: -1.0).let { it in 20.0..400.0 },
@@ -192,7 +222,12 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
                     }
                     if (showHistory) {
                         viewModel.history.sortedByDescending { it.date }.take(20).forEach { entry ->
-                            Column(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.loadEntryIntoForm(entry) }
+                                    .padding(vertical = Dimens.spaceXs),
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,6 +271,32 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
 
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
+        item {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                WeighInType.entries.forEach { option ->
+                    val logged = viewModel.history.any {
+                        it.date == com.example.mmarecomp.util.DateUtils.string(viewModel.date) && it.type == option
+                    }
+                    FilterChip(
+                        selected = viewModel.type == option,
+                        onClick = { viewModel.selectType(option) },
+                        label = { Text(if (logged) "${option.label} ✓" else option.label) },
+                    )
+                }
+            }
+            existingEntry?.let {
+                Text(
+                    stringResource(R.string.weigh_in_slot_logged, it.type.label),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(top = Dimens.spaceXs),
+                )
+            }
+        }
+
         if (viewModel.history.any { it.type == viewModel.type }) {
             item {
                 TextButton(onClick = { viewModel.prefillFromLastEntry() }) {
@@ -245,19 +306,27 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
         }
 
         item {
+            Text(
+                stringResource(R.string.weigh_in_tap_history_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        item {
             var expanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                 OutlinedTextField(
                     value = viewModel.type.label,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Type") },
+                    label = { Text("Type (autre liste)") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     WeighInType.entries.forEach { option ->
-                        DropdownMenuItem(text = { Text(option.label) }, onClick = { viewModel.type = option; expanded = false })
+                        DropdownMenuItem(text = { Text(option.label) }, onClick = { viewModel.selectType(option); expanded = false })
                     }
                 }
             }
@@ -331,7 +400,7 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                 TextButton(
-                    onClick = { viewModel.resetForm() },
+                    onClick = { showResetConfirm = true },
                     modifier = Modifier.defaultMinSize(minHeight = Dimens.minTouchTarget),
                 ) {
                     Text(stringResource(R.string.weigh_in_clear))
@@ -339,15 +408,6 @@ fun WeighInScreen(viewModel: WeighInViewModel, onBack: () -> Unit = {}) {
             }
         }
 
-        item {
-            AnimatedVisibility(
-                visible = showSaved,
-                enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
-                exit = fadeOut(tween(200)),
-            ) {
-                Text(stringResource(R.string.weigh_in_saved), color = MaterialTheme.colorScheme.tertiary)
-            }
-        }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }

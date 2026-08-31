@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -50,6 +51,24 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel, onBack: () -> Unit = {}) 
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        viewModel.appliedMode?.let { mode ->
+            item {
+                SoftAlertBanner(
+                    message = "Mode actif : ${mode.label}" +
+                        (viewModel.lastAppliedTargetCalories?.let { " — $it kcal/jour aujourd'hui" } ?: ""),
+                )
+            }
+            item {
+                TextButton(
+                    onClick = { viewModel.restoreLastTarget() },
+                    enabled = !viewModel.isSaving,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Reprendre la dernière cible")
+                }
+            }
         }
 
         item {

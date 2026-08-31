@@ -31,6 +31,7 @@ import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.CsvExport
+import com.example.mmarecomp.util.UiPreferences
 import com.example.mmarecomp.viewmodel.ProgressViewModel
 
 @Composable
@@ -59,6 +60,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                             putExtra(Intent.EXTRA_TEXT, csv)
                         }
                         context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des pesées"))
+                        viewModel.markExport(UiPreferences.EXPORT_WEIGH_INS)
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -78,6 +80,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                             putExtra(Intent.EXTRA_TEXT, csv)
                         }
                         context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des séances"))
+                        viewModel.markExport(UiPreferences.EXPORT_WORKOUTS)
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -97,6 +100,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                             putExtra(Intent.EXTRA_TEXT, csv)
                         }
                         context.startActivity(Intent.createChooser(sendIntent, "Exporter l'historique des repas"))
+                        viewModel.markExport(UiPreferences.EXPORT_MEALS)
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -106,12 +110,34 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             }
         }
 
+        if (viewModel.weighIns.isNotEmpty()) {
+            viewModel.lastExportLabel(UiPreferences.EXPORT_WEIGH_INS)?.let { label ->
+                item {
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        if (viewModel.workouts.isNotEmpty()) {
+            viewModel.lastExportLabel(UiPreferences.EXPORT_WORKOUTS)?.let { label ->
+                item {
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        if (viewModel.meals.isNotEmpty()) {
+            viewModel.lastExportLabel(UiPreferences.EXPORT_MEALS)?.let { label ->
+                item {
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
         item {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 listOf(4, 8, 12).forEachIndexed { index, weeks ->
                     SegmentedButton(
                         selected = viewModel.windowWeeks == weeks,
-                        onClick = { viewModel.windowWeeks = weeks },
+                        onClick = { viewModel.applyWindowWeeks(weeks) },
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = 3),
                     ) { Text("$weeks semaines") }
                 }

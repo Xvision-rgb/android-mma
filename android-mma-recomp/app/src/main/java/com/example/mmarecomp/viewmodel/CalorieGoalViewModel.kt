@@ -56,6 +56,8 @@ class CalorieGoalViewModel(
         private set
     var savedConfirmation by mutableStateOf(false)
         private set
+    var lastAppliedTargetCalories by mutableStateOf<Int?>(null)
+        private set
 
     /** Recalibrage adaptatif façon MacroFactor — null tant qu'il n'y a pas
      *  assez de données (14j+) ou que l'écart avec la maintenance formulée
@@ -97,6 +99,9 @@ class CalorieGoalViewModel(
                 if (userId.isNotBlank()) {
                     appliedMode = runCatching { profileRepository.fetch(userId) }.getOrNull()?.objectifCalorieMode
                 }
+                lastAppliedTargetCalories = runCatching {
+                    targetRepository.fetch(DateUtils.today())?.caloriesCible
+                }.getOrNull()
                 latest?.poidsKg?.let { poids -> loadRecalibration(poids, recent) }
             } catch (e: Throwable) {
                 rethrowCancellation(e)
@@ -201,6 +206,7 @@ class CalorieGoalViewModel(
                     NutritionTargetDraft.fromGoal(DateUtils.today(), TypeJour.Training, goal),
                 )
                 appliedMode = mode
+                lastAppliedTargetCalories = goal.targetCalories
                 savedConfirmation = true
             } catch (e: Throwable) {
                 rethrowCancellation(e)
@@ -209,5 +215,12 @@ class CalorieGoalViewModel(
                 isSaving = false
             }
         }
+    }
+
+    /** Réapplique la dernière cible enregistrée pour aujourd'hui (même mode actif). */
+    fun restoreLastTarget() {
+        val mode = appliedMode ?: recommendedMode
+        goalFor(mode) ?: return
+        applyMode(mode)
     }
 }

@@ -43,6 +43,14 @@
     <string name="workout_undo_exercise">Exercice retiré</string>
     <string name="workout_undo_session">Séance supprimée</string>
     <string name="workout_undo">Annuler</string>
+    <string name="workout_save_update">Mettre à jour cette séance</string>
+    <string name="workout_saved">Séance enregistrée ✓</string>
+    <string name="workout_type_logged">%1$s — déjà loggé aujourd\'hui</string>
+    <string name="workout_tap_history_hint">Toucher une séance dans l\'historique pour la modifier</string>
+    <string name="workout_reset_confirm_title">Vider le formulaire ?</string>
+    <string name="workout_reset_confirm_message">Les exercices saisis seront effacés. Cette action est irréversible.</string>
+    <string name="workout_reset_confirm_ok">Vider</string>
+    <string name="workout_reset_confirm_cancel">Annuler</string>
 
     <!-- Meal log -->
     <string name="meal_log_title">Log repas</string>
@@ -59,6 +67,8 @@
     <!-- Weigh-in -->
     <string name="weigh_in_title">Log pesée</string>
     <string name="weigh_in_save">Enregistrer la pesée</string>
+    <string name="weigh_in_save_update">Mettre à jour cette pesée</string>
+    <string name="weigh_in_saved_update">Pesée mise à jour ✓</string>
     <string name="weigh_in_saving">Enregistrement…</string>
     <string name="weigh_in_clear">Vider</string>
     <string name="weigh_in_saved">Pesée enregistrée ✓</string>
@@ -67,6 +77,12 @@
     <string name="weigh_in_trend_label">Tendance (moyenne 7 jours, matin à jeun)</string>
     <string name="weigh_in_show_history">Voir l\'historique complet</string>
     <string name="weigh_in_hide_history">Masquer l\'historique</string>
+    <string name="weigh_in_slot_logged">%1$s — déjà loggé</string>
+    <string name="weigh_in_tap_history_hint">Toucher une pesée dans l\'historique pour la corriger</string>
+    <string name="weigh_in_reset_confirm_title">Vider le formulaire ?</string>
+    <string name="weigh_in_reset_confirm_message">Les valeurs saisies seront effacées.</string>
+    <string name="weigh_in_reset_confirm_ok">Vider</string>
+    <string name="weigh_in_reset_confirm_cancel">Annuler</string>
 
     <!-- Settings -->
     <string name="settings_title">Réglages</string>
