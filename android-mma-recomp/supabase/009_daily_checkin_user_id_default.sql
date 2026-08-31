@@ -1,16 +1,12 @@
 -- =============================================================
--- daily_checkins — état de forme quotidien (readiness).
+-- 009 — daily_checkins : default auth.uid() + policies idempotentes
 --
--- Alimente la modulation de séance : le questionnaire subjectif module le
--- VOLUME de la séance du jour, jamais la charge. La HRV est optionnelle et
--- saisie à la main (aucun SDK santé intégré à ce stade).
---
--- Chaque item va de 1 (mauvais) à 5 (bon) : le score total se lit toujours
--- dans le même sens, plus haut = plus prêt.
---
--- À exécuter dans Supabase > SQL Editor, après schema.sql.
+-- Corrige l'échec d'upsert quand NewDailyCheckIn n'envoie pas user_id
+-- (aligné sur meals / weigh_ins / workouts du schéma de base).
+-- À exécuter dans Supabase > SQL Editor, après 006_daily_checkin.sql.
 -- =============================================================
 
+-- Si la table n'existe pas encore, créer le socle (idempotent avec 006).
 create table if not exists public.daily_checkins (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -20,15 +16,15 @@ create table if not exists public.daily_checkins (
   fatigue smallint not null check (fatigue between 1 and 5),
   humeur smallint not null check (humeur between 1 and 5),
   stress smallint not null check (stress between 1 and 5),
-  -- rMSSD au réveil, en ms. Null tant que l'utilisateur ne mesure pas.
   hrv_rmssd numeric(6, 2),
-  -- Suspension à la barre, en secondes — suivi de la poigne dans le temps.
   dead_hang_sec smallint check (dead_hang_sec >= 0),
   created_at timestamptz not null default now(),
-  -- Un seul check-in par jour : refaire le test corrige celui du matin
-  -- au lieu d'en empiler un second.
   unique (user_id, date)
 );
+
+-- Table déjà créée par 006 : ajouter le défaut manquant.
+alter table public.daily_checkins
+  alter column user_id set default auth.uid();
 
 alter table public.daily_checkins enable row level security;
 
@@ -52,11 +48,3 @@ create policy "daily_checkins_delete_own" on public.daily_checkins
 
 create index if not exists daily_checkins_user_date_idx
   on public.daily_checkins (user_id, date desc);
-
--- =============================================================
--- workouts — RPE de séance, pour la charge interne (session-RPE).
--- charge = rpe × duree_min ; l'ACWR en découle (cf. util/TrainingLoad.kt).
--- =============================================================
-
-alter table public.workouts
-  add column if not exists rpe smallint check (rpe between 1 and 10);

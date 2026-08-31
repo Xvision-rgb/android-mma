@@ -25,6 +25,7 @@ import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.UiPreferences
 import com.example.mmarecomp.util.WeeklyInsights
 import com.example.mmarecomp.util.WeeklyInsightsCalculator
+import com.example.mmarecomp.util.isMissingDailyCheckInTable
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -171,14 +172,18 @@ class ProgressViewModel(
         errorOperation = ErrorOperation.LOAD
         viewModelScope.launch {
             val since = DateUtils.daysAgo(windowWeeks * 7L)
-            val weekSince = DateUtils.inclusiveStart(7)
             try {
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
                 meals = mealRepository.fetchSince(since)
-                checkIns = dailyCheckInRepository.fetchSince(weekSince)
-                nutritionTargets = nutritionTargetRepository.fetchSince(weekSince)
-                mmaSessions = runCatching { mmaSessionRepository.fetchSince(weekSince) }.getOrDefault(emptyList())
+                checkIns = try {
+                    dailyCheckInRepository.fetchSince(since)
+                } catch (e: Throwable) {
+                    rethrowCancellation(e)
+                    if (e.isMissingDailyCheckInTable()) emptyList() else throw e
+                }
+                nutritionTargets = nutritionTargetRepository.fetchSince(since)
+                mmaSessions = runCatching { mmaSessionRepository.fetchSince(since) }.getOrDefault(emptyList())
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {

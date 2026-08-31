@@ -144,6 +144,12 @@ fun DashboardScreen(
             }
         }
 
+        viewModel.checkInSchemaWarning?.let { warning ->
+            item {
+                SoftAlertBanner(warning)
+            }
+        }
+
         item {
             DailyJourneyCard(
                 journey = viewModel.dailyJourneyState,

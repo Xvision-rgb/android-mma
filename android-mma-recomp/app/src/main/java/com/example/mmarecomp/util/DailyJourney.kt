@@ -43,11 +43,14 @@ object DailyJourney {
         mmaSessionsToday: List<MmaSession>,
         mealsToday: List<Meal>,
         planToday: TrainingPlanDay?,
+        hourOfDay: Int = LocalTime.now().hour,
     ): DailyJourneyState {
         val todayStr = DateUtils.string(today)
         val isRestDay = planToday?.type == PlanDayType.Repos
         val workoutDone = workoutsToday.any { it.date == todayStr } ||
             mmaSessionsToday.any { it.date == todayStr }
+        val distinctMealSlots = mealsToday.map { it.repas }.toSet().size
+        val nutritionDone = nutritionDone(hourOfDay, distinctMealSlots)
 
         val steps = listOf(
             DailyJourneyStep(
@@ -76,8 +79,8 @@ object DailyJourney {
             DailyJourneyStep(
                 id = DailyJourneyStepId.NUTRITION,
                 label = "Nutrition",
-                detail = nutritionDetail(LocalTime.now().hour, mealsToday.size),
-                done = mealsToday.isNotEmpty(),
+                detail = nutritionDetail(hourOfDay, distinctMealSlots),
+                done = nutritionDone,
             ),
         )
 
@@ -92,11 +95,18 @@ object DailyJourney {
         )
     }
 
-    private fun nutritionDetail(hour: Int, mealsLogged: Int): String = when {
-        mealsLogged > 0 -> "$mealsLogged repas logué(s) aujourd'hui"
+    /** Avant 11 h : 1 créneau suffit ; ensuite il faut au moins 2 créneaux
+     *  distincts pour marquer l'étape (évite qu'un snack coche toute la journée). */
+    internal fun nutritionDone(hour: Int, distinctSlots: Int): Boolean =
+        if (hour < 11) distinctSlots >= 1 else distinctSlots >= 2
+
+    private fun nutritionDetail(hour: Int, distinctSlots: Int): String = when {
+        distinctSlots >= 2 -> "$distinctSlots créneaux logués aujourd'hui"
+        distinctSlots == 1 && hour < 11 -> "1 créneau — continue sur la journée"
+        distinctSlots == 1 -> "1 créneau — encore au moins un repas"
         hour < 11 -> "Petit-déjeuner à saisir"
         hour < 15 -> "Déjeuner à saisir"
         hour < 20 -> "Collation ou dîner à saisir"
-        else -> "Bilan du jour — au moins un repas"
+        else -> "Bilan du jour — au moins 2 créneaux"
     }
 }

@@ -4,6 +4,8 @@ import android.content.Context
 import com.example.mmarecomp.data.local.AppDatabase
 import com.example.mmarecomp.data.local.entity.CacheEntry
 import com.example.mmarecomp.data.local.entity.SyncOutboxEntry
+import com.example.mmarecomp.util.isOfflineEnqueueable
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +17,7 @@ object SyncEntityType {
     const val MEAL = "meal"
     const val WEIGH_IN = "weigh_in"
     const val CHECK_IN = "check_in"
+    const val MMA_SESSION = "mma_session"
 }
 
 object SyncOperation {
@@ -51,20 +54,27 @@ class OfflineCoordinator private constructor(context: Context) {
                 ),
             )
             remote
-        } catch (e: java.io.IOException) {
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (!e.isOfflineEnqueueable()) throw e
             val cached = cacheDao.get(cacheKey)?.jsonPayload
             if (cached != null) readCache(cached) else throw e
         }
     }
 
+    /**
+     * @param id identifiant stable (idéalement `local-…`) pour pouvoir annuler
+     *           un INSERT offline via [removeOutboxEntry] au delete UI.
+     */
     suspend fun enqueue(
         entityType: String,
         operation: String,
         payloadJson: String,
+        id: String = UUID.randomUUID().toString(),
     ) {
         outboxDao.insert(
             SyncOutboxEntry(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 entityType = entityType,
                 operation = operation,
                 payloadJson = payloadJson,
@@ -92,6 +102,8 @@ class OfflineCoordinator private constructor(context: Context) {
         json.encodeToString(serializer, value)
 
     companion object {
+        const val MAX_RETRY = 5
+
         @Volatile
         private var instance: OfflineCoordinator? = null
 

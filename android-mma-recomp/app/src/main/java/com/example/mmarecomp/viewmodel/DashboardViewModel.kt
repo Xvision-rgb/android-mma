@@ -61,6 +61,7 @@ import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.ScreenError
 import com.example.mmarecomp.util.CheckInSaveError
+import com.example.mmarecomp.util.isMissingDailyCheckInTable
 import com.example.mmarecomp.util.rethrowCancellation
 import com.example.mmarecomp.util.toCheckInSaveError
 import kotlinx.coroutines.launch
@@ -130,6 +131,9 @@ class DashboardViewModel(
     var unlockedAchievement by mutableStateOf<AchievementType?>(null)
     var pendingSyncCount by mutableStateOf(0)
         private set
+    /** Alerte non bloquante : table daily_checkins absente / migration manquante. */
+    var checkInSchemaWarning by mutableStateOf<String?>(null)
+        private set
 
     var dailyJourneyState by mutableStateOf(emptyDailyJourney())
         private set
@@ -172,6 +176,36 @@ class DashboardViewModel(
             }
         }
         return byDate.values.sortedBy { it.date }
+    }
+
+    private fun <T> mergeByKey(remote: List<T>, local: List<T>, idOf: (T) -> String): List<T> {
+        val byId = remote.associateBy(idOf).toMutableMap()
+        for (item in local) {
+            val id = idOf(item)
+            if (id.startsWith("local-") && !byId.containsKey(id)) {
+                byId[id] = item
+            }
+        }
+        return byId.values.toList()
+    }
+
+    private fun mergeWorkouts(remote: List<Workout>, local: List<Workout>): List<Workout> =
+        mergeByKey(remote, local) { it.id }
+
+    private fun mergeWeighIns(remote: List<WeighIn>, local: List<WeighIn>): List<WeighIn> =
+        mergeByKey(remote, local) { it.id }
+
+    private fun mergeMmaSessions(remote: List<MmaSession>, local: List<MmaSession>): List<MmaSession> =
+        mergeByKey(remote, local) { it.id }
+
+    private fun mergeMeals(remote: List<Meal>, local: List<Meal>): List<Meal> {
+        val keys = remote.associateBy { "${it.date}-${it.repas}" }.toMutableMap()
+        for (meal in local) {
+            if (meal.id.startsWith("local-") && !keys.containsKey("${meal.date}-${meal.repas}")) {
+                keys["${meal.date}-${meal.repas}"] = meal
+            }
+        }
+        return keys.values.toList()
     }
 
     val avgCaloriesLast7Days: Int
@@ -495,15 +529,41 @@ class DashboardViewModel(
                 workoutsLast28Days = runCatching {
                     workoutRepository.fetchWeek(fenetre28j)
                 }.getOrDefault(emptyList())
+                syncManager?.let { sm ->
+                    workoutsThisWeek = mergeWorkouts(workoutsThisWeek, sm.pendingLocalWorkouts())
+                    workoutsLast28Days = mergeWorkouts(workoutsLast28Days, sm.pendingLocalWorkouts())
+                    mealsLast7Days = mergeMeals(mealsLast7Days, sm.pendingLocalMeals())
+                }
+
+                checkInSchemaWarning = null
+                val remoteCheckIns = try {
+                    dailyCheckInRepository.fetchSince(fenetre28j)
+                } catch (e: Throwable) {
+                    rethrowCancellation(e)
+                    if (e.isMissingDailyCheckInTable()) {
+                        checkInSchemaWarning =
+                            "Table daily_checkins manquante — exécute 006 puis 009 dans le SQL Editor Supabase."
+                        emptyList()
+                    } else {
+                        emptyList()
+                    }
+                }
                 checkInsRecents = mergeCheckIns(
-                    runCatching {
-                        dailyCheckInRepository.fetchSince(fenetre28j)
-                    }.getOrDefault(emptyList()),
-                    checkInsRecents,
+                    remoteCheckIns,
+                    checkInsRecents + (syncManager?.pendingLocalCheckIns().orEmpty()),
                 )
-                mmaSessions = runCatching {
-                    mmaSessionRepository.fetchSince(fenetre28j)
-                }.getOrDefault(emptyList())
+                mmaSessions = mergeMmaSessions(
+                    runCatching {
+                        mmaSessionRepository.fetchSince(fenetre28j)
+                    }.getOrDefault(emptyList()),
+                    syncManager?.pendingLocalMmaSessions().orEmpty(),
+                )
+                syncManager?.let { sm ->
+                    morningWeighIns = mergeWeighIns(
+                        morningWeighIns,
+                        sm.pendingLocalWeighIns().filter { it.type == WeighInType.MatinJeun },
+                    )
+                }
                 if (userId.isNotBlank()) {
                     val profile = runCatching { profileRepository.fetch(userId) }.getOrNull()
                     poidsObjectifKg = profile?.poidsObjectifKg

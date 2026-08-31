@@ -31,6 +31,9 @@ import com.example.mmarecomp.util.ReadinessCalculator
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.RecentExerciseCatalog
 import com.example.mmarecomp.util.RecentExerciseEntry
+import com.example.mmarecomp.util.isMissingDailyCheckInTable
+import com.example.mmarecomp.util.isNetworkError
+import com.example.mmarecomp.util.isOfflineEnqueueable
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -129,6 +132,23 @@ class WorkoutLogViewModel(
                 maybeAutoApplyModulation()
             } catch (e: Throwable) {
                 rethrowCancellation(e)
+                when {
+                    e.isMissingDailyCheckInTable() -> {
+                        reportError(
+                            "Table daily_checkins manquante — exécute la migration 009 (ou 006) dans Supabase.",
+                            ErrorOperation.LOAD,
+                        )
+                    }
+                    e.isOfflineEnqueueable() || e.isNetworkError() -> {
+                        // Hors-ligne : garder la modulation déjà en mémoire, pas de bruit.
+                    }
+                    else -> {
+                        reportError(
+                            "Impossible de charger le point du jour pour moduler la séance.",
+                            ErrorOperation.LOAD,
+                        )
+                    }
+                }
             }
         }
     }

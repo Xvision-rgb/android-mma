@@ -6,13 +6,13 @@ import com.example.mmarecomp.data.offline.SyncEntityType
 import com.example.mmarecomp.data.offline.SyncOperation
 import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.NewDailyCheckIn
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order
 import com.example.mmarecomp.util.isOfflineEnqueueable
 import com.example.mmarecomp.util.rethrowCancellation
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class DailyCheckInRepository(
@@ -36,7 +36,7 @@ class DailyCheckInRepository(
     }
 
     suspend fun fetch(date: String): DailyCheckIn? =
-        fetchSince(date).firstOrNull { it.date == date }
+        fetchForDateRemote(date)
 
     suspend fun log(checkIn: NewDailyCheckIn): DailyCheckIn =
         try {
@@ -44,13 +44,15 @@ class DailyCheckInRepository(
         } catch (e: Throwable) {
             rethrowCancellation(e)
             if (offline == null || !e.isOfflineEnqueueable()) throw e
+            val localId = "local-${UUID.randomUUID()}"
             offline.enqueue(
                 entityType = SyncEntityType.CHECK_IN,
                 operation = SyncOperation.INSERT,
                 payloadJson = json.encodeToString(checkIn),
+                id = localId,
             )
             DailyCheckIn(
-                id = "local-${UUID.randomUUID()}",
+                id = localId,
                 userId = "",
                 date = checkIn.date,
                 sommeil = checkIn.sommeil,
@@ -70,6 +72,15 @@ class DailyCheckInRepository(
                 order("date", Order.ASCENDING)
             }
             .decodeList()
+
+    private suspend fun fetchForDateRemote(date: String): DailyCheckIn? =
+        client.postgrest.from("daily_checkins")
+            .select {
+                filter { eq("date", date) }
+                limit(1)
+            }
+            .decodeList<DailyCheckIn>()
+            .firstOrNull()
 
     suspend fun logRemote(checkIn: NewDailyCheckIn): DailyCheckIn =
         client.postgrest.from("daily_checkins")
