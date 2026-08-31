@@ -145,7 +145,7 @@ fun DashboardScreen(
 
         item {
             DailyJourneyCard(
-                journey = viewModel.dailyJourney,
+                journey = viewModel.dailyJourneyState,
                 onStepClick = { stepId ->
                     when (stepId) {
                         DailyJourneyStepId.CHECK_IN -> showCheckIn = true
@@ -442,8 +442,15 @@ fun DashboardScreen(
                                             duration = SnackbarDuration.Long,
                                         )
                                     }
+                                    showCheckIn = false
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(R.string.checkin_save_failed),
+                                            duration = SnackbarDuration.Long,
+                                        )
+                                    }
                                 }
-                                showCheckIn = false
                             }
                         },
                         onDismiss = { showCheckIn = false },

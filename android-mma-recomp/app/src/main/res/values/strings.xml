@@ -62,6 +62,7 @@
 
     <!-- Check-in -->
     <string name="checkin_saved_with_modulation">Point du jour enregistré ✓ — %1$s. %2$s</string>
+    <string name="checkin_save_failed">Impossible d\'enregistrer le point du jour — vérifie ta connexion et réessaie.</string>
 
     <!-- Meal log -->
     <string name="meal_log_title">Log repas</string>
