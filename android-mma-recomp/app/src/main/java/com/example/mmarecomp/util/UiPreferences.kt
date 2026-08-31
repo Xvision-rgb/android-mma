@@ -25,11 +25,25 @@ class UiPreferences(context: Context) {
             prefs.edit().putString(KEY_IMPORT_DRAFT, value).apply()
         }
 
+    /** Pastille Accueil mémorisée (aujourd_hui | force | semaine | poids | nutrition). */
+    var dashboardPill: String
+        get() = prefs.getString(KEY_DASHBOARD_PILL, PILL_AUJOURDHUI) ?: PILL_AUJOURDHUI
+        set(value) {
+            prefs.edit().putString(KEY_DASHBOARD_PILL, value).apply()
+        }
+
     companion object {
         private const val PREFS = "ui_prefs"
         private const val KEY_PROGRESS_WEEKS = "progress_window_weeks"
         private const val KEY_IMPORT_DRAFT = "import_plan_draft_text"
+        private const val KEY_DASHBOARD_PILL = "dashboard_pill"
         private const val DEFAULT_PROGRESS_WEEKS = 4
+
+        const val PILL_AUJOURDHUI = "aujourd_hui"
+        const val PILL_FORCE = "force"
+        const val PILL_SEMAINE = "semaine"
+        const val PILL_POIDS = "poids"
+        const val PILL_NUTRITION = "nutrition"
 
         const val EXPORT_WEIGH_INS = "export_weigh_ins"
         const val EXPORT_WORKOUTS = "export_workouts"
