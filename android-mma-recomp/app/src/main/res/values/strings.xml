@@ -32,6 +32,11 @@
     <string name="dashboard_activity_streak">jours d\'affilée avec au moins une activité loggée</string>
     <string name="dashboard_activity_streak_cd">Série d\'activité</string>
     <string name="dashboard_edit_exercises_cd">Modifier les exercices du %1$s</string>
+    <string name="dashboard_pill_today">Aujourd\'hui</string>
+    <string name="dashboard_pill_force">Force</string>
+    <string name="dashboard_pill_week">Semaine</string>
+    <string name="dashboard_pill_weight">Poids</string>
+    <string name="dashboard_pill_nutrition">Nutrition</string>
 
     <!-- Weekly program -->
     <string name="weekly_program_title">Programme de la semaine</string>
