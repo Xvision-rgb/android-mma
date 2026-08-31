@@ -62,6 +62,9 @@ import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.util.Formatting
 import com.example.mmarecomp.util.ModulationApplier
+import com.example.mmarecomp.ui.components.DailyJourneyCard
+import com.example.mmarecomp.ui.components.SyncPendingBanner
+import com.example.mmarecomp.util.DailyJourneyStepId
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
@@ -74,6 +77,8 @@ fun DashboardScreen(
     onEditPlanDay: (Int) -> Unit = {},
     onStartWorkout: () -> Unit = {},
     onOpenWeeklyProgram: () -> Unit = {},
+    onOpenWeighIn: () -> Unit = {},
+    onOpenMeals: () -> Unit = {},
 ) {
     LaunchedEffect(phase) { viewModel.load(phase) }
 
@@ -124,6 +129,31 @@ fun DashboardScreen(
         item {
             RelativeStrengthCard(
                 forces = viewModel.forcesRelatives,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        if (viewModel.pendingSyncCount > 0) {
+            item {
+                SyncPendingBanner(
+                    pendingCount = viewModel.pendingSyncCount,
+                    onSync = { viewModel.syncPending() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        item {
+            DailyJourneyCard(
+                journey = viewModel.dailyJourney,
+                onStepClick = { stepId ->
+                    when (stepId) {
+                        DailyJourneyStepId.CHECK_IN -> showCheckIn = true
+                        DailyJourneyStepId.MORNING_WEIGH_IN -> onOpenWeighIn()
+                        DailyJourneyStepId.WORKOUT -> onStartWorkout()
+                        DailyJourneyStepId.NUTRITION -> onOpenMeals()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }

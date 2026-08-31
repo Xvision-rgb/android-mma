@@ -6,7 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.DailyCheckInRepository
 import com.example.mmarecomp.data.MealRepository
+import com.example.mmarecomp.data.MmaSessionRepository
+import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
 import com.example.mmarecomp.model.Meal
@@ -14,10 +17,14 @@ import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.UiPreferences
+import com.example.mmarecomp.util.WeeklyInsights
+import com.example.mmarecomp.util.WeeklyInsightsCalculator
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -28,6 +35,9 @@ class ProgressViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val mealRepository: MealRepository = MealRepository(),
+    private val dailyCheckInRepository: DailyCheckInRepository = DailyCheckInRepository(),
+    private val nutritionTargetRepository: NutritionTargetRepository = NutritionTargetRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
     context: Context? = null,
 ) : ViewModel() {
     private val uiPreferences = context?.let { UiPreferences(it) }
@@ -37,11 +47,32 @@ class ProgressViewModel(
         private set
     var meals by mutableStateOf<List<Meal>>(emptyList())
         private set
+    var checkIns by mutableStateOf<List<com.example.mmarecomp.model.DailyCheckIn>>(emptyList())
+        private set
+    var nutritionTargets by mutableStateOf<List<com.example.mmarecomp.model.NutritionTarget>>(emptyList())
+        private set
+    var mmaSessions by mutableStateOf<List<com.example.mmarecomp.model.MmaSession>>(emptyList())
+        private set
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
     var windowWeeks by mutableStateOf(4)
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
+    val weeklyInsights: WeeklyInsights
+        get() = WeeklyInsightsCalculator.compute(
+            checkIns = checkIns,
+            workouts = workouts,
+            mmaSessions = mmaSessions,
+            meals = meals,
+            weighIns = weighIns,
+            targets = nutritionTargets,
+        )
 
     fun applyWindowWeeks(weeks: Int) {
         windowWeeks = weeks
@@ -85,9 +116,6 @@ class ProgressViewModel(
             return MovingAverage.sevenDay(points)
         }
 
-    /** Apport calorique quotidien moyenné sur 7 jours — jamais le total brut
-     *  d'un seul jour, pour rester cohérent avec le principe de lissage déjà
-     *  appliqué au poids (pas de comparaison jour à jour culpabilisante). */
     val caloriesTrend: List<TrendPoint>
         get() {
             val dailyTotals = meals.groupBy { it.date }.mapValues { (_, dayMeals) -> dayMeals.sumOf { it.calories }.toDouble() }
@@ -95,15 +123,11 @@ class ProgressViewModel(
             return MovingAverage.sevenDay(points)
         }
 
-    /** Répartition des séances loguées par type sur la fenêtre sélectionnée,
-     *  triée par fréquence décroissante — vue d'ensemble de la régularité
-     *  par type d'entraînement. */
     val workoutTypeBreakdown: List<Pair<WorkoutType, Int>>
         get() = workouts.groupingBy { it.type }.eachCount().entries
             .sortedByDescending { it.value }
             .map { it.key to it.value }
 
-    /** Progression de charge par exercice sur la fenêtre sélectionnée. */
     val chargeProgressionByExercise: Map<String, List<ChargePoint>>
         get() {
             val result = mutableMapOf<String, MutableList<ChargePoint>>()
@@ -117,10 +141,6 @@ class ProgressViewModel(
             return result.mapValues { (_, points) -> points.sortedBy { it.date } }
         }
 
-    /** Volume total d'entraînement (séries × reps × charge réelle) agrégé par
-     *  semaine (lundi au dimanche) sur la fenêtre sélectionnée — vue
-     *  d'ensemble de la progression du volume global, pas seulement de la
-     *  charge par exercice. */
     val weeklyVolumeTrend: List<TrendPoint>
         get() {
             val byWeek = mutableMapOf<LocalDate, Double>()
@@ -142,23 +162,31 @@ class ProgressViewModel(
             first != null && last != null && last > first
         }
 
+    val hasAnyData: Boolean
+        get() = weighIns.isNotEmpty() || workouts.isNotEmpty() || meals.isNotEmpty()
+
     fun load() {
         isLoading = true
         errorMessage = null
+        errorOperation = ErrorOperation.LOAD
         viewModelScope.launch {
             val since = DateUtils.daysAgo(windowWeeks * 7L)
+            val weekSince = DateUtils.inclusiveStart(7)
             try {
                 weighIns = weighInRepository.fetch(since)
                 workouts = workoutRepository.fetchWeek(since)
                 meals = mealRepository.fetchSince(since)
+                checkIns = dailyCheckInRepository.fetchSince(weekSince)
+                nutritionTargets = nutritionTargetRepository.fetchSince(weekSince)
+                mmaSessions = runCatching { mmaSessionRepository.fetchSince(weekSince) }.getOrDefault(emptyList())
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {
                     is java.io.IOException -> {
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                        errorMessage = "Pas de connexion internet — données en cache si disponibles."
                     }
                     else -> {
-                errorMessage = "Impossible de charger la progression."
+                        errorMessage = "Impossible de charger la progression."
                     }
                 }
             } finally {

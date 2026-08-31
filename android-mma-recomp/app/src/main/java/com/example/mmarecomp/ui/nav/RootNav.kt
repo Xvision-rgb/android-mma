@@ -32,10 +32,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -58,6 +58,7 @@ import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.weighin.WeighInScreen
 import com.example.mmarecomp.ui.workout.MmaSessionScreen
 import com.example.mmarecomp.ui.workout.WorkoutLogScreen
+import com.example.mmarecomp.viewmodel.AppViewModelFactory
 import com.example.mmarecomp.viewmodel.CalorieGoalViewModel
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
@@ -73,12 +74,6 @@ import kotlinx.coroutines.launch
 
 private data class Tab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
-// Cinq onglets : Material 3 en recommande 3 a 5. Le sixieme forcait a
-// abreger "Progression" en "Progr." pour tenir dans la largeur — le libelle
-// avait ete sacrifie a la structure. La pesee sort de la barre : c'est une
-// saisie ponctuelle (une fois le matin, ~15 s), pas une section. Elle reste
-// atteignable par le FAB du dashboard et par le rappel de notification,
-// desormais comme destination empilee avec un retour visible.
 private val tabs = listOf(
     Tab("dashboard", "Accueil", Icons.Filled.GridView),
     Tab("workout", "Séance", Icons.Filled.FitnessCenter),
@@ -88,7 +83,14 @@ private val tabs = listOf(
 )
 
 @Composable
-fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, currentPhase: Phase, onPhaseChange: (Phase) -> Unit) {
+fun MainNav(
+    userId: String,
+    userEmail: String,
+    authRepository: AuthRepository,
+    currentPhase: Phase,
+    onPhaseChange: (Phase) -> Unit,
+    viewModelFactory: AppViewModelFactory,
+) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
     var fabExpanded by remember { mutableStateOf(false) }
@@ -129,40 +131,35 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
         bottomBar = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
-            // La barre d'onglets n'appartient qu'aux destinations de premier
-            // niveau. Sur un écran empilé (édition de plan, WOD MMA, import,
-            // objectif calorique) elle restait affichée sans être pertinente,
-            // alors même qu'aucun retour n'y était proposé — c'est la
-            // TopAppBar de l'écran qui porte désormais la sortie.
             val isTopLevel = currentDestination?.hierarchy?.any { destination ->
                 tabs.any { it.route == destination.route }
             } == true
             if (isTopLevel) {
-            NavigationBar {
-                tabs.forEach { tab ->
-                    NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true,
-                        onClick = {
-                            fabExpanded = false
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = {
-                            Text(
-                                tab.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                            )
-                        },
-                    )
+                NavigationBar {
+                    tabs.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true,
+                            onClick = {
+                                fabExpanded = false
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = {
+                                Text(
+                                    tab.label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                )
+                            },
+                        )
+                    }
                 }
-            }
             }
         },
     ) { padding ->
@@ -174,18 +171,19 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
             exitTransition = { fadeOut(animationSpec = tween(150)) },
         ) {
             composable("dashboard") {
-                val appContext = LocalContext.current.applicationContext
-                val vm = remember(userId) { DashboardViewModel(userId = userId, context = appContext) }
+                val vm: DashboardViewModel = viewModel(factory = viewModelFactory)
                 DashboardScreen(
                     vm,
                     currentPhase,
                     onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
                     onStartWorkout = { navController.navigate("workout") },
                     onOpenWeeklyProgram = { navController.navigate("weekly_program") },
+                    onOpenWeighIn = { navController.navigate("weighin") },
+                    onOpenMeals = { navController.navigate("meals") },
                 )
             }
             composable("weekly_program") {
-                val vm = remember { WeeklyProgramViewModel() }
+                val vm: WeeklyProgramViewModel = viewModel(factory = viewModelFactory)
                 WeeklyProgramScreen(
                     vm,
                     phase = currentPhase,
@@ -198,7 +196,10 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 arguments = listOf(navArgument("jourSemaine") { type = NavType.IntType }),
             ) { backStackEntry ->
                 val jourSemaine = backStackEntry.arguments?.getInt("jourSemaine") ?: 1
-                val vm = remember(jourSemaine) { TrainingPlanEditViewModel() }
+                val vm: TrainingPlanEditViewModel = viewModel(
+                    factory = viewModelFactory,
+                    key = "plan_edit_$jourSemaine",
+                )
                 TrainingPlanEditScreen(
                     vm,
                     jourSemaine = jourSemaine,
@@ -208,11 +209,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 )
             }
             composable("workout") {
-                val vm = remember { WorkoutLogViewModel() }
+                val vm: WorkoutLogViewModel = viewModel(factory = viewModelFactory)
                 WorkoutLogScreen(vm, currentPhase, onOpenMmaSheet = { navController.navigate("workout/mma") })
             }
             composable("workout/mma") {
-                val vm = remember { MmaSessionViewModel() }
+                val vm: MmaSessionViewModel = viewModel(factory = viewModelFactory)
                 MmaSessionScreen(
                     vm,
                     onSaved = { navController.popBackStack() },
@@ -220,24 +221,19 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 )
             }
             composable("meals") {
-                val appContext = LocalContext.current.applicationContext
-                val vm = remember(userId) { MealLogViewModel(userId = userId, context = appContext) }
+                val vm: MealLogViewModel = viewModel(factory = viewModelFactory)
                 MealLogScreen(vm)
             }
             composable("weighin") {
-                val vm = remember { WeighInViewModel() }
+                val vm: WeighInViewModel = viewModel(factory = viewModelFactory)
                 WeighInScreen(vm, onBack = { navController.popBackStack() })
             }
             composable("progress") {
-                val appContext = LocalContext.current.applicationContext
-                val vm = remember { ProgressViewModel(context = appContext) }
+                val vm: ProgressViewModel = viewModel(factory = viewModelFactory)
                 ProgressScreen(vm)
             }
             composable("settings") {
-                // Instancié directement (pas via viewModel()) pour garder le scaffold
-                // simple : les champs ne survivent pas à une rotation d'écran.
-                // À remplacer par un ViewModelProvider.Factory si besoin plus tard.
-                val vm = remember(userId) { ProfileViewModel(userId) }
+                val vm: ProfileViewModel = viewModel(factory = viewModelFactory)
                 SettingsScreen(
                     vm,
                     userEmail = userEmail,
@@ -248,13 +244,11 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 )
             }
             composable("plan_import") {
-                val appContext = LocalContext.current.applicationContext
-                val vm = remember { ImportTrainingPlanViewModel(context = appContext) }
+                val vm: ImportTrainingPlanViewModel = viewModel(factory = viewModelFactory)
                 ImportTrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
             composable("calorie_goal") {
-                val appContext = LocalContext.current.applicationContext
-                val vm = remember(userId) { CalorieGoalViewModel(userId = userId, context = appContext) }
+                val vm: CalorieGoalViewModel = viewModel(factory = viewModelFactory)
                 CalorieGoalScreen(vm, onBack = { navController.popBackStack() })
             }
         }

@@ -25,6 +25,8 @@ import com.example.mmarecomp.util.MovingAverage
 import com.example.mmarecomp.util.NutritionTargetDraft
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.util.WeighInSelector
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
 import java.time.temporal.ChronoUnit
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -54,6 +56,12 @@ class CalorieGoalViewModel(
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
     var savedConfirmation by mutableStateOf(false)
         private set
     var lastAppliedTargetCalories by mutableStateOf<Int?>(null)

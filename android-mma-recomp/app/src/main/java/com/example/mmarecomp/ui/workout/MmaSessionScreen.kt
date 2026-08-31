@@ -87,6 +87,18 @@ fun MmaSessionScreen(viewModel: MmaSessionViewModel, onSaved: () -> Unit, onBack
     ) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
+        viewModel.screenError?.let { error ->
+            item { ErrorBanner(error, onRetry = { viewModel.loadRecent() }) }
+        }
+
+        if (viewModel.isLoading && viewModel.recentSessions.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator()
+                }
+            }
+        }
+
         item {
             TextButton(onClick = { viewModel.resetForm() }) { Text("Vider le formulaire") }
         }
