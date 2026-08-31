@@ -1,14 +1,92 @@
 package com.example.mmarecomp.data
 
+import com.example.mmarecomp.data.offline.DeletePayload
+import com.example.mmarecomp.data.offline.MealListCache
+import com.example.mmarecomp.data.offline.OfflineCoordinator
+import com.example.mmarecomp.data.offline.SyncEntityType
+import com.example.mmarecomp.data.offline.SyncOperation
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.NewMeal
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import java.util.UUID
 
-class MealRepository {
+class MealRepository(
+    private val offline: OfflineCoordinator? = null,
+) {
     private val client = SupabaseProvider.client
+    private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun fetchForDate(forDate: String): List<Meal> =
+    suspend fun fetchForDate(forDate: String): List<Meal> {
+        val cacheKey = "meals_date_$forDate"
+        return if (offline != null) {
+            offline.fetchWithCache(
+                cacheKey = cacheKey,
+                fetchRemote = { fetchForDateRemote(forDate) },
+                readCache = { payload -> json.decodeFromString<MealListCache>(payload).items },
+                writeCache = { meals -> json.encodeToString(MealListCache(meals)) },
+            )
+        } else {
+            fetchForDateRemote(forDate)
+        }
+    }
+
+    suspend fun fetchSince(sinceDate: String): List<Meal> {
+        val cacheKey = "meals_since_$sinceDate"
+        return if (offline != null) {
+            offline.fetchWithCache(
+                cacheKey = cacheKey,
+                fetchRemote = { fetchSinceRemote(sinceDate) },
+                readCache = { payload -> json.decodeFromString<MealListCache>(payload).items },
+                writeCache = { meals -> json.encodeToString(MealListCache(meals)) },
+            )
+        } else {
+            fetchSinceRemote(sinceDate)
+        }
+    }
+
+    suspend fun log(meal: NewMeal): Meal =
+        try {
+            logRemote(meal)
+        } catch (e: java.io.IOException) {
+            if (offline == null) throw e
+            offline.enqueue(
+                entityType = SyncEntityType.MEAL,
+                operation = SyncOperation.INSERT,
+                payloadJson = json.encodeToString(meal),
+            )
+            Meal(
+                id = "local-${UUID.randomUUID()}",
+                userId = "",
+                date = meal.date,
+                repas = meal.repas,
+                calories = meal.calories,
+                proteinesG = meal.proteinesG,
+                glucidesG = meal.glucidesG,
+                lipidesG = meal.lipidesG,
+                description = meal.description,
+            )
+        }
+
+    suspend fun delete(id: String) {
+        try {
+            deleteRemote(id)
+        } catch (e: java.io.IOException) {
+            if (offline == null) throw e
+            if (!id.startsWith("local-")) {
+                offline.enqueue(
+                    entityType = SyncEntityType.MEAL,
+                    operation = SyncOperation.DELETE,
+                    payloadJson = json.encodeToString(DeletePayload(id)),
+                )
+            }
+        }
+    }
+
+    suspend fun fetchForDateRemote(forDate: String): List<Meal> =
         client.postgrest.from("meals")
             .select {
                 filter { eq("date", forDate) }
@@ -16,7 +94,7 @@ class MealRepository {
             }
             .decodeList()
 
-    suspend fun fetchSince(sinceDate: String): List<Meal> =
+    suspend fun fetchSinceRemote(sinceDate: String): List<Meal> =
         client.postgrest.from("meals")
             .select {
                 filter { gte("date", sinceDate) }
@@ -24,9 +102,7 @@ class MealRepository {
             }
             .decodeList()
 
-    /** Upsert sur (user_id, date, repas) : re-loguer un créneau remplace
-     *  l'entrée existante plutôt que d'en créer une deuxième. */
-    suspend fun log(meal: NewMeal): Meal =
+    suspend fun logRemote(meal: NewMeal): Meal =
         client.postgrest.from("meals")
             .upsert(meal) {
                 onConflict = "user_id,date,repas"
@@ -34,7 +110,7 @@ class MealRepository {
             }
             .decodeSingle()
 
-    suspend fun delete(id: String) {
+    suspend fun deleteRemote(id: String) {
         client.postgrest.from("meals").delete { filter { eq("id", id) } }
     }
 }

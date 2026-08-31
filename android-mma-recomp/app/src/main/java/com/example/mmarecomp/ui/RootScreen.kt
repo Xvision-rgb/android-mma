@@ -1,5 +1,6 @@
 package com.example.mmarecomp.ui
 
+import android.app.Application
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +18,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.auth.AuthScreen
 import com.example.mmarecomp.ui.nav.MainNav
 import com.example.mmarecomp.util.SessionGate
+import com.example.mmarecomp.viewmodel.AppViewModelFactory
 import com.example.mmarecomp.viewmodel.AuthViewModel
 import com.example.mmarecomp.viewmodel.PhaseState
 import com.example.mmarecomp.viewmodel.SessionProfileViewModel
@@ -74,7 +78,9 @@ private fun AuthenticatedShell(
     userEmail: String,
     authRepository: AuthRepository,
 ) {
-    val sessionProfileViewModel = remember(userId) { SessionProfileViewModel(userId) }
+    val application = LocalContext.current.applicationContext as Application
+    val factory = remember(userId) { AppViewModelFactory(application, userId) }
+    val sessionProfileViewModel: SessionProfileViewModel = viewModel(factory = factory)
     val phaseState = sessionProfileViewModel.phaseState
 
     LaunchedEffect(userId) {
@@ -92,6 +98,7 @@ private fun AuthenticatedShell(
                 authRepository = authRepository,
                 currentPhase = currentPhase,
                 onPhaseChange = { currentPhase = it },
+                viewModelFactory = factory,
             )
         }
         is PhaseState.Error -> {

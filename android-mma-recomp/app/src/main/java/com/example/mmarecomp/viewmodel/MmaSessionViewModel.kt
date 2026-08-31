@@ -11,6 +11,8 @@ import com.example.mmarecomp.model.NewMmaSession
 import com.example.mmarecomp.util.DateUtils
 import com.example.mmarecomp.util.ParsedWodMovement
 import com.example.mmarecomp.util.WodParser
+import com.example.mmarecomp.ui.components.ErrorOperation
+import com.example.mmarecomp.ui.components.ScreenError
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -25,8 +27,16 @@ class MmaSessionViewModel(
     var notesTechnique by mutableStateOf("")
     var isSaving by mutableStateOf(false)
         private set
+    var isLoading by mutableStateOf(false)
+        private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+    var errorOperation by mutableStateOf(ErrorOperation.LOAD)
+        private set
+
+    val screenError: ScreenError?
+        get() = errorMessage?.let { ScreenError(it, errorOperation) }
+
     var recentSessions by mutableStateOf<List<MmaSession>>(emptyList())
         private set
 
@@ -51,6 +61,8 @@ class MmaSessionViewModel(
     }
 
     fun loadRecent() {
+        isLoading = true
+        errorMessage = null
         viewModelScope.launch {
             recentSessions = try {
                 repository.fetchRecent()
@@ -58,14 +70,18 @@ class MmaSessionViewModel(
                 rethrowCancellation(e)
                 when (e) {
                     is java.io.IOException -> {
+                errorOperation = ErrorOperation.LOAD
                 errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
                 emptyList()
                     }
                     else -> {
+                errorOperation = ErrorOperation.LOAD
                 errorMessage = "Impossible de charger l'historique des séances MMA."
                 emptyList()
                     }
                 }
+            } finally {
+                isLoading = false
             }
         }
     }

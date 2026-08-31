@@ -152,7 +152,7 @@ fun CalorieGoalScreen(viewModel: CalorieGoalViewModel, onBack: () -> Unit = {}) 
                 SoftAlertBanner(message = "Mode enregistré — la cible du jour a été mise à jour ✓")
             }
         }
-        viewModel.errorMessage?.let { error ->
+        viewModel.screenError?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
 

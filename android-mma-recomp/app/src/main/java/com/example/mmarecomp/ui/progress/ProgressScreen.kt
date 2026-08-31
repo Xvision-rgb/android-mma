@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -26,8 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.components.AppScaffold
+import com.example.mmarecomp.ui.components.AsyncScreenShell
 import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
+import com.example.mmarecomp.ui.components.WeeklyInsightsCard
 import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.CsvExport
@@ -40,12 +43,28 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
     val context = LocalContext.current
 
     AppScaffold(title = "Progression") { padding ->
+        AsyncScreenShell(
+            isLoading = viewModel.isLoading,
+            error = viewModel.screenError,
+            isEmpty = !viewModel.hasAnyData && !viewModel.isLoading,
+            emptyTitle = "Pas encore de données de progression",
+            emptySubtitle = "Logue des pesées, séances ou repas pour voir tes tendances ici.",
+            onRetry = { viewModel.load() },
+            modifier = Modifier.padding(padding),
+        ) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth().padding(padding),
+        modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(Dimens.spaceMd),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
-        viewModel.errorMessage?.let { error ->
+        item {
+            WeeklyInsightsCard(
+                insights = viewModel.weeklyInsights,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        viewModel.screenError?.let { error ->
             item { ErrorBanner(error, onRetry = { viewModel.load() }) }
         }
 
@@ -248,6 +267,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                 }
             }
         }
+    }
     }
     }
 }

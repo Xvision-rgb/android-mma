@@ -53,7 +53,10 @@ import com.example.mmarecomp.util.ModulationSeance
 import com.example.mmarecomp.util.MuscleZoneClassifier
 import com.example.mmarecomp.util.RelativeStrength
 import com.example.mmarecomp.util.TrainingLoad
+import com.example.mmarecomp.util.DailyJourney
+import com.example.mmarecomp.util.DailyJourneyState
 import com.example.mmarecomp.util.TrendPoint
+import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.ScreenError
 import com.example.mmarecomp.util.rethrowCancellation
@@ -70,6 +73,7 @@ class DashboardViewModel(
     private val dailyCheckInRepository: DailyCheckInRepository = DailyCheckInRepository(),
     private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
     private val context: Context? = null,
+    private val syncManager: SyncManager? = null,
 ) : ViewModel() {
     private val streakManager = context?.let { StreakManager(it) }
     private val achievementManager = context?.let { AchievementManager(it) }
@@ -121,6 +125,24 @@ class DashboardViewModel(
     var mmaSessions by mutableStateOf<List<MmaSession>>(emptyList())
         private set
     var unlockedAchievement by mutableStateOf<AchievementType?>(null)
+    var pendingSyncCount by mutableStateOf(0)
+        private set
+
+    val dailyJourney: DailyJourneyState
+        get() {
+            val today = DateUtils.today()
+            val planToday = planThisWeek.firstOrNull {
+                it.jourSemaine == DateUtils.weekdayIso(today)
+            }
+            return DailyJourney.compute(
+                checkInToday = checkInAujourdhui,
+                weighInsToday = morningWeighIns.filter { it.date == today },
+                workoutsToday = workoutsThisWeek.filter { it.date == today },
+                mmaSessionsToday = mmaSessions.filter { it.date == today },
+                mealsToday = mealsLast7Days.filter { it.date == today },
+                planToday = planToday,
+            )
+        }
 
     val avgCaloriesLast7Days: Int
         get() {
@@ -417,6 +439,9 @@ class DashboardViewModel(
         errorMessage = null
         viewModelScope.launch {
             try {
+                syncManager?.syncAll()
+                syncManager?.let { pendingSyncCount = it.offlinePendingCount() }
+
                 val mondayOfWeek = DateUtils.startOfWeek()
                 val fenetre7j = DateUtils.inclusiveStart(7)
                 val fenetre28j = DateUtils.inclusiveStart(28)
@@ -475,6 +500,13 @@ class DashboardViewModel(
             } finally {
                 isLoading = false
             }
+        }
+    }
+
+    fun syncPending() {
+        viewModelScope.launch {
+            syncManager?.syncAll()
+            syncManager?.let { pendingSyncCount = it.offlinePendingCount() }
         }
     }
 
