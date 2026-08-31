@@ -51,6 +51,10 @@
     <string name="workout_reset_confirm_message">Les exercices saisis seront effacés. Cette action est irréversible.</string>
     <string name="workout_reset_confirm_ok">Vider</string>
     <string name="workout_reset_confirm_cancel">Annuler</string>
+    <string name="workout_modulation_applied">Modulation appliquée à ta séance ✓</string>
+
+    <!-- Check-in -->
+    <string name="checkin_saved_with_modulation">Point du jour enregistré ✓ — %1$s. %2$s</string>
 
     <!-- Meal log -->
     <string name="meal_log_title">Log repas</string>

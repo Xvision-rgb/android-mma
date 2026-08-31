@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.readinessColor
 import com.example.mmarecomp.util.Formatting
+import com.example.mmarecomp.util.ModulationApplier
 import com.example.mmarecomp.util.ModulationSeance
 import com.example.mmarecomp.util.TrainingLoad
 
@@ -63,9 +64,21 @@ fun RecoveryReadinessCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        Column(verticalArrangement = Arrangement.spacedBy(Dimens.spaceXs)) {
+            Text("Ce que ça change concrètement :", style = MaterialTheme.typography.labelSmall)
+            ModulationApplier.actionsConcretes(modulation).forEach { action ->
+                Text(
+                    "• $action",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         if (!aCheckInAujourdhui) {
             Text(
-                "Pas encore de point ce matin — la modulation se base sur ta charge seule.",
+                "Pas encore de point ce matin — la modulation se base sur ta charge seule. " +
+                    "Sans ton ressenti, l'app ne peut pas adapter ta séance.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -73,11 +86,16 @@ fun RecoveryReadinessCard(
         } else {
             score?.let {
                 Text(
-                    "Score de forme : $it/25",
+                    "Point du jour fait ✓ — Score de forme : $it/25",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
             }
+            Text(
+                "Ouvre l'onglet Séance : tes exercices seront ajustés automatiquement selon cette modulation.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         acwr?.let {

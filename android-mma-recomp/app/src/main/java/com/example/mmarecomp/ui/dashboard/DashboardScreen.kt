@@ -26,6 +26,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,9 +36,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.R
@@ -56,9 +61,11 @@ import com.example.mmarecomp.ui.components.WeightTrendChart
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.util.Formatting
+import com.example.mmarecomp.util.ModulationApplier
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
 import com.example.mmarecomp.viewmodel.DashboardViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardScreen(
@@ -71,6 +78,9 @@ fun DashboardScreen(
     LaunchedEffect(phase) { viewModel.load(phase) }
 
     var showCheckIn by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val hasData = viewModel.workoutsThisWeek.isNotEmpty() || viewModel.mealsLast7Days.isNotEmpty() ||
         viewModel.morningWeighIns.isNotEmpty()
@@ -385,8 +395,26 @@ fun DashboardScreen(
                 ) {
                     DailyCheckInSheet(
                         onSubmit = { sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang ->
-                            viewModel.enregistrerCheckIn(sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang)
-                            showCheckIn = false
+                            viewModel.enregistrerCheckIn(
+                                sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang,
+                            ) { success, modulation ->
+                                if (success) {
+                                    scope.launch {
+                                        val actions = ModulationApplier.actionsConcretes(modulation)
+                                            .firstOrNull()
+                                            .orEmpty()
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(
+                                                R.string.checkin_saved_with_modulation,
+                                                modulation.action.label,
+                                                actions,
+                                            ),
+                                            duration = SnackbarDuration.Long,
+                                        )
+                                    }
+                                }
+                                showCheckIn = false
+                            }
                         },
                         onDismiss = { showCheckIn = false },
                     )
@@ -402,6 +430,8 @@ fun DashboardScreen(
                 )
             }
         }
+
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
     }
 }

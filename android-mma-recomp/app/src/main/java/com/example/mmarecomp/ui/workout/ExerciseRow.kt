@@ -45,6 +45,7 @@ fun ExerciseRow(
     protocole: ApreProtocol = ApreProtocol.APRE_10,
     incrementKg: Double = ApreEngine.INCREMENT_DEFAUT,
     biaisRir: Double = 0.0,
+    rirBonusModulation: Int = 0,
     seuilChuteStrict: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -102,8 +103,13 @@ fun ExerciseRow(
         }
 
         val cibleRir = if (exercice.nom.isNotBlank()) RirTargets.cible(exercice) else null
+        val cibleLabel = when {
+            cibleRir == null -> null
+            rirBonusModulation > 0 -> "${cibleRir.label} (+$rirBonusModulation modulation)"
+            else -> cibleRir.label
+        }
         Text(
-            if (cibleRir != null) "Séries — RIR cible ${cibleRir.label}" else "Séries",
+            if (cibleLabel != null) "Séries — RIR cible $cibleLabel" else "Séries",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
