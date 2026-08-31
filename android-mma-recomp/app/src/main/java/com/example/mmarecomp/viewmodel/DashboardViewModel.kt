@@ -129,21 +129,48 @@ class DashboardViewModel(
     var pendingSyncCount by mutableStateOf(0)
         private set
 
-    val dailyJourney: DailyJourneyState
-        get() {
-            val today = DateUtils.today()
-            val planToday = planThisWeek.firstOrNull {
-                it.jourSemaine == DateUtils.weekdayIso(today)
-            }
-            return DailyJourney.compute(
-                checkInToday = checkInAujourdhui,
-                weighInsToday = morningWeighIns.filter { it.date == today },
-                workoutsToday = workoutsThisWeek.filter { it.date == today },
-                mmaSessionsToday = mmaSessions.filter { it.date == today },
-                mealsToday = mealsLast7Days.filter { it.date == today },
-                planToday = planToday,
-            )
+    var dailyJourneyState by mutableStateOf(emptyDailyJourney())
+        private set
+
+    private fun emptyDailyJourney(): DailyJourneyState =
+        DailyJourney.compute(
+            checkInToday = null,
+            weighInsToday = emptyList(),
+            workoutsToday = emptyList(),
+            mmaSessionsToday = emptyList(),
+            mealsToday = emptyList(),
+            planToday = null,
+        )
+
+    private fun refreshDailyJourney() {
+        val today = DateUtils.today()
+        val planToday = planThisWeek.firstOrNull {
+            it.jourSemaine == DateUtils.weekdayIso(today)
         }
+        dailyJourneyState = DailyJourney.compute(
+            checkInToday = checkInAujourdhui,
+            weighInsToday = morningWeighIns.filter { it.date == today },
+            workoutsToday = workoutsThisWeek.filter { it.date == today },
+            mmaSessionsToday = mmaSessions.filter { it.date == today },
+            mealsToday = mealsLast7Days.filter { it.date == today },
+            planToday = planToday,
+        )
+    }
+
+    /** Conservé pour les tests — préférer [dailyJourneyState] côté UI. */
+    val dailyJourney: DailyJourneyState
+        get() = dailyJourneyState
+
+    private fun mergeCheckIns(remote: List<DailyCheckIn>, local: List<DailyCheckIn>): List<DailyCheckIn> {
+        val byDate = remote.associateBy { it.date }.toMutableMap()
+        for (checkIn in local) {
+            val pendingLocal = checkIn.id.startsWith("local-")
+            if (pendingLocal && !byDate.containsKey(checkIn.date)) {
+                byDate[checkIn.date] = checkIn
+            }
+        }
+        return byDate.values.sortedBy { it.date }
+    }
 
     val avgCaloriesLast7Days: Int
         get() {
@@ -466,9 +493,12 @@ class DashboardViewModel(
                 workoutsLast28Days = runCatching {
                     workoutRepository.fetchWeek(fenetre28j)
                 }.getOrDefault(emptyList())
-                checkInsRecents = runCatching {
-                    dailyCheckInRepository.fetchSince(fenetre28j)
-                }.getOrDefault(emptyList())
+                checkInsRecents = mergeCheckIns(
+                    runCatching {
+                        dailyCheckInRepository.fetchSince(fenetre28j)
+                    }.getOrDefault(emptyList()),
+                    checkInsRecents,
+                )
                 mmaSessions = runCatching {
                     mmaSessionRepository.fetchSince(fenetre28j)
                 }.getOrDefault(emptyList())
@@ -488,6 +518,7 @@ class DashboardViewModel(
                 }
 
                 checkAchievements()
+                refreshDailyJourney()
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {
@@ -539,6 +570,7 @@ class DashboardViewModel(
                 val enregistre = dailyCheckInRepository.log(nouveau)
                 checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
                 activityDates = activityDates + enregistre.date
+                refreshDailyJourney()
                 onResult(true, modulation)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
