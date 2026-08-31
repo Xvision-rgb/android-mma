@@ -47,6 +47,9 @@
     <!-- Meal log -->
     <string name="meal_log_title">Log repas</string>
     <string name="meal_save">Enregistrer ce repas</string>
+    <string name="meal_save_update">Mettre à jour ce créneau</string>
+    <string name="meal_tap_to_edit">Toucher pour modifier</string>
+    <string name="meal_slot_logged">%1$s — déjà loggé</string>
     <string name="meal_saving">Enregistrement…</string>
     <string name="meal_clear">Vider</string>
     <string name="meal_saved">Repas enregistré ✓</string>

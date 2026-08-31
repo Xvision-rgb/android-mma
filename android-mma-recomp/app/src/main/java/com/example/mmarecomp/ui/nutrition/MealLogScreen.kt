@@ -72,6 +72,7 @@ import com.example.mmarecomp.ui.components.PrimaryActionBar
 import com.example.mmarecomp.ui.components.TargetVsActualBar
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.util.Formatting
+import com.example.mmarecomp.util.MealDescriptionParser
 import com.example.mmarecomp.viewmodel.MealLogViewModel
 import kotlinx.coroutines.launch
 
@@ -148,6 +149,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         }
     }
     var showChangeTarget by remember { mutableStateOf(false) }
+    var initialSlotLoadDone by remember { mutableStateOf(false) }
 
     fun recomputeFromItems() {
         calories = mealItems.sumOf { it.calories }.toString()
@@ -155,6 +157,69 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         glucides = Formatting.oneDecimal(mealItems.sumOf { it.glucidesG })
         lipides = Formatting.oneDecimal(mealItems.sumOf { it.lipidesG })
         if (descriptionIsAuto) description = mealItems.joinToString(", ") { it.label }
+    }
+
+    /** Charge un repas déjà enregistré dans le formulaire — aliments visibles
+     *  et modifiables sans tout ressaisir. */
+    fun loadMealIntoForm(meal: Meal) {
+        meal.repasSlot?.let { selectedSlot = it }
+        calories = meal.calories.toString()
+        proteines = Formatting.oneDecimal(meal.proteinesG)
+        glucides = Formatting.oneDecimal(meal.glucidesG)
+        lipides = Formatting.oneDecimal(meal.lipidesG)
+        description = meal.description.orEmpty()
+        descriptionIsAuto = meal.description.isNullOrBlank()
+        mealItems.clear()
+        mealItems.addAll(
+            MealDescriptionParser.linesFromMeal(meal).map { line ->
+                MealFoodItem(
+                    label = line.label,
+                    calories = line.calories,
+                    proteinesG = line.proteinesG,
+                    glucidesG = line.glucidesG,
+                    lipidesG = line.lipidesG,
+                )
+            },
+        )
+        selectedFood = null
+        quantiteG = "100"
+        viewModel.foodQuery = ""
+    }
+
+    fun clearForm(keepSlot: Boolean = true) {
+        calories = ""
+        proteines = ""
+        glucides = ""
+        lipides = ""
+        description = ""
+        mealItems.clear()
+        descriptionIsAuto = true
+        selectedFood = null
+        quantiteG = "100"
+        viewModel.foodQuery = ""
+        if (!keepSlot) selectedSlot = RepasSlot.Matin
+    }
+
+    /** Change de créneau en chargeant le repas existant ou en vidant le brouillon. */
+    fun selectSlot(slot: RepasSlot) {
+        if (slot == selectedSlot) return
+        selectedSlot = slot
+        val existing = viewModel.mealsForDay.firstOrNull { it.repasSlot == slot }
+        if (existing != null) loadMealIntoForm(existing) else clearForm()
+    }
+
+    val existingMealForSlot = viewModel.mealsForDay.firstOrNull { it.repasSlot == selectedSlot }
+
+    LaunchedEffect(viewModel.date) {
+        initialSlotLoadDone = false
+    }
+
+    /** Au chargement du jour, pré-remplit le créneau sélectionné s'il est déjà loggé. */
+    LaunchedEffect(viewModel.mealsForDay, viewModel.date) {
+        if (!initialSlotLoadDone) {
+            viewModel.mealsForDay.firstOrNull { it.repasSlot == selectedSlot }?.let { loadMealIntoForm(it) }
+            initialSlotLoadDone = true
+        }
     }
 
     /** Ajoute un aliment de plus à ce repas (au lieu de remplacer le
@@ -241,7 +306,9 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
         title = stringResource(R.string.meal_log_title),
         bottomBar = {
             PrimaryActionBar(
-                label = stringResource(R.string.meal_save),
+                label = stringResource(
+                    if (existingMealForSlot != null) R.string.meal_save_update else R.string.meal_save,
+                ),
                 onClick = { performSave() },
             )
         },
@@ -455,15 +522,43 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     }
                 }
                 items(slotMeals, key = { it.id }) { meal ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = Dimens.minTouchTarget)
+                            .clickable {
+                                loadMealIntoForm(meal)
+                                scope.launch {
+                                    listState.animateScrollToItem(
+                                        listState.layoutInfo.visibleItemsInfo
+                                            .firstOrNull { it.key == "meal-form-section" }
+                                            ?.index
+                                            ?: 0,
+                                    )
+                                }
+                            }
+                            .padding(vertical = Dimens.spaceXs),
                     ) {
                         Text(
-                            "${meal.calories} kcal · ${meal.proteinesG.toInt()}g prot",
+                            MealDescriptionParser.summaryLabel(meal),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            "${meal.calories} kcal · ${Formatting.oneDecimal(meal.proteinesG)} g prot · " +
+                                "${Formatting.oneDecimal(meal.glucidesG)} g gluc · ${Formatting.oneDecimal(meal.lipidesG)} g lip",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Text(
+                            stringResource(R.string.meal_tap_to_edit),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
                         IconButton(onClick = { deleteWithUndo(meal) }) {
                             Icon(
                                 Icons.Filled.Delete,
@@ -509,8 +604,38 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
             }
         }
 
-        item { HorizontalDivider() }
+        item(key = "meal-form-section") { HorizontalDivider() }
         item { Text("Ajouter / modifier un repas", style = MaterialTheme.typography.titleMedium) }
+
+        item {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                RepasSlot.entries.forEach { slot ->
+                    val logged = viewModel.mealsForDay.any { it.repasSlot == slot }
+                    FilterChip(
+                        selected = selectedSlot == slot,
+                        onClick = { selectSlot(slot) },
+                        label = {
+                            Text(
+                                if (logged) "${slot.label} ✓" else slot.label,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+
+        existingMealForSlot?.let { logged ->
+            item {
+                Text(
+                    stringResource(R.string.meal_slot_logged, logged.repasSlot?.label ?: ""),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+        }
 
         item {
             var expanded by remember { mutableStateOf(false) }
@@ -519,13 +644,19 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
                     value = selectedSlot.label,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Créneau") },
+                    label = { Text("Créneau (autre liste)") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                 )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     RepasSlot.entries.forEach { slot ->
-                        DropdownMenuItem(text = { Text(slot.label) }, onClick = { selectedSlot = slot; expanded = false })
+                        DropdownMenuItem(
+                            text = { Text(slot.label) },
+                            onClick = {
+                                selectSlot(slot)
+                                expanded = false
+                            },
+                        )
                     }
                 }
             }
@@ -768,17 +899,7 @@ fun MealLogScreen(viewModel: MealLogViewModel) {
 
         item {
             TextButton(
-                onClick = {
-                    calories = ""
-                    proteines = ""
-                    glucides = ""
-                    lipides = ""
-                    description = ""
-                    selectedFood = null
-                    viewModel.foodQuery = ""
-                    mealItems.clear()
-                    descriptionIsAuto = true
-                },
+                onClick = { clearForm() },
                 modifier = Modifier.defaultMinSize(minHeight = Dimens.minTouchTarget),
             ) { Text(stringResource(R.string.meal_clear)) }
         }
