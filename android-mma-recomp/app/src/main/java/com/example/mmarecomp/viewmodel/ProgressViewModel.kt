@@ -32,6 +32,13 @@ import kotlinx.coroutines.launch
 
 data class ChargePoint(val date: LocalDate, val chargeKg: Double)
 
+data class CardioPoint(
+    val date: LocalDate,
+    val dureeMin: Int,
+    val distanceKm: Double?,
+    val allureMinParKm: Double?,
+)
+
 class ProgressViewModel(
     private val weighInRepository: WeighInRepository = WeighInRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
@@ -135,8 +142,31 @@ class ProgressViewModel(
             for (workout in workouts) {
                 val date = DateUtils.date(workout.date) ?: continue
                 for (exercice in workout.exercices) {
+                    if (exercice.isCardio) continue
                     val charge = exercice.chargeMaxKg ?: exercice.chargeReelleKg ?: continue
                     result.getOrPut(exercice.nom) { mutableListOf() }.add(ChargePoint(date, charge))
+                }
+            }
+            return result.mapValues { (_, points) -> points.sortedBy { it.date } }
+        }
+
+    /** Évolution cardio : durée / distance / allure par activité. */
+    val cardioProgressionByExercise: Map<String, List<CardioPoint>>
+        get() {
+            val result = mutableMapOf<String, MutableList<CardioPoint>>()
+            for (workout in workouts) {
+                val date = DateUtils.date(workout.date) ?: continue
+                for (exercice in workout.exercices) {
+                    if (!exercice.isCardio) continue
+                    val duree = exercice.dureeMin?.takeIf { it > 0 } ?: continue
+                    result.getOrPut(exercice.nom) { mutableListOf() }.add(
+                        CardioPoint(
+                            date = date,
+                            dureeMin = duree,
+                            distanceKm = exercice.distanceKm,
+                            allureMinParKm = exercice.allureMinParKm,
+                        ),
+                    )
                 }
             }
             return result.mapValues { (_, points) -> points.sortedBy { it.date } }

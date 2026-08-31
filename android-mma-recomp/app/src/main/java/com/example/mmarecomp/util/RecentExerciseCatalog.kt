@@ -1,8 +1,11 @@
 package com.example.mmarecomp.util
 
+import com.example.mmarecomp.model.ExerciseModality
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.LoggedSet
 import com.example.mmarecomp.model.Workout
+import com.example.mmarecomp.model.asCardio
+import com.example.mmarecomp.model.asStrength
 import com.example.mmarecomp.model.withSets
 
 /** Exercice issu de l'historique, prêt à être ajouté ou à remplacer un mouvement du plan. */
@@ -12,6 +15,9 @@ data class RecentExerciseEntry(
     val nbSeries: Int,
     val template: LoggedExercise,
     val derniereDate: String,
+    val modality: ExerciseModality = ExerciseModality.Strength,
+    val derniereDureeMin: Int? = null,
+    val derniereDistanceKm: Double? = null,
 )
 
 object RecentExerciseCatalog {
@@ -31,21 +37,34 @@ object RecentExerciseCatalog {
             RecentExerciseEntry(
                 nom = ExerciseName.propre(exercice.nom),
                 derniereChargeKg = exercice.chargeMaxKg,
-                nbSeries = exercice.effectiveSets.size.coerceAtLeast(1),
+                nbSeries = if (exercice.isCardio) 0 else exercice.effectiveSets.size.coerceAtLeast(1),
                 template = exercice,
                 derniereDate = date,
+                modality = exercice.modality,
+                derniereDureeMin = exercice.dureeMin,
+                derniereDistanceKm = exercice.distanceKm,
             )
         }
     }
 
-    /** Remplace le nom et les charges tout en gardant le nombre de séries du plan. */
+    /** Remplace le nom et les charges tout en gardant le nombre de séries du plan.
+     *  Si le template est cardio, bascule tout le slot en cardio. */
     fun replaceKeepingStructure(current: LoggedExercise, template: LoggedExercise): LoggedExercise {
-        val targetCount = current.effectiveSets.size.coerceAtLeast(1)
+        if (template.isCardio) {
+            return current.copy(nom = ExerciseName.propre(template.nom)).asCardio(
+                dureeMin = template.dureeMin ?: current.dureeMin ?: 30,
+                distanceKm = template.distanceKm ?: current.distanceKm,
+                intensite = template.intensite ?: current.intensite ?: 5,
+            )
+        }
+        val strengthCurrent = if (current.isCardio) current.asStrength() else current
+        val targetCount = strengthCurrent.effectiveSets.size.coerceAtLeast(1)
         val templateSets = template.effectiveSets
         if (templateSets.isEmpty()) {
-            return current.copy(
+            return strengthCurrent.copy(
                 nom = ExerciseName.propre(template.nom),
                 chargeCibleKg = template.chargeCibleKg ?: template.chargeMaxKg,
+                modality = ExerciseModality.Strength,
             )
         }
         val newSets = (0 until targetCount).map { index ->
@@ -55,15 +74,23 @@ object RecentExerciseCatalog {
                 estAmrap = index == targetCount - 1,
             )
         }
-        return current.copy(
+        return strengthCurrent.copy(
             nom = ExerciseName.propre(template.nom),
             chargeCibleKg = template.chargeCibleKg ?: template.chargeMaxKg,
+            modality = ExerciseModality.Strength,
         ).withSets(newSets)
     }
 
-    fun copyForAdd(template: LoggedExercise): LoggedExercise =
-        template.copy(
-            nom = ExerciseName.propre(template.nom),
-            sets = template.effectiveSets.map { it.copy() },
-        )
+    fun copyForAdd(template: LoggedExercise): LoggedExercise {
+        val propre = template.copy(nom = ExerciseName.propre(template.nom))
+        return if (propre.isCardio) {
+            propre.asCardio(
+                dureeMin = propre.dureeMin ?: 30,
+                distanceKm = propre.distanceKm,
+                intensite = propre.intensite ?: 5,
+            )
+        } else {
+            propre.copy(sets = propre.effectiveSets.map { it.copy() })
+        }
+    }
 }

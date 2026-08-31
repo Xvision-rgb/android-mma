@@ -95,6 +95,10 @@ class MealLogViewModel(
      *  et sert de base à l'estimation de dépense d'exercice. */
     var chargeInterneDuJour by mutableStateOf<Double?>(null)
 
+    /** Dépense d'exercice du jour (kcal) — session-RPE et/ou MET cardio. */
+    var depenseExerciceKcal by mutableStateOf(0)
+        private set
+
     val caloriesDuJour: Int get() = mealsForDay.sumOf { it.calories }
 
     /** Disponibilité énergétique du jour : ce qui reste une fois
@@ -104,8 +108,8 @@ class MealLogViewModel(
         get() {
             val poids = poidsCorpsKg ?: return null
             val masseMaigre = CalorieCalculator.leanMassKg(poids, bfPct)
-            val depense = chargeInterneDuJour
-                ?.let { EnergyAvailability.depuisChargeInterne(it) }
+            val depense = depenseExerciceKcal.takeIf { it > 0 }
+                ?: chargeInterneDuJour?.let { EnergyAvailability.depuisChargeInterne(it) }
                 ?: 0
             return EnergyAvailability.calculer(caloriesDuJour, depense, masseMaigre)
         }
@@ -261,6 +265,12 @@ class MealLogViewModel(
                     .filter { it.date == dateString }
                     .distinctBy { it.id }
                 chargeInterneDuJour = TrainingLoad.chargePourDate(dateString, workouts, mma)
+                depenseExerciceKcal = TrainingLoad.depenseKcalPourDate(
+                    date = dateString,
+                    workouts = workouts,
+                    mmaSessions = mma,
+                    poidsKg = poidsCorpsKg,
+                )
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 val pendingMeals = syncManager?.pendingLocalMeals()

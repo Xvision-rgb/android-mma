@@ -346,18 +346,24 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
 
         item {
-            val totalSeries = viewModel.exercices.sumOf { it.effectiveSets.size }
+            val strengthCount = viewModel.exercices.count { !it.isCardio }
+            val cardioCount = viewModel.exercices.count { it.isCardio }
+            val totalSeries = viewModel.exercices.filterNot { it.isCardio }.sumOf { it.effectiveSets.size }
             Text(
                 when {
                     viewModel.exercices.isEmpty() -> "Exercices"
-                    else -> "Exercices (${viewModel.exercices.size}) · $totalSeries séries au total"
+                    else -> buildString {
+                        append("Exercices (${viewModel.exercices.size})")
+                        if (strengthCount > 0) append(" · $totalSeries séries force")
+                        if (cardioCount > 0) append(" · $cardioCount cardio")
+                    }
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
             val volumeTotal = viewModel.exercices.sumOf { it.volumeTotal }
             if (volumeTotal > 0) {
                 Text(
-                    "Volume estimé : ${volumeTotal.toInt()}kg (Σ reps × charge, série par série)",
+                    "Volume force : ${volumeTotal.toInt()}kg (Σ reps × charge)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -366,6 +372,43 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                         "Dernière séance ${viewModel.type.label} : ${previous.toInt()}kg — juste un repère, pas un objectif à battre.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            val (cardioMin, cardioKcal) = viewModel.cardioSummary()
+            if (cardioMin > 0 || cardioKcal > 0) {
+                Text(
+                    buildString {
+                        append("Cardio : ")
+                        if (cardioMin > 0) append("${cardioMin} min")
+                        if (cardioKcal > 0) {
+                            if (cardioMin > 0) append(" · ")
+                            append("~$cardioKcal kcal estimées")
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        item {
+            Text(
+                "Presets cardio — tap pour ajouter",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+            ) {
+                com.example.mmarecomp.util.CardioEnergy.PRESETS.forEach { preset ->
+                    FilterChip(
+                        selected = false,
+                        onClick = { viewModel.addCardioPreset(preset.nom) },
+                        label = { Text(preset.nom) },
                     )
                 }
             }
