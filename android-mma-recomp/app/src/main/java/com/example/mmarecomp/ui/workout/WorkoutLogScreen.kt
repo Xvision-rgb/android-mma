@@ -91,6 +91,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
     var showResetConfirm by remember { mutableStateOf(false) }
+    var replacePickerIndex by remember { mutableStateOf<Int?>(null) }
     val existingWorkout = viewModel.existingWorkoutForType
 
     fun removeWithUndo(index: Int, exercice: LoggedExercise) {
@@ -325,6 +326,25 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 )
             }
         }
+
+        if (viewModel.recentWorkouts.isNotEmpty()) {
+            item {
+                RecentExerciseChipsRow(
+                    entries = viewModel.recentExercisesForAdd(),
+                    onSelect = { entry ->
+                        viewModel.addExerciseFromRecent(entry)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = context.getString(R.string.workout_exercise_added, entry.nom),
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         item {
             val totalSeries = viewModel.exercices.sumOf { it.effectiveSets.size }
             Text(
@@ -398,6 +418,11 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     seuilChuteStrict = com.example.mmarecomp.util.SetStopAdvisor.estStrict(viewModel.type),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (viewModel.recentWorkouts.isNotEmpty()) {
+                        TextButton(onClick = { replacePickerIndex = index }) {
+                            Text(stringResource(R.string.workout_replace_exercise))
+                        }
+                    }
                     IconButton(onClick = { viewModel.moveExerciseUp(index) }, enabled = index > 0) {
                         Icon(
                             Icons.Filled.KeyboardArrowUp,
@@ -559,6 +584,32 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         }
 
     }
+        replacePickerIndex?.let { index ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                ExercisePickerSheet(
+                    title = stringResource(R.string.workout_picker_replace_title),
+                    entries = viewModel.recentExercisesForReplace(index),
+                    onSelect = { entry ->
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.replaceExerciseFromRecent(index, entry)
+                        replacePickerIndex = null
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = context.getString(R.string.workout_exercise_replaced, entry.nom),
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    },
+                    onDismiss = { replacePickerIndex = null },
+                    modifier = Modifier.padding(Dimens.spaceMd),
+                )
+            }
+        }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
     }

@@ -52,6 +52,13 @@
     <string name="workout_reset_confirm_ok">Vider</string>
     <string name="workout_reset_confirm_cancel">Annuler</string>
     <string name="workout_modulation_applied">Modulation appliquée à ta séance ✓</string>
+    <string name="workout_recent_exercises_title">Exos récents — tap pour ajouter</string>
+    <string name="workout_recent_exercises_empty">Aucun autre exercice dans ton historique récent.</string>
+    <string name="workout_replace_exercise">Remplacer</string>
+    <string name="workout_picker_replace_title">Remplacer par un exo récent</string>
+    <string name="workout_picker_cancel">Fermer</string>
+    <string name="workout_exercise_added">%1$s ajouté ✓</string>
+    <string name="workout_exercise_replaced">Remplacé par %1$s ✓</string>
 
     <!-- Check-in -->
     <string name="checkin_saved_with_modulation">Point du jour enregistré ✓ — %1$s. %2$s</string>
