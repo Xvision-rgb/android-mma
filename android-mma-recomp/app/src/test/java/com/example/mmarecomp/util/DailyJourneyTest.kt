@@ -34,9 +34,11 @@ class DailyJourneyTest {
             ),
             mmaSessionsToday = emptyList(),
             mealsToday = listOf(
-                Meal("m", "u", "2026-08-31", 1, 500, 30.0, 50.0, 15.0),
+                Meal("m1", "u", "2026-08-31", 1, 500, 30.0, 50.0, 15.0),
+                Meal("m2", "u", "2026-08-31", 2, 700, 40.0, 70.0, 20.0),
             ),
             planToday = TrainingPlanDay("p", "u", 1, PlanDayType.JambesForce, emptyList(), Phase.Ete),
+            hourOfDay = 14,
         )
         assertEquals(4, journey.completedCount)
         assertEquals(4, journey.totalCount)
@@ -53,9 +55,40 @@ class DailyJourneyTest {
             mmaSessionsToday = emptyList(),
             mealsToday = emptyList(),
             planToday = TrainingPlanDay("p", "u", 1, PlanDayType.Repos, emptyList(), Phase.Ete),
+            hourOfDay = 14,
         )
         assertEquals(0, journey.completedCount)
         assertTrue(journey.steps.first { it.id == DailyJourneyStepId.WORKOUT }.optional)
         assertTrue(journey.steps.first { it.id == DailyJourneyStepId.WORKOUT }.done)
+    }
+
+    @Test
+    fun `nutrition exige deux creneaux apres 11h`() {
+        val withOne = DailyJourney.compute(
+            today = today,
+            checkInToday = null,
+            weighInsToday = emptyList(),
+            workoutsToday = emptyList(),
+            mmaSessionsToday = emptyList(),
+            mealsToday = listOf(Meal("m", "u", "2026-08-31", 1, 500, 30.0, 50.0, 15.0)),
+            planToday = null,
+            hourOfDay = 14,
+        )
+        assertTrue(!withOne.steps.first { it.id == DailyJourneyStepId.NUTRITION }.done)
+
+        val withTwo = DailyJourney.compute(
+            today = today,
+            checkInToday = null,
+            weighInsToday = emptyList(),
+            workoutsToday = emptyList(),
+            mmaSessionsToday = emptyList(),
+            mealsToday = listOf(
+                Meal("m1", "u", "2026-08-31", 1, 500, 30.0, 50.0, 15.0),
+                Meal("m2", "u", "2026-08-31", 3, 600, 35.0, 40.0, 18.0),
+            ),
+            planToday = null,
+            hourOfDay = 14,
+        )
+        assertTrue(withTwo.steps.first { it.id == DailyJourneyStepId.NUTRITION }.done)
     }
 }

@@ -33,13 +33,15 @@ l'ordre** dans le SQL Editor Supabase :
 | `006_daily_checkin.sql` | Table `daily_checkins` (readiness, modulation de séance) |
 | `007_nutrition_target_macros.sql` | Colonnes glucides/lipides cibles sur `nutrition_targets` |
 | `008_workout_type_course.sql` | Type de séance `course` (sorties running, distinct du MMA) |
+| `009_daily_checkin_user_id_default.sql` | `user_id DEFAULT auth.uid()` + policies idempotentes sur `daily_checkins` |
 
 Chaque fichier est idempotent ou documenté comme ré-exécutable — relis l'en-tête
-SQL avant d'appliquer sur une base déjà partiellement migrée.
+SQL avant d'appliquer sur une base déjà partiellement migrée. Voir aussi
+`supabase/README.md` (convention `user_id`).
 
 ### Installation demain matin (checklist rapide)
 
-1. **Supabase** : schéma + migrations `005`–`008` appliquées, URL + clé `anon`
+1. **Supabase** : schéma + migrations `005`–`009` appliquées, URL + clé `anon`
    copiées dans `SupabaseConfig.kt`.
 2. **Android Studio** : ouvrir `android-mma-recomp/`, laisser Gradle synchroniser.
 3. **Téléphone** : débogage USB activé, branché, appareil sélectionné en haut.
@@ -47,12 +49,15 @@ SQL avant d'appliquer sur une base déjà partiellement migrée.
 5. **Premier lancement** : créer un compte ou se connecter, faire une pesée
    matin + un repas pour valider la synchro Supabase.
 
-### Mode hors-ligne (TODO)
+### Mode hors-ligne
 
-Pas encore implémenté : file d'attente locale (outbox) pour repas/séances/pesées
-quand le réseau est coupé, avec rejeu automatique au retour en ligne. L'app
-affiche aujourd'hui une erreur réseau explicite et propose de réessayer — pas de
-fausse confirmation d'enregistrement hors ligne.
+Outbox Room (cache + file d'attente) pour :
+- repas, séances salle, pesées, check-ins, séances MMA
+
+Au retour réseau / refresh Accueil / bouton sync : rejeu avec plafond de retry.
+Les erreurs **schéma** (table manquante) ne partent **pas** en file — message
+explicite à l'écran. Pas d'outbox pour le plan d'entraînement, les cibles
+nutrition ni le profil.
 
 ## 2. Setup du projet Android
 

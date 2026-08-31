@@ -7,11 +7,13 @@ import com.example.mmarecomp.data.offline.SyncOperation
 import com.example.mmarecomp.data.offline.WeighInListCache
 import com.example.mmarecomp.model.NewWeighIn
 import com.example.mmarecomp.model.WeighIn
+import com.example.mmarecomp.util.isOfflineEnqueueable
+import com.example.mmarecomp.util.rethrowCancellation
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class WeighInRepository(
@@ -37,15 +39,18 @@ class WeighInRepository(
     suspend fun log(weighIn: NewWeighIn): WeighIn =
         try {
             logRemote(weighIn)
-        } catch (e: java.io.IOException) {
-            if (offline == null) throw e
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (offline == null || !e.isOfflineEnqueueable()) throw e
+            val localId = "local-${UUID.randomUUID()}"
             offline.enqueue(
                 entityType = SyncEntityType.WEIGH_IN,
                 operation = SyncOperation.INSERT,
                 payloadJson = json.encodeToString(weighIn),
+                id = localId,
             )
             WeighIn(
-                id = "local-${UUID.randomUUID()}",
+                id = localId,
                 userId = "",
                 date = weighIn.date,
                 heure = weighIn.heure,
@@ -57,17 +62,20 @@ class WeighInRepository(
         }
 
     suspend fun delete(id: String) {
+        if (id.startsWith("local-")) {
+            offline?.removeOutboxEntry(id)
+            return
+        }
         try {
             deleteRemote(id)
-        } catch (e: java.io.IOException) {
-            if (offline == null) throw e
-            if (!id.startsWith("local-")) {
-                offline.enqueue(
-                    entityType = SyncEntityType.WEIGH_IN,
-                    operation = SyncOperation.DELETE,
-                    payloadJson = json.encodeToString(DeletePayload(id)),
-                )
-            }
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (offline == null || !e.isOfflineEnqueueable()) throw e
+            offline.enqueue(
+                entityType = SyncEntityType.WEIGH_IN,
+                operation = SyncOperation.DELETE,
+                payloadJson = json.encodeToString(DeletePayload(id)),
+            )
         }
     }
 

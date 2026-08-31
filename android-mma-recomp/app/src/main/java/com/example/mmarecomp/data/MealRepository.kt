@@ -7,11 +7,13 @@ import com.example.mmarecomp.data.offline.SyncEntityType
 import com.example.mmarecomp.data.offline.SyncOperation
 import com.example.mmarecomp.model.Meal
 import com.example.mmarecomp.model.NewMeal
+import com.example.mmarecomp.util.isOfflineEnqueueable
+import com.example.mmarecomp.util.rethrowCancellation
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class MealRepository(
@@ -51,15 +53,18 @@ class MealRepository(
     suspend fun log(meal: NewMeal): Meal =
         try {
             logRemote(meal)
-        } catch (e: java.io.IOException) {
-            if (offline == null) throw e
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (offline == null || !e.isOfflineEnqueueable()) throw e
+            val localId = "local-${UUID.randomUUID()}"
             offline.enqueue(
                 entityType = SyncEntityType.MEAL,
                 operation = SyncOperation.INSERT,
                 payloadJson = json.encodeToString(meal),
+                id = localId,
             )
             Meal(
-                id = "local-${UUID.randomUUID()}",
+                id = localId,
                 userId = "",
                 date = meal.date,
                 repas = meal.repas,
@@ -72,17 +77,20 @@ class MealRepository(
         }
 
     suspend fun delete(id: String) {
+        if (id.startsWith("local-")) {
+            offline?.removeOutboxEntry(id)
+            return
+        }
         try {
             deleteRemote(id)
-        } catch (e: java.io.IOException) {
-            if (offline == null) throw e
-            if (!id.startsWith("local-")) {
-                offline.enqueue(
-                    entityType = SyncEntityType.MEAL,
-                    operation = SyncOperation.DELETE,
-                    payloadJson = json.encodeToString(DeletePayload(id)),
-                )
-            }
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (offline == null || !e.isOfflineEnqueueable()) throw e
+            offline.enqueue(
+                entityType = SyncEntityType.MEAL,
+                operation = SyncOperation.DELETE,
+                payloadJson = json.encodeToString(DeletePayload(id)),
+            )
         }
     }
 

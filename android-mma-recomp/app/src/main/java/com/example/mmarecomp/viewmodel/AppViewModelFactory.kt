@@ -37,13 +37,15 @@ class AppViewModelFactory(
                     nutritionTargetRepository = NutritionTargetRepository(),
                     profileRepository = ProfileRepository(),
                     dailyCheckInRepository = DailyCheckInRepository(offline),
-                    mmaSessionRepository = MmaSessionRepository(),
+                    mmaSessionRepository = MmaSessionRepository(offline),
                     context = application,
                     syncManager = syncManager,
                 ) as T
             modelClass.isAssignableFrom(WorkoutLogViewModel::class.java) ->
                 WorkoutLogViewModel(
                     workoutRepository = WorkoutRepository(offline),
+                    dailyCheckInRepository = DailyCheckInRepository(offline),
+                    mmaSessionRepository = MmaSessionRepository(offline),
                 ) as T
             modelClass.isAssignableFrom(MealLogViewModel::class.java) ->
                 MealLogViewModel(
@@ -64,7 +66,7 @@ class AppViewModelFactory(
                     mealRepository = MealRepository(offline),
                     dailyCheckInRepository = DailyCheckInRepository(offline),
                     nutritionTargetRepository = NutritionTargetRepository(),
-                    mmaSessionRepository = MmaSessionRepository(),
+                    mmaSessionRepository = MmaSessionRepository(offline),
                     context = application,
                 ) as T
             modelClass.isAssignableFrom(ProfileViewModel::class.java) ->
@@ -78,7 +80,7 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(TrainingPlanEditViewModel::class.java) ->
                 TrainingPlanEditViewModel() as T
             modelClass.isAssignableFrom(MmaSessionViewModel::class.java) ->
-                MmaSessionViewModel() as T
+                MmaSessionViewModel(repository = MmaSessionRepository(offline)) as T
             else -> throw IllegalArgumentException("ViewModel inconnu: ${modelClass.name}")
         }
     }
