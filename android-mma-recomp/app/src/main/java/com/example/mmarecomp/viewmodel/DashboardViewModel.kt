@@ -60,7 +60,9 @@ import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.ScreenError
+import com.example.mmarecomp.util.CheckInSaveError
 import com.example.mmarecomp.util.rethrowCancellation
+import com.example.mmarecomp.util.toCheckInSaveError
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(
@@ -553,7 +555,7 @@ class DashboardViewModel(
         stress: Int,
         hrvRmssd: Double?,
         deadHangSec: Int?,
-        onResult: (Boolean, ModulationSeance) -> Unit = { _, _ -> },
+        onResult: (Boolean, ModulationSeance, CheckInSaveError?, Boolean) -> Unit = { _, _, _, _ -> },
     ) {
         viewModelScope.launch {
             val nouveau = NewDailyCheckIn(
@@ -570,12 +572,13 @@ class DashboardViewModel(
                 val enregistre = dailyCheckInRepository.log(nouveau)
                 checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
                 activityDates = activityDates + enregistre.date
+                syncManager?.let { pendingSyncCount = it.offlinePendingCount() }
                 refreshDailyJourney()
-                onResult(true, modulation)
+                onResult(true, modulation, null, enregistre.id.startsWith("local-"))
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 reportError("Impossible d'enregistrer le point du jour.", ErrorOperation.SAVE)
-                onResult(false, modulation)
+                onResult(false, modulation, e.toCheckInSaveError(), false)
             }
         }
     }

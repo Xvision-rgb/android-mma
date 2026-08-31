@@ -8,6 +8,8 @@ import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.NewDailyCheckIn
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import com.example.mmarecomp.util.isOfflineEnqueueable
+import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -39,8 +41,9 @@ class DailyCheckInRepository(
     suspend fun log(checkIn: NewDailyCheckIn): DailyCheckIn =
         try {
             logRemote(checkIn)
-        } catch (e: java.io.IOException) {
-            if (offline == null) throw e
+        } catch (e: Throwable) {
+            rethrowCancellation(e)
+            if (offline == null || !e.isOfflineEnqueueable()) throw e
             offline.enqueue(
                 entityType = SyncEntityType.CHECK_IN,
                 operation = SyncOperation.INSERT,

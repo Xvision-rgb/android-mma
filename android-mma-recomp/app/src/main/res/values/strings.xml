@@ -62,7 +62,10 @@
 
     <!-- Check-in -->
     <string name="checkin_saved_with_modulation">Point du jour enregistré ✓ — %1$s. %2$s</string>
-    <string name="checkin_save_failed">Impossible d\'enregistrer le point du jour — vérifie ta connexion et réessaie.</string>
+    <string name="checkin_saved_pending_sync">Point du jour enregistré sur l\'appareil — synchro serveur en attente.</string>
+    <string name="checkin_save_failed">Impossible d\'enregistrer le point du jour — réessaie dans un instant.</string>
+    <string name="checkin_save_failed_network">Impossible d\'enregistrer le point du jour — vérifie ta connexion et réessaie.</string>
+    <string name="checkin_save_failed_schema">Table Supabase manquante : exécute la migration 006_daily_checkin.sql dans le SQL Editor, puis réessaie.</string>
 
     <!-- Meal log -->
     <string name="meal_log_title">Log repas</string>

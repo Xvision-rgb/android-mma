@@ -67,6 +67,7 @@ import com.example.mmarecomp.ui.components.SyncPendingBanner
 import com.example.mmarecomp.util.DailyJourneyStepId
 import com.example.mmarecomp.util.PlateauStatus
 import com.example.mmarecomp.util.TrendDirection
+import com.example.mmarecomp.util.CheckInSaveError
 import com.example.mmarecomp.viewmodel.DashboardViewModel
 import kotlinx.coroutines.launch
 
@@ -427,26 +428,36 @@ fun DashboardScreen(
                         onSubmit = { sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang ->
                             viewModel.enregistrerCheckIn(
                                 sommeil, courbatures, fatigue, humeur, stress, hrv, deadHang,
-                            ) { success, modulation ->
+                            ) { success, modulation, saveError, pendingSync ->
                                 if (success) {
                                     scope.launch {
-                                        val actions = ModulationApplier.actionsConcretes(modulation)
-                                            .firstOrNull()
-                                            .orEmpty()
-                                        snackbarHostState.showSnackbar(
-                                            message = context.getString(
+                                        val message = if (pendingSync) {
+                                            context.getString(R.string.checkin_saved_pending_sync)
+                                        } else {
+                                            val actions = ModulationApplier.actionsConcretes(modulation)
+                                                .firstOrNull()
+                                                .orEmpty()
+                                            context.getString(
                                                 R.string.checkin_saved_with_modulation,
                                                 modulation.action.label,
                                                 actions,
-                                            ),
+                                            )
+                                        }
+                                        snackbarHostState.showSnackbar(
+                                            message = message,
                                             duration = SnackbarDuration.Long,
                                         )
                                     }
                                     showCheckIn = false
                                 } else {
                                     scope.launch {
+                                        val messageRes = when (saveError) {
+                                            CheckInSaveError.SCHEMA -> R.string.checkin_save_failed_schema
+                                            CheckInSaveError.NETWORK -> R.string.checkin_save_failed_network
+                                            CheckInSaveError.OTHER, null -> R.string.checkin_save_failed
+                                        }
                                         snackbarHostState.showSnackbar(
-                                            message = context.getString(R.string.checkin_save_failed),
+                                            message = context.getString(messageRes),
                                             duration = SnackbarDuration.Long,
                                         )
                                     }
