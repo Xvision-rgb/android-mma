@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.WeighInRepository
+import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.model.NewWeighIn
 import com.example.mmarecomp.model.WeighIn
 import com.example.mmarecomp.model.WeighInContext
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 
 class WeighInViewModel(
     private val repository: WeighInRepository = WeighInRepository(),
+    private val syncManager: SyncManager? = null,
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var heure by mutableStateOf(LocalTime.now())
@@ -77,16 +79,25 @@ class WeighInViewModel(
     fun loadHistory(days: Long = 60) {
         viewModelScope.launch {
             try {
-                history = repository.fetch(DateUtils.daysAgo(days))
+                val remote = repository.fetch(DateUtils.daysAgo(days))
+                val pending = syncManager?.pendingLocalWeighIns().orEmpty()
+                history = (remote + pending).distinctBy { "${it.date}-${it.type}-${it.id}" }
+                    .groupBy { "${it.date}-${it.type}" }
+                    .map { (_, group) -> group.firstOrNull { !it.id.startsWith("local-") } ?: group.first() }
+                    .sortedBy { it.date }
             } catch (e: Throwable) {
                 rethrowCancellation(e)
+                val pending = syncManager?.pendingLocalWeighIns().orEmpty()
+                if (pending.isNotEmpty()) {
+                    history = pending.sortedBy { it.date }
+                }
                 errorOperation = ErrorOperation.LOAD
                 when (e) {
                     is java.io.IOException -> {
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
+                        errorMessage = "Pas de connexion internet — affichage des pesées locales si disponibles."
                     }
                     else -> {
-                errorMessage = "Impossible de charger l'historique des pesées."
+                        errorMessage = "Impossible de charger l'historique des pesées."
                     }
                 }
             }

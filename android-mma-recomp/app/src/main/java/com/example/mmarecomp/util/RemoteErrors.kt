@@ -8,13 +8,18 @@ import java.io.IOException
  * PAS être enqueuées — elles doivent remonter à l'opérateur.
  */
 fun Throwable.isOfflineEnqueueable(): Boolean {
-    if (this is IOException) return true
-    val name = javaClass.name
-    // Timeouts / connectivité Ktor parfois wrappés hors IOException pure.
-    if (name.contains("HttpRequestTimeoutException", ignoreCase = true)) return true
-    if (name.contains("ConnectTimeoutException", ignoreCase = true)) return true
-    if (name.contains("SocketTimeoutException", ignoreCase = true)) return true
-    val msg = message.orEmpty()
+    val chain = generateSequence(this) { it.cause }.toList()
+    if (chain.any { it is IOException }) return true
+    if (chain.any {
+            val name = it.javaClass.name
+            name.contains("HttpRequestTimeoutException", ignoreCase = true) ||
+                name.contains("ConnectTimeoutException", ignoreCase = true) ||
+                name.contains("SocketTimeoutException", ignoreCase = true)
+        }
+    ) {
+        return true
+    }
+    val msg = chain.mapNotNull { it.message }.joinToString(" ")
     return msg.contains("timeout", ignoreCase = true) &&
         !msg.contains("PGRST", ignoreCase = true) &&
         !isMissingDailyCheckInTable()
@@ -22,7 +27,9 @@ fun Throwable.isOfflineEnqueueable(): Boolean {
 
 /** Table `daily_checkins` absente ou schéma Supabase pas à jour (migration 006/009). */
 fun Throwable.isMissingDailyCheckInTable(): Boolean {
-    val msg = message.orEmpty()
+    val msg = generateSequence(this) { it.cause }
+        .mapNotNull { it.message }
+        .joinToString(" ")
     return msg.contains("daily_checkins", ignoreCase = true) ||
         (msg.contains("42P01") && msg.contains("checkin", ignoreCase = true)) ||
         (msg.contains("Could not find the table", ignoreCase = true) &&

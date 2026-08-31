@@ -62,6 +62,7 @@ import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.ScreenError
 import com.example.mmarecomp.util.CheckInSaveError
 import com.example.mmarecomp.util.isMissingDailyCheckInTable
+import com.example.mmarecomp.util.isOfflineEnqueueable
 import com.example.mmarecomp.util.rethrowCancellation
 import com.example.mmarecomp.util.toCheckInSaveError
 import kotlinx.coroutines.launch
@@ -134,6 +135,11 @@ class DashboardViewModel(
     /** Alerte non bloquante : table daily_checkins absente / migration manquante. */
     var checkInSchemaWarning by mutableStateOf<String?>(null)
         private set
+    /** Entrées outbox abandonnées au dernier sync (retry max / erreur métier). */
+    var lastSyncAbandoned by mutableStateOf(0)
+        private set
+
+    private var lastLoadedPhase: Phase? = null
 
     var dailyJourneyState by mutableStateOf(emptyDailyJourney())
         private set
@@ -492,6 +498,7 @@ class DashboardViewModel(
     }
 
     fun load(phase: Phase) {
+        lastLoadedPhase = phase
         streakManager?.updateStreak()
         val hasCachedData = planThisWeek.isNotEmpty() ||
             workoutsThisWeek.isNotEmpty() ||
@@ -503,7 +510,8 @@ class DashboardViewModel(
         errorMessage = null
         viewModelScope.launch {
             try {
-                syncManager?.syncAll()
+                val syncResult = syncManager?.syncAll()
+                lastSyncAbandoned = syncResult?.abandoned ?: 0
                 syncManager?.let { pendingSyncCount = it.offlinePendingCount() }
 
                 val mondayOfWeek = DateUtils.startOfWeek()
@@ -512,7 +520,9 @@ class DashboardViewModel(
                 val fenetre60j = DateUtils.inclusiveStart(60)
                 val today = DateUtils.today()
 
-                planThisWeek = trainingPlanRepository.fetchWeek(phase)
+                // Plan / cibles : pas d'offline — ne doivent pas bloquer le reste du dashboard.
+                planThisWeek = runCatching { trainingPlanRepository.fetchWeek(phase) }
+                    .getOrDefault(planThisWeek)
                 workoutsThisWeek = workoutRepository.fetchWeek(mondayOfWeek)
                 val meals28j = mealRepository.fetchSince(fenetre28j)
                 mealsLast7Days = meals28j.filter { it.date >= fenetre7j }
@@ -521,14 +531,19 @@ class DashboardViewModel(
                 // sinon le premier point est essentiellement le poids brut.
                 morningWeighIns = weighInRepository.fetch(fenetre60j)
                     .filter { it.type == WeighInType.MatinJeun }
-                todayTarget = nutritionTargetRepository.fetch(today)
-                recentTargets = nutritionTargetRepository.fetchSince(fenetre7j)
+                todayTarget = runCatching { nutritionTargetRepository.fetch(today) }
+                    .getOrDefault(todayTarget)
+                recentTargets = runCatching { nutritionTargetRepository.fetchSince(fenetre7j) }
+                    .getOrDefault(recentTargets)
 
                 // Fenêtre de 28 jours : c'est la base chronique de l'ACWR.
                 // Une fenêtre plus courte rendrait le ratio instable.
-                workoutsLast28Days = runCatching {
+                workoutsLast28Days = try {
                     workoutRepository.fetchWeek(fenetre28j)
-                }.getOrDefault(emptyList())
+                } catch (e: Throwable) {
+                    rethrowCancellation(e)
+                    if (e.isOfflineEnqueueable()) workoutsLast28Days else throw e
+                }
                 syncManager?.let { sm ->
                     workoutsThisWeek = mergeWorkouts(workoutsThisWeek, sm.pendingLocalWorkouts())
                     workoutsLast28Days = mergeWorkouts(workoutsLast28Days, sm.pendingLocalWorkouts())
@@ -540,12 +555,17 @@ class DashboardViewModel(
                     dailyCheckInRepository.fetchSince(fenetre28j)
                 } catch (e: Throwable) {
                     rethrowCancellation(e)
-                    if (e.isMissingDailyCheckInTable()) {
-                        checkInSchemaWarning =
-                            "Table daily_checkins manquante — exécute 006 puis 009 dans le SQL Editor Supabase."
-                        emptyList()
-                    } else {
-                        emptyList()
+                    when {
+                        e.isMissingDailyCheckInTable() -> {
+                            checkInSchemaWarning =
+                                "Table daily_checkins manquante — exécute 006 puis 009 dans le SQL Editor Supabase."
+                            emptyList()
+                        }
+                        e.isOfflineEnqueueable() -> checkInsRecents.filterNot { it.id.startsWith("local-") }
+                        else -> {
+                            checkInSchemaWarning = "Impossible de charger les points du jour."
+                            checkInsRecents.filterNot { it.id.startsWith("local-") }
+                        }
                     }
                 }
                 checkInsRecents = mergeCheckIns(
@@ -553,9 +573,12 @@ class DashboardViewModel(
                     checkInsRecents + (syncManager?.pendingLocalCheckIns().orEmpty()),
                 )
                 mmaSessions = mergeMmaSessions(
-                    runCatching {
+                    try {
                         mmaSessionRepository.fetchSince(fenetre28j)
-                    }.getOrDefault(emptyList()),
+                    } catch (e: Throwable) {
+                        rethrowCancellation(e)
+                        if (e.isOfflineEnqueueable()) mmaSessions else emptyList()
+                    },
                     syncManager?.pendingLocalMmaSessions().orEmpty(),
                 )
                 syncManager?.let { sm ->
@@ -583,12 +606,15 @@ class DashboardViewModel(
                 refreshDailyJourney()
             } catch (e: Throwable) {
                 rethrowCancellation(e)
-                when (e) {
-                    is java.io.IOException -> {
-                reportError("Pas de connexion internet — le dashboard s'affichera dès que le réseau revient.", ErrorOperation.LOAD)
+                when {
+                    e.isOfflineEnqueueable() -> {
+                        reportError(
+                            "Pas de connexion internet — affichage du cache local si disponible.",
+                            ErrorOperation.LOAD,
+                        )
                     }
                     else -> {
-                reportError("Impossible de charger le dashboard pour le moment.", ErrorOperation.LOAD)
+                        reportError("Impossible de charger le dashboard pour le moment.", ErrorOperation.LOAD)
                     }
                 }
             } finally {
@@ -599,8 +625,10 @@ class DashboardViewModel(
 
     fun syncPending() {
         viewModelScope.launch {
-            syncManager?.syncAll()
+            val result = syncManager?.syncAll()
+            lastSyncAbandoned = result?.abandoned ?: 0
             syncManager?.let { pendingSyncCount = it.offlinePendingCount() }
+            lastLoadedPhase?.let { load(it) }
         }
     }
 

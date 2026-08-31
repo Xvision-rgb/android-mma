@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.MmaSessionRepository
+import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.NewMmaSession
 import com.example.mmarecomp.util.DateUtils
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 
 class MmaSessionViewModel(
     private val repository: MmaSessionRepository = MmaSessionRepository(),
+    private val syncManager: SyncManager? = null,
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var wodContent by mutableStateOf("")
@@ -65,19 +67,22 @@ class MmaSessionViewModel(
         errorMessage = null
         viewModelScope.launch {
             recentSessions = try {
-                repository.fetchRecent()
+                val remote = repository.fetchRecent()
+                val pending = syncManager?.pendingLocalMmaSessions().orEmpty()
+                (remote + pending).distinctBy { it.id }
             } catch (e: Throwable) {
                 rethrowCancellation(e)
+                val pending = syncManager?.pendingLocalMmaSessions().orEmpty()
                 when (e) {
                     is java.io.IOException -> {
-                errorOperation = ErrorOperation.LOAD
-                errorMessage = "Pas de connexion internet — réessaie dès que le réseau revient."
-                emptyList()
+                        errorOperation = ErrorOperation.LOAD
+                        errorMessage = "Pas de connexion internet — affichage des séances locales si disponibles."
+                        pending
                     }
                     else -> {
-                errorOperation = ErrorOperation.LOAD
-                errorMessage = "Impossible de charger l'historique des séances MMA."
-                emptyList()
+                        errorOperation = ErrorOperation.LOAD
+                        errorMessage = "Impossible de charger l'historique des séances MMA."
+                        pending
                     }
                 }
             } finally {

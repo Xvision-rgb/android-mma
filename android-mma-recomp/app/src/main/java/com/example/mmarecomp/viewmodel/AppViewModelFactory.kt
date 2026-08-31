@@ -46,6 +46,7 @@ class AppViewModelFactory(
                     workoutRepository = WorkoutRepository(offline),
                     dailyCheckInRepository = DailyCheckInRepository(offline),
                     mmaSessionRepository = MmaSessionRepository(offline),
+                    syncManager = syncManager,
                 ) as T
             modelClass.isAssignableFrom(MealLogViewModel::class.java) ->
                 MealLogViewModel(
@@ -53,11 +54,14 @@ class AppViewModelFactory(
                     mealRepository = MealRepository(offline),
                     weighInRepository = WeighInRepository(offline),
                     workoutRepository = WorkoutRepository(offline),
+                    mmaSessionRepository = MmaSessionRepository(offline),
+                    syncManager = syncManager,
                     context = application,
                 ) as T
             modelClass.isAssignableFrom(WeighInViewModel::class.java) ->
                 WeighInViewModel(
                     repository = WeighInRepository(offline),
+                    syncManager = syncManager,
                 ) as T
             modelClass.isAssignableFrom(ProgressViewModel::class.java) ->
                 ProgressViewModel(
@@ -72,7 +76,12 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(ProfileViewModel::class.java) ->
                 ProfileViewModel(userId) as T
             modelClass.isAssignableFrom(CalorieGoalViewModel::class.java) ->
-                CalorieGoalViewModel(userId = userId, context = application) as T
+                CalorieGoalViewModel(
+                    userId = userId,
+                    weighInRepository = WeighInRepository(offline),
+                    mealRepository = MealRepository(offline),
+                    context = application,
+                ) as T
             modelClass.isAssignableFrom(ImportTrainingPlanViewModel::class.java) ->
                 ImportTrainingPlanViewModel(context = application) as T
             modelClass.isAssignableFrom(WeeklyProgramViewModel::class.java) ->
@@ -80,7 +89,10 @@ class AppViewModelFactory(
             modelClass.isAssignableFrom(TrainingPlanEditViewModel::class.java) ->
                 TrainingPlanEditViewModel() as T
             modelClass.isAssignableFrom(MmaSessionViewModel::class.java) ->
-                MmaSessionViewModel(repository = MmaSessionRepository(offline)) as T
+                MmaSessionViewModel(
+                    repository = MmaSessionRepository(offline),
+                    syncManager = syncManager,
+                ) as T
             else -> throw IllegalArgumentException("ViewModel inconnu: ${modelClass.name}")
         }
     }
