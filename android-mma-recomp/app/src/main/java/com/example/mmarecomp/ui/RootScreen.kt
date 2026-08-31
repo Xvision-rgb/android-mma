@@ -22,6 +22,7 @@ import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
 import com.example.mmarecomp.ui.auth.AuthScreen
 import com.example.mmarecomp.ui.nav.MainNav
+import com.example.mmarecomp.util.SessionGate
 import com.example.mmarecomp.viewmodel.AuthViewModel
 import com.example.mmarecomp.viewmodel.PhaseState
 import com.example.mmarecomp.viewmodel.SessionProfileViewModel
@@ -34,57 +35,88 @@ fun RootScreen() {
 
     val sessionStatus by authRepository.sessionStatus.collectAsState()
 
-    when (val status = sessionStatus) {
-        is SessionStatus.Authenticated -> {
-            val userId = status.session.user?.id.orEmpty()
-            val sessionProfileViewModel = remember(userId) { SessionProfileViewModel(userId) }
-            val phaseState = sessionProfileViewModel.phaseState
+    var cachedUserId by remember { mutableStateOf<String?>(null) }
+    var cachedUserEmail by remember { mutableStateOf("") }
 
-            LaunchedEffect(userId) {
-                sessionProfileViewModel.load()
-            }
+    if (sessionStatus is SessionStatus.Authenticated) {
+        val authenticated = sessionStatus as SessionStatus.Authenticated
+        cachedUserId = authenticated.session.user?.id.orEmpty().ifBlank { null }
+        cachedUserEmail = authenticated.session.user?.email.orEmpty()
+    } else if (sessionStatus is SessionStatus.NotAuthenticated) {
+        cachedUserId = null
+        cachedUserEmail = ""
+    }
 
-            when (val state = phaseState) {
-                is PhaseState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is PhaseState.Ready -> {
-                    var currentPhase by remember(state.phase) { mutableStateOf(state.phase) }
-                    LaunchedEffect(state.phase) { currentPhase = state.phase }
-                    MainNav(
-                        userId = userId,
-                        userEmail = status.session.user?.email.orEmpty(),
-                        authRepository = authRepository,
-                        currentPhase = currentPhase,
-                        onPhaseChange = { currentPhase = it },
-                    )
-                }
-                is PhaseState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = state.message,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(horizontal = 24.dp),
-                            )
-                            Button(
-                                onClick = { sessionProfileViewModel.load() },
-                                modifier = Modifier.padding(top = 16.dp),
-                            ) {
-                                Text("Réessayer")
-                            }
-                        }
-                    }
-                }
+    when {
+        SessionGate.shouldShowAuthenticatedShell(sessionStatus, cachedUserId) -> {
+            val userId = when (val status = sessionStatus) {
+                is SessionStatus.Authenticated -> status.session.user?.id.orEmpty()
+                else -> cachedUserId.orEmpty()
             }
+            val userEmail = when (val status = sessionStatus) {
+                is SessionStatus.Authenticated -> status.session.user?.email.orEmpty()
+                else -> cachedUserEmail
+            }
+            AuthenticatedShell(
+                userId = userId,
+                userEmail = userEmail,
+                authRepository = authRepository,
+            )
         }
-        is SessionStatus.NotAuthenticated -> AuthScreen(authViewModel)
-        else -> {
+        sessionStatus is SessionStatus.NotAuthenticated -> AuthScreen(authViewModel)
+        else -> AuthLoadingPlaceholder()
+    }
+}
+
+@Composable
+private fun AuthenticatedShell(
+    userId: String,
+    userEmail: String,
+    authRepository: AuthRepository,
+) {
+    val sessionProfileViewModel = remember(userId) { SessionProfileViewModel(userId) }
+    val phaseState = sessionProfileViewModel.phaseState
+
+    LaunchedEffect(userId) {
+        sessionProfileViewModel.ensureLoaded()
+    }
+
+    when (val state = phaseState) {
+        is PhaseState.Loading -> AuthLoadingPlaceholder()
+        is PhaseState.Ready -> {
+            var currentPhase by remember(state.phase) { mutableStateOf(state.phase) }
+            LaunchedEffect(state.phase) { currentPhase = state.phase }
+            MainNav(
+                userId = userId,
+                userEmail = userEmail,
+                authRepository = authRepository,
+                currentPhase = currentPhase,
+                onPhaseChange = { currentPhase = it },
+            )
+        }
+        is PhaseState.Error -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.message,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                    )
+                    Button(
+                        onClick = { sessionProfileViewModel.load() },
+                        modifier = Modifier.padding(top = 16.dp),
+                    ) {
+                        Text("Réessayer")
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun AuthLoadingPlaceholder() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
     }
 }

@@ -15,8 +15,10 @@ import com.example.mmarecomp.model.WeighInContext
 import com.example.mmarecomp.model.WeighInType
 import com.example.mmarecomp.model.Workout
 import com.example.mmarecomp.model.WorkoutType
+import io.github.jan.supabase.auth.status.SessionStatus
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -110,6 +112,24 @@ class MovingAverageDirectionTest {
     fun `une serie trop courte reste indeterminee`() {
         val one = listOf(TrendPoint(LocalDate.of(2026, 8, 30), 80.0))
         assertEquals(TrendDirection.INDETERMINE, MovingAverage.direction(one))
+    }
+}
+
+class SessionGateTest {
+
+    @Test
+    fun `Initializing garde l app si une session etait deja en cache`() {
+        assertTrue(SessionGate.shouldShowAuthenticatedShell(SessionStatus.Initializing, "user-1"))
+    }
+
+    @Test
+    fun `Initializing sans cache affiche le chargement auth`() {
+        assertFalse(SessionGate.shouldShowAuthenticatedShell(SessionStatus.Initializing, null))
+    }
+
+    @Test
+    fun `NotAuthenticated masque l app meme avec un cache`() {
+        assertFalse(SessionGate.shouldShowAuthenticatedShell(SessionStatus.NotAuthenticated(isSignOut = false), "user-1"))
     }
 }
 
