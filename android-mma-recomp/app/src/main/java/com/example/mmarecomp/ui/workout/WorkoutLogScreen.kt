@@ -69,6 +69,7 @@ import com.example.mmarecomp.ui.components.EmptyState
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.components.PrimaryActionBar
+import com.example.mmarecomp.ui.components.SessionModulationBanner
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.ui.theme.workoutTypeColor
 import com.example.mmarecomp.viewmodel.WorkoutLogViewModel
@@ -143,8 +144,32 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     }
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
-    LaunchedEffect(viewModel.date) { viewModel.loadWorkoutsForDate() }
+    LaunchedEffect(viewModel.date) {
+        viewModel.loadWorkoutsForDate()
+        viewModel.loadReadiness()
+    }
     LaunchedEffect(Unit) { viewModel.loadRecent() }
+
+    LaunchedEffect(viewModel.modulationSnackbarMessage) {
+        viewModel.modulationSnackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Long)
+            viewModel.clearModulationSnackbar()
+        }
+    }
+
+    fun applyModulation() {
+        if (viewModel.applyModulationToWorkout()) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            scope.launch {
+                val message = viewModel.dernierResumeModulation.joinToString(" · ")
+                    .ifBlank { context.getString(R.string.workout_modulation_applied) }
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    duration = SnackbarDuration.Long,
+                )
+            }
+        }
+    }
 
     if (showResetConfirm) {
         AlertDialog(
@@ -188,6 +213,19 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
     ) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
+
+        item {
+            SessionModulationBanner(
+                modulation = viewModel.modulation,
+                scoreReadiness = viewModel.scoreReadiness,
+                aCheckInAujourdhui = viewModel.aCheckInAujourdhui,
+                modulationApplied = viewModel.modulationApplied,
+                resumeModulation = viewModel.dernierResumeModulation,
+                peutAppliquer = viewModel.exercices.isNotEmpty(),
+                onApply = { applyModulation() },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         item {
             Row(
@@ -356,6 +394,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                     protocole = viewModel.protocoleApre,
                     incrementKg = viewModel.incrementChargeKg,
                     biaisRir = viewModel.biaisRir,
+                    rirBonusModulation = viewModel.rirBonusModulation,
                     seuilChuteStrict = com.example.mmarecomp.util.SetStopAdvisor.estStrict(viewModel.type),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {

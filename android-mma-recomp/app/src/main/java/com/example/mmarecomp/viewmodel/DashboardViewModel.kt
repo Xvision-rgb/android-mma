@@ -52,6 +52,7 @@ import com.example.mmarecomp.util.VolumeLandmarks
 import com.example.mmarecomp.util.ModulationSeance
 import com.example.mmarecomp.util.MuscleZoneClassifier
 import com.example.mmarecomp.util.RelativeStrength
+import com.example.mmarecomp.util.ReadinessCalculator
 import com.example.mmarecomp.util.TrainingLoad
 import com.example.mmarecomp.util.TrendPoint
 import com.example.mmarecomp.ui.components.ErrorOperation
@@ -216,11 +217,11 @@ class DashboardViewModel(
     /** Modulation de la séance du jour, dérivée du check-in réel et de la
      *  charge interne — plus aucune donnée mockée ici. */
     val modulation: ModulationSeance
-        get() = TrainingLoad.moduler(
-            score = checkInAujourdhui?.score,
-            acwr = acwr,
-            ecartHrvSigma = TrainingLoad.ecartHrvEnSigma(checkInsRecents, java.time.LocalDate.now()),
-            joursConsecutifsEnRouge = TrainingLoad.joursConsecutifsEnRouge(checkInsRecents),
+        get() = ReadinessCalculator.modulation(
+            checkInToday = checkInAujourdhui,
+            checkInsRecents = checkInsRecents,
+            workouts = workoutsFenetreChronique,
+            mmaSessions = mmaSessions,
         )
 
     /** Séances sur la fenêtre chronique, sans doublon : workoutsLast28Days
@@ -489,6 +490,7 @@ class DashboardViewModel(
         stress: Int,
         hrvRmssd: Double?,
         deadHangSec: Int?,
+        onResult: (Boolean, ModulationSeance) -> Unit = { _, _ -> },
     ) {
         viewModelScope.launch {
             val nouveau = NewDailyCheckIn(
@@ -505,9 +507,11 @@ class DashboardViewModel(
                 val enregistre = dailyCheckInRepository.log(nouveau)
                 checkInsRecents = checkInsRecents.filterNot { it.date == enregistre.date } + enregistre
                 activityDates = activityDates + enregistre.date
+                onResult(true, modulation)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 reportError("Impossible d'enregistrer le point du jour.", ErrorOperation.SAVE)
+                onResult(false, modulation)
             }
         }
     }

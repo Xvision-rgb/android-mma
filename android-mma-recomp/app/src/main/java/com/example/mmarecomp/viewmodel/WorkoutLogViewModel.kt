@@ -5,8 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mmarecomp.data.DailyCheckInRepository
+import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.LoggedSet
 import com.example.mmarecomp.model.NewWorkout
@@ -21,6 +24,10 @@ import com.example.mmarecomp.util.ExerciseName
 import com.example.mmarecomp.util.ApreEngine
 import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.ChargeHistory
+import com.example.mmarecomp.util.ModulationApplier
+import com.example.mmarecomp.util.ModulationSeance
+import com.example.mmarecomp.util.ReadinessAction
+import com.example.mmarecomp.util.ReadinessCalculator
 import com.example.mmarecomp.util.DateUtils
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
@@ -29,6 +36,8 @@ import kotlinx.coroutines.launch
 class WorkoutLogViewModel(
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
+    private val dailyCheckInRepository: DailyCheckInRepository = DailyCheckInRepository(),
+    private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var type by mutableStateOf(WorkoutType.JambesForce)
@@ -78,6 +87,30 @@ class WorkoutLogViewModel(
     var workoutsForDate by mutableStateOf<List<Workout>>(emptyList())
         private set
 
+    var modulation by mutableStateOf(
+        ModulationSeance(
+            action = ReadinessAction.NOMINALE,
+            facteurVolume = 1.0,
+            facteurCharge = 1.0,
+            rirSupplementaire = 0,
+            explication = "Chargement…",
+        ),
+    )
+        private set
+    var scoreReadiness by mutableStateOf<Int?>(null)
+        private set
+    var aCheckInAujourdhui by mutableStateOf(false)
+        private set
+    var modulationApplied by mutableStateOf(false)
+        private set
+    var rirBonusModulation by mutableStateOf(0)
+        private set
+    var dernierResumeModulation by mutableStateOf<List<String>>(emptyList())
+        private set
+    var modulationSnackbarMessage by mutableStateOf<String?>(null)
+        private set
+    private var checkInsRecents by mutableStateOf<List<DailyCheckIn>>(emptyList())
+
     /** Séance déjà enregistrée pour la date et le type sélectionnés. */
     val existingWorkoutForType: Workout?
         get() = workoutsForDate.firstOrNull { it.type == type }
@@ -85,6 +118,63 @@ class WorkoutLogViewModel(
     /** Types de séance déjà logués pour la date sélectionnée. */
     val loggedTypesForDate: Set<WorkoutType>
         get() = workoutsForDate.map { it.type }.toSet()
+
+    /** Charge le check-in du jour et la modulation associée. */
+    fun loadReadiness() {
+        viewModelScope.launch {
+            try {
+                refreshReadiness()
+                maybeAutoApplyModulation()
+            } catch (e: Throwable) {
+                rethrowCancellation(e)
+            }
+        }
+    }
+
+    private suspend fun refreshReadiness() {
+        val fenetre28j = DateUtils.inclusiveStart(28)
+        checkInsRecents = dailyCheckInRepository.fetchSince(fenetre28j)
+        val workouts = (workoutRepository.fetchWeek(fenetre28j) + recentWorkouts)
+            .distinctBy { it.id }
+        val mmaSessions = runCatching {
+            mmaSessionRepository.fetchSince(fenetre28j)
+        }.getOrDefault(emptyList())
+        val dateStr = DateUtils.string(date)
+        val checkInForDate = checkInsRecents.firstOrNull { it.date == dateStr }
+        scoreReadiness = checkInForDate?.score
+        aCheckInAujourdhui = checkInForDate != null
+        modulation = ReadinessCalculator.modulation(
+            checkInToday = checkInForDate,
+            checkInsRecents = checkInsRecents,
+            workouts = workouts,
+            mmaSessions = mmaSessions,
+            today = date,
+        )
+    }
+
+    /** Applique automatiquement la modulation si la séance est chargée et non nominale. */
+    private fun maybeAutoApplyModulation(): Boolean {
+        if (modulationApplied || exercices.isEmpty()) return false
+        if (modulation.action == ReadinessAction.NOMINALE) return false
+        if (!applyModulationToWorkout()) return false
+        modulationSnackbarMessage = dernierResumeModulation.joinToString(" · ").ifBlank { null }
+        return true
+    }
+
+    fun clearModulationSnackbar() {
+        modulationSnackbarMessage = null
+    }
+
+    /** Applique la modulation du jour sur les exercices du formulaire. */
+    fun applyModulationToWorkout(): Boolean {
+        if (modulationApplied || exercices.isEmpty()) return false
+        val result = ModulationApplier.apply(modulation, exercices)
+        exercices = result.exercices
+        rirBonusModulation = result.rirSupplementaire
+        dernierResumeModulation = result.resume
+        modulationApplied = true
+        return true
+    }
 
     /** Charge les séances de la date sélectionnée (pour chips ✓ et édition). */
     fun loadWorkoutsForDate() {
@@ -192,6 +282,9 @@ class WorkoutLogViewModel(
         rpe = ""
         notes = ""
         prefilledFromPlan = false
+        modulationApplied = false
+        rirBonusModulation = 0
+        dernierResumeModulation = emptyList()
     }
 
     /** Reprend le type/exercices/durée de la séance loguée hier, si elle
@@ -245,6 +338,11 @@ class WorkoutLogViewModel(
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
             exercices = plan.exercices.map { it.toLogged() }
             prefilledFromPlan = true
+            modulationApplied = false
+            rirBonusModulation = 0
+            dernierResumeModulation = emptyList()
+            refreshReadiness()
+            maybeAutoApplyModulation()
         }
     }
 
