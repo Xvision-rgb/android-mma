@@ -3,6 +3,7 @@ package com.example.mmarecomp.ui.dashboard
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -85,6 +86,10 @@ fun WeeklyProgramScreen(
                     viewModel.planDays.sortedBy { it.jourSemaine }.forEach { day ->
                         item(key = day.id) {
                             var expanded by remember(day.id) { mutableStateOf(false) }
+                            val isToday = day.jourSemaine == com.example.mmarecomp.util.DateUtils.weekdayIso(
+                                com.example.mmarecomp.util.DateUtils.today(),
+                            )
+                            Column(modifier = Modifier.fillMaxWidth()) {
                             Box {
                                 Row(
                                     modifier = Modifier
@@ -128,6 +133,24 @@ fun WeeklyProgramScreen(
                                         )
                                     }
                                 }
+                            }
+                            if (isToday && day.exercices.isNotEmpty()) {
+                                day.exercices.take(3).forEach { exercice ->
+                                    if (exercice.nom.isNotBlank()) {
+                                        Text(
+                                            "• ${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                        )
+                                    }
+                                }
+                            } else if (day.exercices.isNotEmpty()) {
+                                Text(
+                                    day.exercices.take(2).joinToString(" · ") { it.nom.ifBlank { "—" } },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             }
                         }
                     }

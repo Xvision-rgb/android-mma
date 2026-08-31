@@ -49,6 +49,10 @@ class WeighInViewModel(
     var history by mutableStateOf<List<WeighIn>>(emptyList())
         private set
 
+    /** Pesée déjà enregistrée pour la date et le type sélectionnés. */
+    val existingEntryForSelection: WeighIn?
+        get() = history.firstOrNull { it.date == DateUtils.string(date) && it.type == type }
+
     /** Distinction stricte matin/soir : le graphique de tendance ne prend
      *  jamais les pesées du soir, uniquement le matin à jeun. */
     val trend7Day: List<TrendPoint>
@@ -93,8 +97,35 @@ class WeighInViewModel(
      *  quand le poids n'a presque pas bougé, sans avoir à re-saisir. */
     fun prefillFromLastEntry() {
         val last = history.filter { it.type == type }.lastOrNull() ?: return
-        poidsKg = last.poidsKg.toString()
-        bfPct = last.bfPct?.toString() ?: ""
+        loadEntryIntoForm(last)
+    }
+
+    /** Charge une pesée existante dans le formulaire (historique ou créneau). */
+    fun loadEntryIntoForm(entry: WeighIn) {
+        DateUtils.date(entry.date)?.let { date = it }
+        type = entry.type
+        poidsKg = entry.poidsKg.toString()
+        bfPct = entry.bfPct?.toString() ?: ""
+        creatineRecente = entry.contexte.creatineRecente
+        alcoolRecent = entry.contexte.alcoolRecent
+        postTraining = entry.contexte.postTraining
+        entry.heure.takeIf { it.isNotBlank() }?.let { heureStr ->
+            runCatching {
+                heure = java.time.LocalTime.parse(heureStr, DateTimeFormatter.ofPattern("HH:mm:ss"))
+            }
+        }
+    }
+
+    /** Change de créneau en chargeant la pesée du jour ou en vidant le formulaire. */
+    fun selectType(newType: WeighInType) {
+        if (newType == type) return
+        type = newType
+        existingEntryForSelection?.let { loadEntryIntoForm(it) } ?: resetForm()
+    }
+
+    /** Charge la pesée du jour pour le type sélectionné, si elle existe. */
+    fun loadEntryForCurrentSelection() {
+        existingEntryForSelection?.let { loadEntryIntoForm(it) }
     }
 
     /** Vide le formulaire de saisie (garde la date et le type sélectionnés). */

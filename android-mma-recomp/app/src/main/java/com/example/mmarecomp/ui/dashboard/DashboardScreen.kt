@@ -40,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.R
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.AppCard
 import com.example.mmarecomp.ui.components.AppScaffold
@@ -130,10 +131,10 @@ fun DashboardScreen(
             )
         }
         item {
-            val suggestion = viewModel.suggestedExercise
+            val suggestion = viewModel.suggestedWorkout
             NextWorkoutCard(
-                exerciseName = suggestion?.first,
-                muscleGroup = suggestion?.second,
+                sessionLabel = suggestion?.sessionLabel,
+                exercises = suggestion?.exercises ?: emptyList(),
                 onStartClick = onStartWorkout,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -249,6 +250,15 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    plan.exercices.take(3).forEach { exercice ->
+                        if (exercice.nom.isNotBlank()) {
+                            Text(
+                                "• ${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
                 val typeBreakdown = viewModel.workoutTypeBreakdown
                 if (typeBreakdown.isNotEmpty()) {
@@ -324,6 +334,18 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                RepasSlot.entries.forEach { slot ->
+                    val meal = viewModel.mealsTodayBySlot[slot]
+                    Text(
+                        if (meal != null) {
+                            "${slot.label} : ${meal.calories} kcal"
+                        } else {
+                            "${slot.label} : —"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 viewModel.yesterdayCalories?.let { hier ->
                     Text(
                         "Hier : $hier kcal — juste un repère, pas une comparaison",

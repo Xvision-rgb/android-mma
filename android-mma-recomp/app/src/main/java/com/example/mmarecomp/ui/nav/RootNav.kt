@@ -229,7 +229,8 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 WeighInScreen(vm, onBack = { navController.popBackStack() })
             }
             composable("progress") {
-                val vm = remember { ProgressViewModel() }
+                val appContext = LocalContext.current.applicationContext
+                val vm = remember { ProgressViewModel(context = appContext) }
                 ProgressScreen(vm)
             }
             composable("settings") {
@@ -247,7 +248,8 @@ fun MainNav(userId: String, userEmail: String, authRepository: AuthRepository, c
                 )
             }
             composable("plan_import") {
-                val vm = remember { ImportTrainingPlanViewModel() }
+                val appContext = LocalContext.current.applicationContext
+                val vm = remember { ImportTrainingPlanViewModel(context = appContext) }
                 ImportTrainingPlanScreen(vm, currentPhase, onBack = { navController.popBackStack() })
             }
             composable("calorie_goal") {

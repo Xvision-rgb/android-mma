@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -83,18 +85,12 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     }
     LaunchedEffect(rirCalibration) { viewModel.biaisRir = rirCalibration.biais }
 
-    var showSavedMessage by remember { mutableStateOf(false) }
-    LaunchedEffect(showSavedMessage) {
-        if (showSavedMessage) {
-            kotlinx.coroutines.delay(4000)
-            showSavedMessage = false
-        }
-    }
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
     val context = androidx.compose.ui.platform.LocalContext.current
+    var showResetConfirm by remember { mutableStateOf(false) }
+    val existingWorkout = viewModel.existingWorkoutForType
 
     fun removeWithUndo(index: Int, exercice: LoggedExercise) {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -128,17 +124,46 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     }
 
     fun performSave() {
+        val wasUpdate = viewModel.existingWorkoutForType != null
         viewModel.save { saved ->
-            showSavedMessage = saved
             if (saved) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            if (wasUpdate) R.string.workout_save_update else R.string.workout_saved,
+                        ),
+                        duration = SnackbarDuration.Short,
+                    )
+                }
                 viewModel.loadRecent()
+                viewModel.loadWorkoutsForDate()
             }
         }
     }
 
     LaunchedEffect(viewModel.date, phase) { viewModel.loadPlan(phase) }
+    LaunchedEffect(viewModel.date) { viewModel.loadWorkoutsForDate() }
     LaunchedEffect(Unit) { viewModel.loadRecent() }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text(stringResource(R.string.workout_reset_confirm_title)) },
+            text = { Text(stringResource(R.string.workout_reset_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetForm()
+                    showResetConfirm = false
+                }) { Text(stringResource(R.string.workout_reset_confirm_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) {
+                    Text(stringResource(R.string.workout_reset_confirm_cancel))
+                }
+            },
+        )
+    }
 
     AppScaffold(
         title = stringResource(R.string.workout_log_title),
@@ -147,7 +172,9 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 label = if (viewModel.isSaving) {
                     stringResource(R.string.workout_saving)
                 } else {
-                    stringResource(R.string.workout_save)
+                    stringResource(
+                        if (existingWorkout != null) R.string.workout_save_update else R.string.workout_save,
+                    )
                 },
                 enabled = !viewModel.isSaving,
                 onClick = { performSave() },
@@ -163,35 +190,33 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
         item {
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-                OutlinedTextField(
-                    value = viewModel.type.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Type de séance") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                )
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    WorkoutType.entries.forEach { option ->
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(Dimens.dotMd)
-                                        .background(workoutTypeColor(option), androidx.compose.foundation.shape.CircleShape),
-                                )
-                            },
-                            text = { Text(option.label) },
-                            onClick = {
-                                viewModel.type = option
-                                expanded = false
-                            },
-                        )
-                    }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                WorkoutType.entries.forEach { option ->
+                    val logged = viewModel.loggedTypesForDate.contains(option)
+                    FilterChip(
+                        selected = viewModel.type == option,
+                        onClick = { viewModel.selectType(option) },
+                        label = { Text(if (logged) "${option.label} ✓" else option.label) },
+                    )
                 }
             }
+            existingWorkout?.let {
+                Text(
+                    stringResource(R.string.workout_type_logged, it.type.label),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(top = Dimens.spaceXs),
+                )
+            }
+            Text(
+                stringResource(R.string.workout_tap_history_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Dimens.spaceXs),
+            )
         }
 
         if (viewModel.type == WorkoutType.MmaWod) {
@@ -210,7 +235,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                 TextButton(onClick = { viewModel.duplicateFromYesterday { found -> duplicateFeedback = found } }) {
                     Text("Reprendre la séance d'hier")
                 }
-                TextButton(onClick = { viewModel.resetForm() }) { Text("Vider le formulaire") }
+                TextButton(onClick = { showResetConfirm = true }) { Text("Vider le formulaire") }
             }
             duplicateFeedback?.let { found ->
                 Text(
@@ -416,35 +441,56 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                             viewModel.recentWorkouts.filter { it.type == filter }
                         } ?: viewModel.recentWorkouts
                         filteredHistory.forEach { workout ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.loadWorkoutIntoForm(workout) }
+                                    .padding(vertical = Dimens.spaceXs),
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(Dimens.dotSm)
-                                            .background(workoutTypeColor(workout.type), androidx.compose.foundation.shape.CircleShape),
-                                    )
-                                    Text(
-                                        "${workout.date} · ${workout.type.label}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "${workout.exercices.size} exercice(s)" + (workout.dureeMin?.let { " · ${it}min" } ?: ""),
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                    IconButton(onClick = { deleteWorkoutWithUndo(workout) }) {
-                                        Icon(
-                                            Icons.Filled.Delete,
-                                            contentDescription = "Supprimer cette séance du ${workout.date}",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(Dimens.dotSm)
+                                                .background(
+                                                    workoutTypeColor(workout.type),
+                                                    androidx.compose.foundation.shape.CircleShape,
+                                                ),
+                                        )
+                                        Text(
+                                            "${workout.date} · ${workout.type.label}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "${workout.exercices.size} exercice(s)" + (workout.dureeMin?.let { " · ${it}min" } ?: ""),
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                        IconButton(onClick = { deleteWorkoutWithUndo(workout) }) {
+                                            Icon(
+                                                Icons.Filled.Delete,
+                                                contentDescription = "Supprimer cette séance du ${workout.date}",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+                                if (workout.exercices.isNotEmpty()) {
+                                    Text(
+                                        workout.exercices.take(3).joinToString(" · ") { it.nom.ifBlank { "—" } } +
+                                            if (workout.exercices.size > 3) "…" else "",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         }
@@ -462,6 +508,7 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
                             ErrorOperation.LOAD -> {
                                 viewModel.loadPlan(phase)
                                 viewModel.loadRecent()
+                                viewModel.loadWorkoutsForDate()
                             }
                             ErrorOperation.SAVE -> performSave()
                             ErrorOperation.DELETE -> viewModel.retryPendingDelete()
@@ -472,15 +519,6 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
             }
         }
 
-        item {
-            AnimatedVisibility(
-                visible = showSavedMessage,
-                enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.9f, animationSpec = tween(200)),
-                exit = fadeOut(tween(200)),
-            ) {
-                Text("Séance enregistrée 💪", color = MaterialTheme.colorScheme.tertiary)
-            }
-        }
     }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }

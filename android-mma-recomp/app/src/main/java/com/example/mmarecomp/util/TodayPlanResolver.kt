@@ -10,6 +10,11 @@ import java.time.LocalDate
  * tirer au sort à chaque recomposition et sans masquer le plan dès
  * qu'une séance d'un autre type a été loguée le même jour.
  */
+data class WorkoutSuggestion(
+    val sessionLabel: String,
+    val exercises: List<String>,
+)
+
 object TodayPlanResolver {
 
     /**
@@ -39,8 +44,21 @@ object TodayPlanResolver {
         workouts: List<Workout>,
         today: LocalDate = LocalDate.now(),
     ): Pair<String, String>? {
+        val suggestion = suggestedExercises(planThisWeek, workouts, today) ?: return null
+        val first = suggestion.exercises.firstOrNull() ?: return null
+        return first to suggestion.sessionLabel
+    }
+
+    /** Jusqu'à trois exercices du plan du jour (ou du prochain jour d'entraînement)
+     *  — déterministe, jamais aléatoire. */
+    fun suggestedExercises(
+        planThisWeek: List<TrainingPlanDay>,
+        workouts: List<Workout>,
+        today: LocalDate = LocalDate.now(),
+        limit: Int = 3,
+    ): WorkoutSuggestion? {
         unresolvedToday(planThisWeek, workouts, today)
-            ?.let { plan -> firstExercise(plan)?.let { return it } }
+            ?.let { plan -> return exercisesFromPlan(plan, limit) }
 
         val jourAujourdhui = DateUtils.weekdayIso(DateUtils.string(today))
         val suivants = planThisWeek
@@ -49,11 +67,12 @@ object TodayPlanResolver {
                 val delta = (day.jourSemaine - jourAujourdhui + 7) % 7
                 if (delta == 0) 7 else delta
             }
-        return suivants.firstOrNull()?.let { firstExercise(it) }
+        return suivants.firstOrNull()?.let { exercisesFromPlan(it, limit) }
     }
 
-    private fun firstExercise(plan: TrainingPlanDay): Pair<String, String>? {
-        val nom = plan.exercices.firstOrNull { it.nom.isNotBlank() }?.nom ?: return null
-        return nom to plan.type.label
+    private fun exercisesFromPlan(plan: TrainingPlanDay, limit: Int): WorkoutSuggestion? {
+        val noms = plan.exercices.map { it.nom.trim() }.filter { it.isNotBlank() }.take(limit)
+        if (noms.isEmpty()) return null
+        return WorkoutSuggestion(sessionLabel = plan.type.label, exercises = noms)
     }
 }

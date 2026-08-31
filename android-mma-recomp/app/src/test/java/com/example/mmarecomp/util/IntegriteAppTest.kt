@@ -166,6 +166,16 @@ class TodayPlanResolverTest {
     }
 
     @Test
+    fun `suggestedExercises renvoie jusqu a trois exercices du plan`() {
+        val plan = listOf(
+            plan(1, PlanDayType.TorseForce, "Développé couché", "Rowing", "Dips", "Face pull"),
+        )
+        val suggestion = TodayPlanResolver.suggestedExercises(plan, emptyList(), lundi)
+        assertNotNull(suggestion)
+        assertEquals(listOf("Développé couché", "Rowing", "Dips"), suggestion!!.exercises)
+    }
+
+    @Test
     fun `si le jour est fait on propose le prochain jour d entrainement`() {
         val plan = listOf(
             plan(1, PlanDayType.JambesForce, "Squat"),
