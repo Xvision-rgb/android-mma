@@ -407,7 +407,13 @@ class DashboardViewModel(
 
     fun load(phase: Phase) {
         streakManager?.updateStreak()
-        isLoading = true
+        val hasCachedData = planThisWeek.isNotEmpty() ||
+            workoutsThisWeek.isNotEmpty() ||
+            mealsLast7Days.isNotEmpty() ||
+            morningWeighIns.isNotEmpty()
+        if (!hasCachedData) {
+            isLoading = true
+        }
         errorMessage = null
         viewModelScope.launch {
             try {

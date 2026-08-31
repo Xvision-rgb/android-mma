@@ -37,6 +37,15 @@ class SessionProfileViewModelTest {
     }
 
     @Test
+    fun `ensureLoaded ne relance pas si la phase est deja prete`() = runBlocking {
+        val vm = SessionProfileViewModel(userId = "u") { profile(Phase.CurriculumMma) }
+        vm.loadProfile()
+        assertTrue(vm.phaseState is PhaseState.Ready)
+        vm.ensureLoaded()
+        assertEquals(Phase.CurriculumMma, (vm.phaseState as PhaseState.Ready).phase)
+    }
+
+    @Test
     fun `une erreur de chargement n impose pas une phase par defaut`() = runBlocking {
         val vm = SessionProfileViewModel(userId = "u") {
             throw java.io.IOException("offline")

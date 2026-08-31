@@ -29,14 +29,24 @@ class SessionProfileViewModel(
         private set
 
     fun load() {
+        if (phaseState is PhaseState.Ready) return
         phaseState = PhaseState.Loading
         viewModelScope.launch {
             loadProfile()
         }
     }
 
+    /** Premier chargement uniquement — ne remet pas l'écran en chargement si la
+     *  phase est déjà connue (retour au premier plan, refresh token, etc.). */
+    fun ensureLoaded() {
+        if (phaseState is PhaseState.Ready) return
+        load()
+    }
+
     suspend fun loadProfile() {
-        phaseState = PhaseState.Loading
+        if (phaseState !is PhaseState.Ready) {
+            phaseState = PhaseState.Loading
+        }
         try {
             val profile = fetchProfile(userId)
             phaseState = PhaseState.Ready(profile.phase)
