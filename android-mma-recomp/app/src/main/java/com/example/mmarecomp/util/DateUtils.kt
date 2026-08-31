@@ -26,8 +26,16 @@ object DateUtils {
     }
 
     /** 1 = lundi ... 7 = dimanche, pour matcher `training_plan.jour_semaine`. */
+    fun weekdayIso(date: LocalDate): Int = date.dayOfWeek.value
+
+    /** Préférer [weekdayIso] avec un [LocalDate]. Retourne null si la chaîne
+     *  n'est pas une date ISO valide (évite de retomber silencieusement sur lundi). */
+    fun weekdayIsoOrNull(dateString: String): Int? =
+        date(dateString)?.dayOfWeek?.value
+
     fun weekdayIso(dateString: String): Int =
-        date(dateString)?.dayOfWeek?.value ?: DayOfWeek.MONDAY.value
+        weekdayIsoOrNull(dateString)
+            ?: error("Date ISO invalide pour weekdayIso: $dateString")
 
     fun startOfWeek(from: LocalDate = LocalDate.now()): String =
         string(from.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))

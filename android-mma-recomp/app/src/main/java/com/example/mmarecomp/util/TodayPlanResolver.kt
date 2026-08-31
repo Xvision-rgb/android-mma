@@ -27,7 +27,7 @@ object TodayPlanResolver {
         workouts: List<Workout>,
         today: LocalDate = LocalDate.now(),
     ): TrainingPlanDay? {
-        val jour = DateUtils.weekdayIso(DateUtils.string(today))
+        val jour = DateUtils.weekdayIso(today)
         val plan = planThisWeek.firstOrNull { it.jourSemaine == jour } ?: return null
         val typeAttendu = plan.type.toWorkoutTypeOrNull() ?: return plan
         val dejaLoguee = workouts.any { it.date == DateUtils.string(today) && it.type == typeAttendu }
@@ -60,7 +60,7 @@ object TodayPlanResolver {
         unresolvedToday(planThisWeek, workouts, today)
             ?.let { plan -> return exercisesFromPlan(plan, limit) }
 
-        val jourAujourdhui = DateUtils.weekdayIso(DateUtils.string(today))
+        val jourAujourdhui = DateUtils.weekdayIso(today)
         val suivants = planThisWeek
             .filter { it.type.toWorkoutTypeOrNull() != null && it.exercices.isNotEmpty() }
             .sortedBy { day ->

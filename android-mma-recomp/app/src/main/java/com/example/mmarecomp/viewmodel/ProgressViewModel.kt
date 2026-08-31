@@ -182,8 +182,11 @@ class ProgressViewModel(
                     rethrowCancellation(e)
                     if (e.isMissingDailyCheckInTable()) emptyList() else throw e
                 }
-                nutritionTargets = nutritionTargetRepository.fetchSince(since)
-                mmaSessions = runCatching { mmaSessionRepository.fetchSince(since) }.getOrDefault(emptyList())
+                nutritionTargets = runCatching {
+                    nutritionTargetRepository.fetchSince(since)
+                }.getOrDefault(nutritionTargets)
+                mmaSessions = runCatching { mmaSessionRepository.fetchSince(since) }
+                    .getOrDefault(mmaSessions)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {

@@ -13,6 +13,7 @@ import com.example.mmarecomp.data.NutritionTargetRepository
 import com.example.mmarecomp.data.ProfileRepository
 import com.example.mmarecomp.data.WeighInRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.model.CalorieMode
 import com.example.mmarecomp.model.Food
 import com.example.mmarecomp.model.Meal
@@ -53,6 +54,7 @@ class MealLogViewModel(
     private val profileRepository: ProfileRepository = ProfileRepository(),
     private val workoutRepository: WorkoutRepository = WorkoutRepository(),
     private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
+    private val syncManager: SyncManager? = null,
     context: Context? = null,
 ) : ViewModel() {
     private val contextePreference = context?.let { ContextePreference(it) }
@@ -234,23 +236,48 @@ class MealLogViewModel(
         viewModelScope.launch {
             val dateString = DateUtils.string(date)
             try {
-                mealsForDay = mealRepository.fetchForDate(forDate = dateString)
-                target = targetRepository.fetch(forDate = dateString)
-                val workouts = runCatching { workoutRepository.fetchWeek(dateString) }
-                    .getOrDefault(emptyList())
+                val remoteMeals = mealRepository.fetchForDate(forDate = dateString)
+                val pendingMeals = syncManager?.pendingLocalMeals()
+                    .orEmpty()
                     .filter { it.date == dateString }
-                val mma = runCatching { mmaSessionRepository.fetchSince(dateString) }
-                    .getOrDefault(emptyList())
+                mealsForDay = (remoteMeals + pendingMeals)
+                    .distinctBy { "${it.date}-${it.repas}-${it.id}" }
+                    .groupBy { it.repas }
+                    .map { (_, group) -> group.firstOrNull { !it.id.startsWith("local-") } ?: group.first() }
+                target = runCatching { targetRepository.fetch(forDate = dateString) }
+                    .getOrDefault(target)
+                val pendingWorkouts = syncManager?.pendingLocalWorkouts().orEmpty()
+                val workouts = (
+                    runCatching { workoutRepository.fetchWeek(dateString) }.getOrDefault(emptyList()) +
+                        pendingWorkouts
+                    )
                     .filter { it.date == dateString }
+                    .distinctBy { it.id }
+                val pendingMma = syncManager?.pendingLocalMmaSessions().orEmpty()
+                val mma = (
+                    runCatching { mmaSessionRepository.fetchSince(dateString) }.getOrDefault(emptyList()) +
+                        pendingMma
+                    )
+                    .filter { it.date == dateString }
+                    .distinctBy { it.id }
                 chargeInterneDuJour = TrainingLoad.chargePourDate(dateString, workouts, mma)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
+                val pendingMeals = syncManager?.pendingLocalMeals()
+                    .orEmpty()
+                    .filter { it.date == dateString }
+                if (pendingMeals.isNotEmpty()) {
+                    mealsForDay = pendingMeals
+                }
                 when (e) {
                     is java.io.IOException -> {
-                reportError("Pas de connexion internet — réessaie dès que le réseau revient.", ErrorOperation.LOAD)
+                        reportError(
+                            "Pas de connexion internet — affichage du cache / file locale si disponible.",
+                            ErrorOperation.LOAD,
+                        )
                     }
                     else -> {
-                reportError("Impossible de charger les repas du jour.", ErrorOperation.LOAD)
+                        reportError("Impossible de charger les repas du jour.", ErrorOperation.LOAD)
                     }
                 }
             } finally {
@@ -275,7 +302,14 @@ class MealLogViewModel(
                 target = targetRepository.set(newTarget)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
-                reportError("Impossible d'enregistrer la cible du jour.", ErrorOperation.SAVE)
+                reportError(
+                    if (e is java.io.IOException) {
+                        "Cible non enregistrable hors-ligne — reconnecte-toi pour la synchroniser."
+                    } else {
+                        "Impossible d'enregistrer la cible du jour."
+                    },
+                    ErrorOperation.SAVE,
+                )
             }
         }
     }
@@ -328,7 +362,14 @@ class MealLogViewModel(
                 target = targetRepository.set(newTarget)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
-                reportError("Impossible d'enregistrer la cible personnalisée.", ErrorOperation.SAVE)
+                reportError(
+                    if (e is java.io.IOException) {
+                        "Cible non enregistrable hors-ligne — reconnecte-toi pour la synchroniser."
+                    } else {
+                        "Impossible d'enregistrer la cible personnalisée."
+                    },
+                    ErrorOperation.SAVE,
+                )
             }
         }
     }

@@ -15,6 +15,13 @@ class RemoteErrorsTest {
     }
 
     @Test
+    fun `IOException wrappee dans la cause est enqueueable`() {
+        val wrapped = RuntimeException("ktor", IOException("broken pipe"))
+        assertTrue(wrapped.isOfflineEnqueueable())
+        assertEquals(CheckInSaveError.NETWORK, wrapped.toCheckInSaveError())
+    }
+
+    @Test
     fun `table daily_checkins manquante n est PAS enqueueable`() {
         val error = RuntimeException(
             "Could not find the table 'public.daily_checkins' in the schema cache",

@@ -9,6 +9,7 @@ import com.example.mmarecomp.data.DailyCheckInRepository
 import com.example.mmarecomp.data.MmaSessionRepository
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.data.WorkoutRepository
+import com.example.mmarecomp.data.offline.SyncManager
 import com.example.mmarecomp.model.DailyCheckIn
 import com.example.mmarecomp.model.LoggedExercise
 import com.example.mmarecomp.model.LoggedSet
@@ -43,6 +44,7 @@ class WorkoutLogViewModel(
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
     private val dailyCheckInRepository: DailyCheckInRepository = DailyCheckInRepository(),
     private val mmaSessionRepository: MmaSessionRepository = MmaSessionRepository(),
+    private val syncManager: SyncManager? = null,
 ) : ViewModel() {
     var date by mutableStateOf(LocalDate.now())
     var type by mutableStateOf(WorkoutType.JambesForce)
@@ -232,10 +234,25 @@ class WorkoutLogViewModel(
         viewModelScope.launch {
             val dateStr = DateUtils.string(date)
             workoutsForDate = try {
-                workoutRepository.fetchWeek(dateStr).filter { it.date == dateStr }
+                val remote = workoutRepository.fetchWeek(dateStr).filter { it.date == dateStr }
+                val pending = syncManager?.pendingLocalWorkouts()
+                    .orEmpty()
+                    .filter { it.date == dateStr }
+                (remote + pending).distinctBy { it.id }
             } catch (e: Throwable) {
                 rethrowCancellation(e)
-                emptyList()
+                val pending = syncManager?.pendingLocalWorkouts()
+                    .orEmpty()
+                    .filter { it.date == dateStr }
+                if (pending.isEmpty() && !e.isOfflineEnqueueable()) {
+                    reportError("Impossible de charger les séances du jour.", ErrorOperation.LOAD)
+                } else if (pending.isEmpty()) {
+                    reportError(
+                        "Pas de connexion — aucune séance en cache pour ce jour.",
+                        ErrorOperation.LOAD,
+                    )
+                }
+                pending
             }
         }
     }
@@ -369,7 +386,7 @@ class WorkoutLogViewModel(
     fun loadPlan(phase: Phase) {
         errorMessage = null
         viewModelScope.launch {
-            val jour = DateUtils.weekdayIso(DateUtils.string(date))
+            val jour = DateUtils.weekdayIso(date)
             val plan = try {
                 trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
             } catch (e: Throwable) {

@@ -150,6 +150,14 @@ fun DashboardScreen(
             }
         }
 
+        if (viewModel.lastSyncAbandoned > 0) {
+            item {
+                SoftAlertBanner(
+                    "Certaines saisies hors-ligne n'ont pas pu être synchronisées (${viewModel.lastSyncAbandoned}) — vérifie le réseau ou les migrations Supabase.",
+                )
+            }
+        }
+
         item {
             DailyJourneyCard(
                 journey = viewModel.dailyJourneyState,
