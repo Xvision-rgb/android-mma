@@ -23,7 +23,7 @@ class TrainingPlanRepository {
     suspend fun upsert(day: NewTrainingPlanDay) {
         client.postgrest.from("training_plan")
             .upsert(day) {
-                onConflict = "user_id,jour_semaine,phase"
+                onConflict = "user_id,jour_semaine,phase,creneau"
             }
     }
 }

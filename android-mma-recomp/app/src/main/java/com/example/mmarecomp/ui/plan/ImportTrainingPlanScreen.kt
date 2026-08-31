@@ -27,9 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
-import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
 import com.example.mmarecomp.ui.theme.Dimens
@@ -38,8 +36,8 @@ import com.example.mmarecomp.viewmodel.ImportTrainingPlanViewModel
 /** Import d'un programme collé en texte libre (ex. généré par Claude).
  *  Le parsing (TrainingPlanParser) est toujours best-effort et n'écrit
  *  jamais directement en base : cet écran affiche un aperçu éditable par
- *  jour détecté, où corriger ce qui a été mal reconnu avant de valider —
- *  jour par jour ou en un clic pour tous les jours détectés. */
+ *  créneau détecté, où corriger ce qui a été mal reconnu avant de valider —
+ *  créneau par créneau ou en un clic pour tous. */
 @Composable
 fun ImportTrainingPlanScreen(
     viewModel: ImportTrainingPlanViewModel,
@@ -59,10 +57,10 @@ fun ImportTrainingPlanScreen(
     ) {
         item {
             Text(
-                "Colle un programme (par exemple généré par Claude) : un jour de la " +
-                    "semaine par ligne (Lundi, Mardi…), puis les exercices en dessous " +
-                    "(ex. \"Squat 4x8 @80kg\"). Le résultat sera à vérifier et corriger " +
-                    "avant d'être enregistré — rien n'est écrit tant que tu ne valides pas.",
+                "Colle un programme : un jour par ligne (Lundi, Mardi…), éventuellement " +
+                    "avec créneau (\"Lundi — Soir\", ou sous-titre Matin/Soir), puis les " +
+                    "exercices (\"Squat 4x8 @80kg\", \"Dead hang 3x45s\", \"Course 20 min\", " +
+                    "\"Farmer walk 2x40m\"). Rien n'est écrit tant que tu ne valides pas.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -77,10 +75,6 @@ fun ImportTrainingPlanScreen(
             )
         }
         item {
-            // Le Bloc Densité vit dans les assets plutôt que d'être écrit en
-            // base directement : il passe par le même aperçu éditable que
-            // n'importe quel programme collé, donc rien n'est enregistré sans
-            // que l'utilisateur l'ait vu et ajusté.
             val context = androidx.compose.ui.platform.LocalContext.current
             androidx.compose.material3.OutlinedButton(
                 onClick = {
@@ -119,7 +113,7 @@ fun ImportTrainingPlanScreen(
             item {
                 Text(
                     "Aucun jour ni exercice reconnu dans ce texte — vérifie le format " +
-                        "(un jour de la semaine par ligne, puis \"Exercice NxM\" en dessous) " +
+                        "(un jour de la semaine par ligne, puis \"Exercice NxM\" / \"Nx45s\" / \"20 min\") " +
                         "ou ajoute les exercices manuellement depuis le Dashboard.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -127,19 +121,15 @@ fun ImportTrainingPlanScreen(
             }
         }
 
-        items(viewModel.drafts, key = { it.jourSemaine }) { draft ->
+        items(viewModel.drafts, key = { it.slotKey }) { draft ->
             Column(modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider()
                 Text(
-                    joursLabels[draft.jourSemaine] ?: "",
+                    draft.label,
                     style = MaterialTheme.typography.titleMedium,
                 )
 
                 if (draft.saved) {
-                    // Une fois enregistré, plus aucun bouton ne permet de
-                    // re-soumettre ce jour : le rendre éditable donnerait
-                    // l'illusion que d'autres changements seraient pris en
-                    // compte alors qu'ils seraient perdus sans le savoir.
                     Text(
                         "Enregistré ✓ — ${draft.exercices.size} exercice(s)",
                         style = MaterialTheme.typography.bodySmall,
@@ -147,29 +137,29 @@ fun ImportTrainingPlanScreen(
                     )
                     draft.exercices.forEach { exercice ->
                         Text(
-                            "${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                            "${exercice.nom} — ${exercice.formatPrescription()}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
-                    val existingCount = viewModel.existingDays[draft.jourSemaine]?.exercices?.size ?: 0
+                    val existingCount = viewModel.existingDays[draft.slotKey]?.exercices?.size ?: 0
                     val hasExisting = existingCount > 0
                     if (hasExisting) {
                         Text(
-                            "Ce jour a déjà $existingCount exercice(s) programmé(s) :",
+                            "Ce créneau a déjà $existingCount exercice(s) programmé(s) :",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
                             FilterChip(
                                 selected = draft.appendToExisting,
-                                onClick = { viewModel.setAppendMode(draft.jourSemaine, true) },
+                                onClick = { viewModel.setAppendMode(draft.slotKey, true) },
                                 label = { Text("Compléter") },
                             )
                             FilterChip(
                                 selected = !draft.appendToExisting,
-                                onClick = { viewModel.setAppendMode(draft.jourSemaine, false) },
+                                onClick = { viewModel.setAppendMode(draft.slotKey, false) },
                                 label = { Text("Remplacer") },
                             )
                         }
@@ -177,7 +167,7 @@ fun ImportTrainingPlanScreen(
 
                     if (draft.exercices.isEmpty()) {
                         Text(
-                            "Jour détecté mais aucun exercice reconnu en dessous — ajoute-les manuellement.",
+                            "Créneau détecté mais aucun exercice reconnu — ajoute-les manuellement.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -186,10 +176,10 @@ fun ImportTrainingPlanScreen(
                     draft.exercices.forEachIndexed { index, exercice ->
                         PlannedExerciseRow(
                             exercice = exercice,
-                            onChange = { viewModel.updateDraftExercise(draft.jourSemaine, index, it) },
+                            onChange = { viewModel.updateDraftExercise(draft.slotKey, index, it) },
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { viewModel.removeDraftExercise(draft.jourSemaine, index) }) {
+                            IconButton(onClick = { viewModel.removeDraftExercise(draft.slotKey, index) }) {
                                 Icon(
                                     Icons.Filled.Delete,
                                     contentDescription = "Retirer cet exercice importé",
@@ -198,15 +188,15 @@ fun ImportTrainingPlanScreen(
                             }
                         }
                     }
-                    TextButton(onClick = { viewModel.addDraftExercise(draft.jourSemaine) }) {
+                    TextButton(onClick = { viewModel.addDraftExercise(draft.slotKey) }) {
                         Text("Ajouter un exercice")
                     }
 
                     Button(
-                        onClick = { viewModel.saveDay(draft.jourSemaine) {} },
+                        onClick = { viewModel.saveDay(draft.slotKey) {} },
                         enabled = !viewModel.isSaving,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Enregistrer ce jour") }
+                    ) { Text("Enregistrer ce créneau") }
                 }
             }
         }
@@ -225,9 +215,9 @@ fun ImportTrainingPlanScreen(
                         onClick = {
                             viewModel.saveAll { successCount, total ->
                                 saveAllSummary = if (successCount == total) {
-                                    "$successCount jour(s) enregistré(s) ✓"
+                                    "$successCount créneau(x) enregistré(s) ✓"
                                 } else {
-                                    "$successCount jour(s) sur $total enregistré(s) — vérifie l'erreur ci-dessus pour le reste"
+                                    "$successCount créneau(x) sur $total enregistré(s) — vérifie l'erreur ci-dessus pour le reste"
                                 }
                             }
                         },

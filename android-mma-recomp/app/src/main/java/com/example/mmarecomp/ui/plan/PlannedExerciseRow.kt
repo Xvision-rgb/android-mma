@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,12 +19,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.mmarecomp.model.PlannedExercise
+import com.example.mmarecomp.model.PlannedExerciseUnit
 import com.example.mmarecomp.ui.theme.Dimens
 
 /** Ligne d'édition d'un exercice programmé (training_plan) — plus simple que
  *  ExerciseRow (log séance) : pas de charge réelle/reps réelles/case
  *  "propre", ce sont des champs de performance qui n'ont de sens qu'au
- *  moment du log, pas dans le plan prévisionnel. */
+ *  moment du log, pas dans le plan prévisionnel.
+ *  Unité au choix : reps, secondes, minutes, mètres. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) -> Unit) {
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -47,11 +54,6 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
             modifier = Modifier.fillMaxWidth(),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)) {
-            // value lié directement à exercice.series.toString() empêchait de vider le
-            // champ pour retaper un nombre : toIntOrNull() sur "" retombait sur l'ancienne
-            // valeur, donc le texte affiché ne changeait jamais visuellement à l'effacement.
-            // Un texte local (resynchronisé seulement quand la valeur committée change)
-            // laisse l'utilisateur taper/effacer librement.
             var seriesText by remember(exercice.series) { mutableStateOf(exercice.series.toString()) }
             OutlinedTextField(
                 value = seriesText,
@@ -66,14 +68,20 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
                 ),
                 modifier = Modifier.weight(1f),
             )
-            var repsText by remember(exercice.reps) { mutableStateOf(exercice.reps.toString()) }
+            var qtyText by remember(exercice.reps) { mutableStateOf(exercice.reps.toString()) }
+            val qtyLabel = when (exercice.unite) {
+                PlannedExerciseUnit.Reps -> "Reps"
+                PlannedExerciseUnit.Secondes -> "Secondes"
+                PlannedExerciseUnit.Minutes -> "Minutes"
+                PlannedExerciseUnit.Metres -> "Mètres"
+            }
             OutlinedTextField(
-                value = repsText,
+                value = qtyText,
                 onValueChange = { text ->
-                    repsText = text
+                    qtyText = text
                     text.toIntOrNull()?.takeIf { it >= 1 }?.let { onChange(exercice.copy(reps = it)) }
                 },
-                label = { Text("Reps") },
+                label = { Text(qtyLabel) },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
@@ -81,20 +89,50 @@ fun PlannedExerciseRow(exercice: PlannedExercise, onChange: (PlannedExercise) ->
                 modifier = Modifier.weight(1f),
             )
         }
-        OutlinedTextField(
-            value = exercice.chargeCibleKg?.toString() ?: "",
-            onValueChange = {
-                onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
-            },
-            label = { Text("Charge cible (kg, optionnel)") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
-                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
-            ),
-            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                onDone = { focusManager.clearFocus() },
-            ),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        var unitExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(expanded = unitExpanded, onExpandedChange = { unitExpanded = it }) {
+            OutlinedTextField(
+                value = exercice.unite.label,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Unité") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+            )
+            androidx.compose.material3.DropdownMenu(
+                expanded = unitExpanded,
+                onDismissRequest = { unitExpanded = false },
+            ) {
+                PlannedExerciseUnit.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            onChange(exercice.copy(unite = option))
+                            unitExpanded = false
+                        },
+                    )
+                }
+            }
+        }
+        val showCharge = exercice.unite == PlannedExerciseUnit.Reps ||
+            exercice.unite == PlannedExerciseUnit.Secondes ||
+            exercice.unite == PlannedExerciseUnit.Metres
+        if (showCharge) {
+            OutlinedTextField(
+                value = exercice.chargeCibleKg?.toString() ?: "",
+                onValueChange = {
+                    onChange(exercice.copy(chargeCibleKg = it.replace(",", ".").toDoubleOrNull()?.coerceAtLeast(0.0)))
+                },
+                label = { Text("Charge cible (kg, optionnel)") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { focusManager.clearFocus() },
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }

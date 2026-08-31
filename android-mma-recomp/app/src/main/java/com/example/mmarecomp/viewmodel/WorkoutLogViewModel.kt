@@ -385,13 +385,26 @@ class WorkoutLogViewModel(
         }
     }
 
-    /** Pré-remplit la séance depuis le split programmé pour le jour choisi. */
-    fun loadPlan(phase: Phase) {
+    /** Créneaux du jour chargés pour choisir salle / maison si deux séances. */
+    var planSlotsForDate by mutableStateOf<List<com.example.mmarecomp.model.TrainingPlanDay>>(emptyList())
+        private set
+    var selectedPlanCreneau by mutableStateOf(com.example.mmarecomp.model.PlanCreneau.Matin)
+        private set
+
+    fun selectPlanCreneau(creneau: com.example.mmarecomp.model.PlanCreneau, phase: Phase) {
+        selectedPlanCreneau = creneau
+        loadPlan(phase, forceCreneau = creneau)
+    }
+
+    /** Pré-remplit la séance depuis le split programmé pour le jour choisi.
+     *  S'il y a matin + soir, prend le premier créneau non encore logué
+     *  (ou [forceCreneau] si l'utilisateur choisit). */
+    fun loadPlan(phase: Phase, forceCreneau: com.example.mmarecomp.model.PlanCreneau? = null) {
         errorMessage = null
         viewModelScope.launch {
             val jour = DateUtils.weekdayIso(date)
-            val plan = try {
-                trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jour }
+            val week = try {
+                trainingPlanRepository.fetchWeek(phase)
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {
@@ -404,8 +417,24 @@ class WorkoutLogViewModel(
                 return@launch
                     }
                 }
+            }
+            val slots = week
+                .filter { it.jourSemaine == jour }
+                .sortedBy { it.creneau.ordinal }
+            planSlotsForDate = slots
+            val plan = when {
+                forceCreneau != null -> slots.firstOrNull { it.creneau == forceCreneau }
+                slots.size <= 1 -> slots.firstOrNull()
+                else -> {
+                    val loggedTypes = workoutsForDate.map { it.type }.toSet()
+                    slots.firstOrNull { slot ->
+                        val expected = slot.type.toWorkoutTypeOrNull()
+                        expected == null || expected !in loggedTypes
+                    } ?: slots.firstOrNull()
+                }
             } ?: return@launch
 
+            selectedPlanCreneau = plan.creneau
             plan.type.toWorkoutTypeOrNull()?.let { type = it }
             exercices = plan.exercices.map { it.toLogged() }
             prefilledFromPlan = true

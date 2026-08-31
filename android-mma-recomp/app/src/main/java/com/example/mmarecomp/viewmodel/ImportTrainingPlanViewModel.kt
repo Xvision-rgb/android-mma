@@ -9,34 +9,41 @@ import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.model.NewTrainingPlanDay
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
 import com.example.mmarecomp.model.joursLabels
+import com.example.mmarecomp.model.planSlotKey
+import com.example.mmarecomp.model.slotKey
 import com.example.mmarecomp.util.TrainingPlanParser
 import com.example.mmarecomp.util.UiPreferences
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
-/** Brouillon d'import pour un jour détecté dans le texte collé — jamais
+/** Brouillon d'import pour un créneau détecté dans le texte collé — jamais
  *  enregistré tant que l'utilisateur n'a pas validé explicitement. */
 data class ImportDayDraft(
     val jourSemaine: Int,
+    val creneau: PlanCreneau = PlanCreneau.Matin,
     val exercices: List<PlannedExercise>,
     /** true = les exercices importés viennent s'ajouter à ceux déjà
-     *  programmés pour ce jour ; false = ils les remplacent. Par défaut
+     *  programmés pour ce créneau ; false = ils les remplacent. Par défaut
      *  à true dès qu'il y a déjà du contenu, pour ne jamais écraser
-     *  silencieusement un jour déjà programmé. */
+     *  silencieusement un créneau déjà programmé. */
     val appendToExisting: Boolean,
     val saved: Boolean = false,
-)
+) {
+    val slotKey: String get() = planSlotKey(jourSemaine, creneau)
+    val label: String get() = "${joursLabels[jourSemaine] ?: ""} · ${creneau.label}"
+}
 
 /** Import d'un programme d'entraînement collé en texte libre (ex. généré par
  *  Claude) — parsing best-effort (TrainingPlanParser), jamais d'écriture en
  *  base directement depuis le texte : l'utilisateur voit un aperçu éditable
- *  par jour (mêmes contrôles que TrainingPlanEditScreen) et choisit
- *  explicitement, pour chaque jour déjà programmé, de compléter ou de
- *  remplacer, avant de valider jour par jour ou en un clic pour tous. */
+ *  par créneau (mêmes contrôles que TrainingPlanEditScreen) et choisit
+ *  explicitement, pour chaque créneau déjà programmé, de compléter ou de
+ *  remplacer, avant de valider créneau par créneau ou en un clic pour tous. */
 class ImportTrainingPlanViewModel(
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
     context: Context? = null,
@@ -66,7 +73,7 @@ class ImportTrainingPlanViewModel(
     var hasParsed by mutableStateOf(false)
         private set
 
-    var existingDays by mutableStateOf<Map<Int, TrainingPlanDay>>(emptyMap())
+    var existingDays by mutableStateOf<Map<String, TrainingPlanDay>>(emptyMap())
         private set
     var drafts by mutableStateOf<List<ImportDayDraft>>(emptyList())
         private set
@@ -75,7 +82,7 @@ class ImportTrainingPlanViewModel(
         phase = newPhase
     }
 
-    /** Charge le programme existant — pour savoir quels jours ont déjà des
+    /** Charge le programme existant — pour savoir quels créneaux ont déjà des
      *  exercices et proposer compléter/remplacer plutôt que d'écraser à
      *  l'aveugle. */
     fun loadExisting() {
@@ -83,7 +90,7 @@ class ImportTrainingPlanViewModel(
         errorMessage = null
         viewModelScope.launch {
             try {
-                existingDays = trainingPlanRepository.fetchWeek(phase).associateBy { it.jourSemaine }
+                existingDays = trainingPlanRepository.fetchWeek(phase).associateBy { it.slotKey() }
             } catch (e: Throwable) {
                 rethrowCancellation(e)
                 when (e) {
@@ -101,7 +108,7 @@ class ImportTrainingPlanViewModel(
     }
 
     /** Ré-analyser le texte (ex. après une correction) ne doit jamais faire
-     *  disparaître un jour déjà enregistré dans cette session d'import : ces
+     *  disparaître un créneau déjà enregistré dans cette session d'import : ces
      *  jours gardent leur état "Enregistré ✓" tel quel plutôt que d'être
      *  remplacés par un nouveau brouillon non enregistré. Les brouillons pas
      *  encore enregistrés sont, eux, régénérés depuis le nouveau texte —
@@ -110,50 +117,57 @@ class ImportTrainingPlanViewModel(
     fun parse() {
         hasParsed = true
         val parsed = TrainingPlanParser.parse(rawText)
-        val alreadySaved = drafts.filter { it.saved }.associateBy { it.jourSemaine }
+        val alreadySaved = drafts.filter { it.saved }.associateBy { it.slotKey }
         val fromNewParse = parsed.days
-            .filterNot { alreadySaved.containsKey(it.jourSemaine) }
+            .filterNot { alreadySaved.containsKey(planSlotKey(it.jourSemaine, it.creneau)) }
             .map { day ->
-                val hasExisting = existingDays[day.jourSemaine]?.exercices?.isNotEmpty() == true
-                ImportDayDraft(jourSemaine = day.jourSemaine, exercices = day.exercices, appendToExisting = hasExisting)
+                val key = planSlotKey(day.jourSemaine, day.creneau)
+                val hasExisting = existingDays[key]?.exercices?.isNotEmpty() == true
+                ImportDayDraft(
+                    jourSemaine = day.jourSemaine,
+                    creneau = day.creneau,
+                    exercices = day.exercices,
+                    appendToExisting = hasExisting,
+                )
             }
-        drafts = (alreadySaved.values + fromNewParse).sortedBy { it.jourSemaine }
+        drafts = (alreadySaved.values + fromNewParse)
+            .sortedWith(compareBy({ it.jourSemaine }, { it.creneau.ordinal }))
     }
 
-    fun setAppendMode(jourSemaine: Int, append: Boolean) {
-        drafts = drafts.map { if (it.jourSemaine == jourSemaine) it.copy(appendToExisting = append) else it }
+    fun setAppendMode(slotKey: String, append: Boolean) {
+        drafts = drafts.map { if (it.slotKey == slotKey) it.copy(appendToExisting = append) else it }
     }
 
-    fun updateDraftExercise(jourSemaine: Int, index: Int, updated: PlannedExercise) {
+    fun updateDraftExercise(slotKey: String, index: Int, updated: PlannedExercise) {
         drafts = drafts.map { draft ->
-            if (draft.jourSemaine != jourSemaine) draft
+            if (draft.slotKey != slotKey) draft
             else draft.copy(exercices = draft.exercices.toMutableList().also { it[index] = updated })
         }
     }
 
-    fun removeDraftExercise(jourSemaine: Int, index: Int) {
+    fun removeDraftExercise(slotKey: String, index: Int) {
         drafts = drafts.map { draft ->
-            if (draft.jourSemaine != jourSemaine) draft
+            if (draft.slotKey != slotKey) draft
             else draft.copy(exercices = draft.exercices.filterIndexed { i, _ -> i != index })
         }
     }
 
-    fun addDraftExercise(jourSemaine: Int) {
+    fun addDraftExercise(slotKey: String) {
         drafts = drafts.map { draft ->
-            if (draft.jourSemaine != jourSemaine) draft
+            if (draft.slotKey != slotKey) draft
             else draft.copy(exercices = draft.exercices + PlannedExercise(nom = "", series = 3, reps = 10))
         }
     }
 
     private enum class SaveOutcome { SUCCESS, NETWORK_ERROR, OTHER_ERROR }
 
-    private suspend fun saveDayInternal(jourSemaine: Int): SaveOutcome {
-        val draft = drafts.firstOrNull { it.jourSemaine == jourSemaine } ?: return SaveOutcome.OTHER_ERROR
+    private suspend fun saveDayInternal(slotKey: String): SaveOutcome {
+        val draft = drafts.firstOrNull { it.slotKey == slotKey } ?: return SaveOutcome.OTHER_ERROR
         if (draft.exercices.any { it.nom.isBlank() }) {
-            errorMessage = "${joursLabels[jourSemaine] ?: "Un jour"} a un exercice avec un nom vide — complète-le ou retire-le avant d'enregistrer."
+            errorMessage = "${draft.label} a un exercice avec un nom vide — complète-le ou retire-le avant d'enregistrer."
             return SaveOutcome.OTHER_ERROR
         }
-        val existing = existingDays[jourSemaine]
+        val existing = existingDays[slotKey]
         val finalExercices = if (draft.appendToExisting) {
             (existing?.exercices ?: emptyList()) + draft.exercices
         } else {
@@ -162,14 +176,15 @@ class ImportTrainingPlanViewModel(
         return try {
             trainingPlanRepository.upsert(
                 NewTrainingPlanDay(
-                    jourSemaine = jourSemaine,
+                    jourSemaine = draft.jourSemaine,
                     type = existing?.type ?: PlanDayType.TorseForce,
                     exercices = finalExercices,
                     phase = phase,
                     notes = existing?.notes,
+                    creneau = draft.creneau,
                 ),
             )
-            drafts = drafts.map { if (it.jourSemaine == jourSemaine) it.copy(saved = true) else it }
+            drafts = drafts.map { if (it.slotKey == slotKey) it.copy(saved = true) else it }
             SaveOutcome.SUCCESS
         } catch (e: Throwable) {
             rethrowCancellation(e)
@@ -179,36 +194,36 @@ class ImportTrainingPlanViewModel(
             SaveOutcome.NETWORK_ERROR
                 }
                 else -> {
-            errorMessage = "Impossible d'enregistrer ce jour."
+            errorMessage = "Impossible d'enregistrer ce créneau."
             SaveOutcome.OTHER_ERROR
                 }
             }
         }
     }
 
-    fun saveDay(jourSemaine: Int, onResult: (Boolean) -> Unit) {
+    fun saveDay(slotKey: String, onResult: (Boolean) -> Unit) {
         isSaving = true
         errorMessage = null
         viewModelScope.launch {
-            val outcome = saveDayInternal(jourSemaine)
+            val outcome = saveDayInternal(slotKey)
             isSaving = false
             onResult(outcome == SaveOutcome.SUCCESS)
         }
     }
 
-    /** Enregistre tous les jours pas encore sauvegardés, l'un après l'autre.
+    /** Enregistre tous les créneaux pas encore sauvegardés, l'un après l'autre.
      *  S'arrête dès qu'une coupure réseau est détectée (pas la peine
-     *  d'insister sur les jours suivants sans connexion) ; une erreur
-     *  propre à un jour (ex. nom d'exercice vide) n'empêche pas de tenter
-     *  les autres jours. */
+     *  d'insister sur les suivants sans connexion) ; une erreur
+     *  propre à un créneau (ex. nom d'exercice vide) n'empêche pas de tenter
+     *  les autres. */
     fun saveAll(onResult: (successCount: Int, total: Int) -> Unit) {
         isSaving = true
         errorMessage = null
         viewModelScope.launch {
-            val pending = drafts.filter { !it.saved }.map { it.jourSemaine }
+            val pending = drafts.filter { !it.saved }.map { it.slotKey }
             var success = 0
-            for (jour in pending) {
-                val outcome = saveDayInternal(jour)
+            for (key in pending) {
+                val outcome = saveDayInternal(key)
                 if (outcome == SaveOutcome.SUCCESS) success++
                 if (outcome == SaveOutcome.NETWORK_ERROR) break
             }

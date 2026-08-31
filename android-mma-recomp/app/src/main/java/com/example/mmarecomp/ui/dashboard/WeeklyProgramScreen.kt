@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,10 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.mmarecomp.R
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.PlanDayType
+import com.example.mmarecomp.model.displayLabel
+import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.AppScaffold
 import com.example.mmarecomp.ui.components.ErrorBanner
-import com.example.mmarecomp.ui.components.ErrorOperation
 import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.WeeklyProgramViewModel
 
@@ -42,7 +45,7 @@ import com.example.mmarecomp.viewmodel.WeeklyProgramViewModel
 fun WeeklyProgramScreen(
     viewModel: WeeklyProgramViewModel,
     phase: Phase,
-    onEditPlanDay: (Int) -> Unit,
+    onEditPlanDay: (jourSemaine: Int, creneau: PlanCreneau) -> Unit,
     onBack: () -> Unit,
 ) {
     LaunchedEffect(phase) { viewModel.load(phase) }
@@ -83,12 +86,16 @@ fun WeeklyProgramScreen(
                         }
                     }
 
-                    viewModel.planDays.sortedBy { it.jourSemaine }.forEach { day ->
+                    val sorted = viewModel.planDays.sortedWith(
+                        compareBy({ it.jourSemaine }, { it.creneau.ordinal }),
+                    )
+                    sorted.forEach { day ->
                         item(key = day.id) {
                             var expanded by remember(day.id) { mutableStateOf(false) }
                             val isToday = day.jourSemaine == com.example.mmarecomp.util.DateUtils.weekdayIso(
                                 com.example.mmarecomp.util.DateUtils.today(),
                             )
+                            val multiCreneau = sorted.count { it.jourSemaine == day.jourSemaine } > 1
                             Column(modifier = Modifier.fillMaxWidth()) {
                             Box {
                                 Row(
@@ -100,13 +107,17 @@ fun WeeklyProgramScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
                                     Text(
-                                        com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "",
+                                        if (multiCreneau || day.creneau != PlanCreneau.Matin) {
+                                            day.displayLabel()
+                                        } else {
+                                            joursLabels[day.jourSemaine] ?: ""
+                                        },
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(day.type.label, style = MaterialTheme.typography.bodySmall)
                                         IconButton(
-                                            onClick = { onEditPlanDay(day.jourSemaine) },
+                                            onClick = { onEditPlanDay(day.jourSemaine, day.creneau) },
                                             modifier = Modifier.defaultMinSize(
                                                 minWidth = Dimens.minTouchTarget,
                                                 minHeight = Dimens.minTouchTarget,
@@ -116,7 +127,7 @@ fun WeeklyProgramScreen(
                                                 Icons.Filled.Edit,
                                                 contentDescription = stringResource(
                                                     R.string.dashboard_edit_exercises_cd,
-                                                    com.example.mmarecomp.model.joursLabels[day.jourSemaine] ?: "jour",
+                                                    day.displayLabel(),
                                                 ),
                                             )
                                         }
@@ -138,7 +149,7 @@ fun WeeklyProgramScreen(
                                 day.exercices.take(3).forEach { exercice ->
                                     if (exercice.nom.isNotBlank()) {
                                         Text(
-                                            "• ${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                                            "• ${exercice.nom} — ${exercice.formatPrescription()}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.tertiary,
                                         )
@@ -150,6 +161,14 @@ fun WeeklyProgramScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                            }
+                            val hasSoir = sorted.any {
+                                it.jourSemaine == day.jourSemaine && it.creneau == PlanCreneau.Soir
+                            }
+                            if (day.creneau == PlanCreneau.Matin && !hasSoir) {
+                                TextButton(onClick = { onEditPlanDay(day.jourSemaine, PlanCreneau.Soir) }) {
+                                    Text("Ajouter créneau soir")
+                                }
                             }
                             }
                         }

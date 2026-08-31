@@ -58,6 +58,7 @@ class WeeklyProgramViewModel(
                 exercices = day.exercices,
                 phase = day.phase,
                 notes = day.notes,
+                creneau = day.creneau,
             )
             try {
                 trainingPlanRepository.upsert(updated)

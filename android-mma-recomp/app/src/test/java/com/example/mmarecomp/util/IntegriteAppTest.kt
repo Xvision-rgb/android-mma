@@ -6,6 +6,7 @@ import com.example.mmarecomp.model.LoggedSet
 import com.example.mmarecomp.model.MmaSession
 import com.example.mmarecomp.model.NutritionTarget
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.model.TrainingPlanDay
@@ -204,6 +205,26 @@ class TodayPlanResolverTest {
         val workouts = listOf(workout(lundi, WorkoutType.JambesForce))
         val suggestion = TodayPlanResolver.suggestedExercise(plan, workouts, lundi)
         assertEquals("Développé couché" to "Torse force", suggestion)
+    }
+
+    @Test
+    fun `apres le matin force le soir reste a faire`() {
+        val plan = listOf(
+            plan(1, PlanDayType.JambesForce, "Squat").copy(creneau = PlanCreneau.Matin),
+            TrainingPlanDay(
+                id = "p1s",
+                userId = "u",
+                jourSemaine = 1,
+                type = PlanDayType.Hiit,
+                exercices = listOf(PlannedExercise("Burpees", 3, 10)),
+                phase = Phase.Ete,
+                creneau = PlanCreneau.Soir,
+            ),
+        )
+        val workouts = listOf(workout(lundi, WorkoutType.JambesForce))
+        val unresolved = TodayPlanResolver.unresolvedToday(plan, workouts, lundi)
+        assertEquals(PlanDayType.Hiit, unresolved?.type)
+        assertEquals(PlanCreneau.Soir, unresolved?.creneau)
     }
 }
 

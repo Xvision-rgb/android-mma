@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.joursLabels
 import com.example.mmarecomp.ui.components.AppScaffold
@@ -50,7 +51,7 @@ import com.example.mmarecomp.ui.theme.Dimens
 import com.example.mmarecomp.viewmodel.TrainingPlanEditViewModel
 import kotlinx.coroutines.launch
 
-/** Édite les exercices programmés d'un jour du split hebdo — brouillon local,
+/** Édite les exercices programmés d'un créneau du split hebdo — brouillon local,
  *  un seul enregistrement explicite (bouton "Enregistrer"), rien n'est écrit
  *  en base à chaque frappe. */
 @Composable
@@ -58,10 +59,11 @@ fun TrainingPlanEditScreen(
     viewModel: TrainingPlanEditViewModel,
     jourSemaine: Int,
     phase: Phase,
+    creneau: PlanCreneau = PlanCreneau.Matin,
     onSaved: () -> Unit,
     onBack: () -> Unit = {},
 ) {
-    LaunchedEffect(jourSemaine, phase) { viewModel.load(jourSemaine, phase) }
+    LaunchedEffect(jourSemaine, phase, creneau) { viewModel.load(jourSemaine, phase, creneau) }
     val scope = rememberCoroutineScope()
 
     fun attemptSave() {
@@ -76,7 +78,7 @@ fun TrainingPlanEditScreen(
     }
 
     AppScaffold(
-        title = "Programme — ${joursLabels[jourSemaine] ?: ""}",
+        title = "Programme — ${joursLabels[jourSemaine] ?: ""} · ${creneau.label}",
         onBack = onBack,
     ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -115,6 +117,15 @@ fun TrainingPlanEditScreen(
                 }
             }
 
+            item {
+                Text(
+                    "Créneau : ${creneau.label} — tu peux programmer une 2ᵉ séance le même jour " +
+                        "(ex. salle le matin, maison le soir) depuis le programme semaine.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             item { HorizontalDivider() }
             item {
                 Text(
@@ -126,7 +137,7 @@ fun TrainingPlanEditScreen(
             if (viewModel.exercices.isEmpty()) {
                 item {
                     EmptyState(
-                        title = "Aucun exercice programmé pour ce jour",
+                        title = "Aucun exercice programmé pour ce créneau",
                         subtitle = "Ajoute-en un, ou importe un programme complet depuis Réglages.",
                         icon = Icons.Filled.FitnessCenter,
                         actionLabel = "Ajouter un exercice",
@@ -200,7 +211,7 @@ fun TrainingPlanEditScreen(
                     ErrorBanner(
                         error,
                         onRetry = {
-                            if (viewModel.errorIsFromSave) attemptSave() else viewModel.load(jourSemaine, phase)
+                            if (viewModel.errorIsFromSave) attemptSave() else viewModel.load(jourSemaine, phase, creneau)
                         },
                     )
                 }

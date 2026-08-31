@@ -8,12 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.mmarecomp.data.TrainingPlanRepository
 import com.example.mmarecomp.model.NewTrainingPlanDay
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.PlanDayType
 import com.example.mmarecomp.model.PlannedExercise
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
 
-/** Édite les exercices programmés d'un jour du split hebdo (training_plan) —
+/** Édite les exercices programmés d'un créneau du split hebdo (training_plan) —
  *  jusqu'ici seul le type de séance du jour était modifiable depuis le
  *  Dashboard, la liste d'exercices elle-même n'avait aucune UI d'édition.
  *  Brouillon local modifiable librement, un seul enregistrement explicite
@@ -22,6 +23,8 @@ class TrainingPlanEditViewModel(
     private val trainingPlanRepository: TrainingPlanRepository = TrainingPlanRepository(),
 ) : ViewModel() {
     var jourSemaine by mutableStateOf(1)
+        private set
+    var creneau by mutableStateOf(PlanCreneau.Matin)
         private set
     var phase by mutableStateOf(Phase.Ete)
         private set
@@ -52,15 +55,17 @@ class TrainingPlanEditViewModel(
     val hasUnsavedChanges: Boolean
         get() = loadedSnapshot != Triple(type, exercices, notes)
 
-    fun load(jourSemaine: Int, phase: Phase) {
+    fun load(jourSemaine: Int, phase: Phase, creneau: PlanCreneau = PlanCreneau.Matin) {
         this.jourSemaine = jourSemaine
         this.phase = phase
+        this.creneau = creneau
         isLoading = true
         errorMessage = null
         errorIsFromSave = false
         viewModelScope.launch {
             try {
-                val day = trainingPlanRepository.fetchWeek(phase).firstOrNull { it.jourSemaine == jourSemaine }
+                val day = trainingPlanRepository.fetchWeek(phase)
+                    .firstOrNull { it.jourSemaine == jourSemaine && it.creneau == creneau }
                 type = day?.type ?: PlanDayType.Repos
                 exercices = day?.exercices ?: emptyList()
                 notes = day?.notes ?: ""
@@ -136,6 +141,7 @@ class TrainingPlanEditViewModel(
                 exercices = exercices,
                 phase = phase,
                 notes = notes.ifBlank { null },
+                creneau = creneau,
             )
             try {
                 trainingPlanRepository.upsert(newDay)

@@ -215,6 +215,28 @@ fun WorkoutLogScreen(viewModel: WorkoutLogViewModel, phase: Phase, onOpenMmaShee
     ) {
         item { DateField("Date", viewModel.date, { viewModel.date = it }, modifier = Modifier.fillMaxWidth()) }
 
+        if (viewModel.planSlotsForDate.size > 1) {
+            item {
+                Text(
+                    "Créneau du plan",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    viewModel.planSlotsForDate.forEach { slot ->
+                        FilterChip(
+                            selected = viewModel.selectedPlanCreneau == slot.creneau,
+                            onClick = { viewModel.selectPlanCreneau(slot.creneau, phase) },
+                            label = { Text("${slot.creneau.label} · ${slot.type.label}") },
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             SessionModulationBanner(
                 modulation = viewModel.modulation,

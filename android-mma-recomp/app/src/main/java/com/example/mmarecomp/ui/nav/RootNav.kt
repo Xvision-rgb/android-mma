@@ -46,6 +46,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.mmarecomp.data.AuthRepository
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.ui.dashboard.DashboardScreen
 import com.example.mmarecomp.ui.dashboard.WeeklyProgramScreen
 import com.example.mmarecomp.ui.nutrition.MealLogScreen
@@ -175,7 +176,9 @@ fun MainNav(
                 DashboardScreen(
                     vm,
                     currentPhase,
-                    onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                    onEditPlanDay = { jourSemaine, creneau ->
+                        navController.navigate("plan_edit/$jourSemaine/${creneau.value}")
+                    },
                     onStartWorkout = { navController.navigate("workout") },
                     onOpenWeeklyProgram = { navController.navigate("weekly_program") },
                     onOpenWeighIn = { navController.navigate("weighin") },
@@ -187,26 +190,43 @@ fun MainNav(
                 WeeklyProgramScreen(
                     vm,
                     phase = currentPhase,
-                    onEditPlanDay = { jourSemaine -> navController.navigate("plan_edit/$jourSemaine") },
+                    onEditPlanDay = { jourSemaine, creneau ->
+                        navController.navigate("plan_edit/$jourSemaine/${creneau.value}")
+                    },
                     onBack = { navController.popBackStack() },
                 )
             }
             composable(
-                "plan_edit/{jourSemaine}",
-                arguments = listOf(navArgument("jourSemaine") { type = NavType.IntType }),
+                "plan_edit/{jourSemaine}/{creneau}",
+                arguments = listOf(
+                    navArgument("jourSemaine") { type = NavType.IntType },
+                    navArgument("creneau") { type = NavType.StringType; defaultValue = "matin" },
+                ),
             ) { backStackEntry ->
                 val jourSemaine = backStackEntry.arguments?.getInt("jourSemaine") ?: 1
+                val creneau = PlanCreneau.fromValue(backStackEntry.arguments?.getString("creneau"))
                 val vm: TrainingPlanEditViewModel = viewModel(
                     factory = viewModelFactory,
-                    key = "plan_edit_$jourSemaine",
+                    key = "plan_edit_${jourSemaine}_${creneau.value}",
                 )
                 TrainingPlanEditScreen(
                     vm,
                     jourSemaine = jourSemaine,
                     phase = currentPhase,
+                    creneau = creneau,
                     onSaved = { navController.popBackStack() },
                     onBack = { navController.popBackStack() },
                 )
+            }
+            // Alias rétrocompatible sans créneau → matin
+            composable(
+                "plan_edit/{jourSemaine}",
+                arguments = listOf(navArgument("jourSemaine") { type = NavType.IntType }),
+            ) { backStackEntry ->
+                val jourSemaine = backStackEntry.arguments?.getInt("jourSemaine") ?: 1
+                navController.navigate("plan_edit/$jourSemaine/matin") {
+                    popUpTo("plan_edit/$jourSemaine") { inclusive = true }
+                }
             }
             composable("workout") {
                 val vm: WorkoutLogViewModel = viewModel(factory = viewModelFactory)
