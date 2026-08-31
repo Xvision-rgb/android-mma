@@ -10,14 +10,40 @@ enum class ExerciseModality {
     @SerialName("cardio") Cardio,
 }
 
+/** Unité de la quantité programmée ([PlannedExercise.reps]). */
+@Serializable
+enum class PlannedExerciseUnit(val value: String, val label: String, val shortSuffix: String) {
+    @SerialName("reps") Reps("reps", "Reps", ""),
+    @SerialName("secondes") Secondes("secondes", "Secondes", "s"),
+    @SerialName("minutes") Minutes("minutes", "Minutes", " min"),
+    @SerialName("metres") Metres("metres", "Mètres", "m"),
+}
+
 /** Exercice tel que programmé dans le split hebdo (training_plan.exercices). */
 @Serializable
 data class PlannedExercise(
     val nom: String,
     val series: Int,
+    /** Quantité par série — reps, secondes, minutes ou mètres selon [unite]. */
     val reps: Int,
     @SerialName("charge_cible_kg") val chargeCibleKg: Double? = null,
-)
+    /** Défaut reps pour rester rétrocompatible avec le JSONB historique. */
+    val unite: PlannedExerciseUnit = PlannedExerciseUnit.Reps,
+) {
+    /** Affichage court type `4x8`, `3x45s`, `20 min`, `2x40m`. */
+    fun formatPrescription(): String {
+        val q = reps
+        return when (unite) {
+            PlannedExerciseUnit.Reps -> "${series}x$q"
+            PlannedExerciseUnit.Secondes ->
+                if (series <= 1) "${q}s" else "${series}x${q}s"
+            PlannedExerciseUnit.Minutes ->
+                if (series <= 1) "$q min" else "${series}x$q min"
+            PlannedExerciseUnit.Metres ->
+                if (series <= 1) "${q}m" else "${series}x${q}m"
+        }
+    }
+}
 
 /** Une série réelle, loguée individuellement.
  *
@@ -159,17 +185,41 @@ fun LoggedExercise.asStrength(): LoggedExercise {
     )
 }
 
-fun PlannedExercise.toLogged() = LoggedExercise(
-    nom = nom,
-    series = series,
-    reps = reps,
-    chargeCibleKg = chargeCibleKg,
-    sets = (1..series).map { i ->
-        LoggedSet(
-            index = i,
-            reps = reps,
-            chargeKg = chargeCibleKg ?: 0.0,
-            estAmrap = i == series,
-        )
-    },
-)
+/**
+ * Pré-remplit un log depuis le plan.
+ * - reps / secondes → force (pour les tenues, [LoggedSet.reps] porte les secondes)
+ * - minutes / mètres → cardio (durée ou distance)
+ */
+fun PlannedExercise.toLogged(): LoggedExercise = when (unite) {
+    PlannedExerciseUnit.Minutes -> LoggedExercise(
+        nom = nom,
+        series = 0,
+        reps = 0,
+        modality = ExerciseModality.Cardio,
+        dureeMin = (series.coerceAtLeast(1) * reps).coerceAtLeast(1),
+        intensite = 5,
+    )
+    PlannedExerciseUnit.Metres -> LoggedExercise(
+        nom = nom,
+        series = 0,
+        reps = 0,
+        modality = ExerciseModality.Cardio,
+        dureeMin = null,
+        distanceKm = (series.coerceAtLeast(1) * reps) / 1000.0,
+        intensite = 5,
+    )
+    PlannedExerciseUnit.Reps, PlannedExerciseUnit.Secondes -> LoggedExercise(
+        nom = nom,
+        series = series,
+        reps = reps,
+        chargeCibleKg = chargeCibleKg,
+        sets = (1..series.coerceAtLeast(1)).map { i ->
+            LoggedSet(
+                index = i,
+                reps = reps,
+                chargeKg = chargeCibleKg ?: 0.0,
+                estAmrap = i == series,
+            )
+        },
+    )
+}

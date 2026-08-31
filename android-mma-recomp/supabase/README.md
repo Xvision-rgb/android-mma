@@ -3,7 +3,7 @@
 Le schéma de base (`meals`, `workouts`, `weigh_ins`, `profiles`, RLS, etc.)
 vit historiquement dans `ios-mma-recomp/supabase/schema.sql`. Ce dépôt Android
 ne le re-vendor pas intégralement : exécute d'abord ce fichier iOS, puis les
-migrations `002`–`009` ici.
+migrations `002`–`010` ici.
 
 ## Convention `user_id`
 
@@ -19,11 +19,15 @@ Sans ce `DEFAULT`, l'insert échoue (NOT NULL / RLS) alors que le WiFi est OK.
 La migration `009_daily_checkin_user_id_default.sql` aligne `daily_checkins`
 sur cette convention.
 
+La migration `010_training_plan_creneau.sql` ajoute le créneau `matin`/`soir`
+sur `training_plan` (deux séances possibles le même jour). Les unités
+(reps / secondes / minutes / mètres) sont dans le JSONB `exercices`.
+
 ## Ordre d'exécution
 
 1. `schema.sql` (iOS / base)
 2. `002`–`004` seeds foods
-3. `005`–`009` migrations Android
+3. `005`–`010` migrations Android
 
 ## Hors-ligne (app)
 

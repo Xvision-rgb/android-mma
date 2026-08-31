@@ -92,6 +92,31 @@ class SupabaseJsonTest {
 
         assertEquals(1, day.jourSemaine)
         assertTrue(day.exercices.isEmpty())
+        assertEquals(com.example.mmarecomp.model.PlanCreneau.Matin, day.creneau)
+    }
+
+    @Test
+    fun `training_plan avec creneau soir et unite secondes se decode`() {
+        val json = """
+            {
+              "id": "22222222-2222-2222-2222-222222222223",
+              "user_id": "u1",
+              "jour_semaine": 2,
+              "creneau": "soir",
+              "type": "hiit",
+              "exercices": [
+                {"nom":"Dead hang","series":3,"reps":45,"unite":"secondes"}
+              ],
+              "phase": "ete",
+              "notes": null,
+              "actif": true
+            }
+        """.trimIndent()
+
+        val day = supabaseJson.decodeFromString<TrainingPlanDay>(json)
+
+        assertEquals(com.example.mmarecomp.model.PlanCreneau.Soir, day.creneau)
+        assertEquals(com.example.mmarecomp.model.PlannedExerciseUnit.Secondes, day.exercices.single().unite)
     }
 
     @Test

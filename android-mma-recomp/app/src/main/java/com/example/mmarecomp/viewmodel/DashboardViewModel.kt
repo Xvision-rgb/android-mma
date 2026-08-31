@@ -156,9 +156,9 @@ class DashboardViewModel(
 
     private fun refreshDailyJourney() {
         val today = DateUtils.today()
-        val planToday = planThisWeek.firstOrNull {
-            it.jourSemaine == DateUtils.weekdayIso(today)
-        }
+        val planToday = planThisWeek
+            .filter { it.jourSemaine == DateUtils.weekdayIso(today) }
+            .minByOrNull { it.creneau.ordinal }
         dailyJourneyState = DailyJourney.compute(
             checkInToday = checkInAujourdhui,
             weighInsToday = morningWeighIns.filter { it.date == today },
@@ -486,6 +486,7 @@ class DashboardViewModel(
                 exercices = day.exercices,
                 phase = day.phase,
                 notes = day.notes,
+                creneau = day.creneau,
             )
             try {
                 trainingPlanRepository.upsert(updated)

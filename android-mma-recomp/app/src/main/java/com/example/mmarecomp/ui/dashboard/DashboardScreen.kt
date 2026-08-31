@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.mmarecomp.R
 import com.example.mmarecomp.model.Phase
+import com.example.mmarecomp.model.PlanCreneau
 import com.example.mmarecomp.model.RepasSlot
 import com.example.mmarecomp.ui.components.AchievementUnlockModal
 import com.example.mmarecomp.ui.components.AppCard
@@ -82,7 +83,7 @@ private data class DashboardPill(
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     phase: Phase,
-    onEditPlanDay: (Int) -> Unit = {},
+    onEditPlanDay: (jourSemaine: Int, creneau: PlanCreneau) -> Unit = { _, _ -> },
     onStartWorkout: () -> Unit = {},
     onOpenWeeklyProgram: () -> Unit = {},
     onOpenWeighIn: () -> Unit = {},
@@ -438,15 +439,21 @@ private fun LazyListScope.semainePillItems(
                 )
             }
             viewModel.todayPlan?.let { plan ->
+                val multi = viewModel.planThisWeek.count { it.jourSemaine == plan.jourSemaine } > 1
                 Text(
-                    "Aujourd'hui : ${plan.type.label}",
+                    "Aujourd'hui : ${plan.type.label}" +
+                        if (multi || plan.creneau != com.example.mmarecomp.model.PlanCreneau.Matin) {
+                            " · ${plan.creneau.label}"
+                        } else {
+                            ""
+                        },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 plan.exercices.take(3).forEach { exercice ->
                     if (exercice.nom.isNotBlank()) {
                         Text(
-                            "• ${exercice.nom} — ${exercice.series}x${exercice.reps}",
+                            "• ${exercice.nom} — ${exercice.formatPrescription()}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
