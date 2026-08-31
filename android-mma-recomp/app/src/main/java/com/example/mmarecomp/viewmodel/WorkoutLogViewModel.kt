@@ -22,6 +22,8 @@ import com.example.mmarecomp.util.ApreEngine
 import com.example.mmarecomp.util.ApreProtocol
 import com.example.mmarecomp.util.ChargeHistory
 import com.example.mmarecomp.util.DateUtils
+import com.example.mmarecomp.util.RecentExerciseCatalog
+import com.example.mmarecomp.util.RecentExerciseEntry
 import java.time.LocalDate
 import com.example.mmarecomp.util.rethrowCancellation
 import kotlinx.coroutines.launch
@@ -85,6 +87,35 @@ class WorkoutLogViewModel(
     /** Types de séance déjà logués pour la date sélectionnée. */
     val loggedTypesForDate: Set<WorkoutType>
         get() = workoutsForDate.map { it.type }.toSet()
+
+    /** Exercices récents proposés pour ajout rapide (hors ceux déjà dans le formulaire). */
+    fun recentExercisesForAdd(): List<RecentExerciseEntry> {
+        val present = exercices.map { ExerciseName.cle(it.nom) }.toSet()
+        return RecentExerciseCatalog.fromWorkouts(recentWorkouts)
+            .filter { !present.contains(ExerciseName.cle(it.nom)) }
+    }
+
+    /** Liste pour le picker « Remplacer » — exclut les autres exos déjà dans le formulaire. */
+    fun recentExercisesForReplace(index: Int): List<RecentExerciseEntry> {
+        val present = exercices.mapIndexedNotNull { i, ex ->
+            if (i == index) null else ExerciseName.cle(ex.nom)
+        }.toSet()
+        return RecentExerciseCatalog.fromWorkouts(recentWorkouts)
+            .filter { !present.contains(ExerciseName.cle(it.nom)) }
+    }
+
+    fun addExerciseFromRecent(entry: RecentExerciseEntry) {
+        exercices = exercices + RecentExerciseCatalog.copyForAdd(entry.template)
+        prefilledFromPlan = false
+    }
+
+    fun replaceExerciseFromRecent(index: Int, entry: RecentExerciseEntry) {
+        if (index !in exercices.indices) return
+        exercices = exercices.toMutableList().also {
+            it[index] = RecentExerciseCatalog.replaceKeepingStructure(it[index], entry.template)
+        }
+        prefilledFromPlan = false
+    }
 
     /** Charge les séances de la date sélectionnée (pour chips ✓ et édition). */
     fun loadWorkoutsForDate() {
